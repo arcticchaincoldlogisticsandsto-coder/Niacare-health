@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Shield,
   CreditCard,
@@ -25,6 +25,8 @@ import {
 } from 'lucide-react';
 import { Language, Theme, UserCategory, LocalFormData, InternationalFormData } from '../types';
 import { TANZANIA_INSURANCE_PROVIDERS } from '../data/insurance';
+import { fetchBills, settleBill } from '../lib/bills';
+import { insertMedicalRecord } from '../lib/records';
 
 export interface MedicalBill {
   id: string;
@@ -38,39 +40,6 @@ export interface MedicalBill {
   totalUsd: number;
 }
 
-export const INITIAL_BILLS: MedicalBill[] = [
-  {
-    id: 'bill-01',
-    invoiceNumber: 'INV-2026-8821',
-    facility: 'Muhimbili National Hospital (MNH)',
-    department: 'Outpatient Specialist Clinic',
-    date: '20 Agosti 2026',
-    status: 'pending',
-    items: [
-      { name: 'Ada ya Ushauri wa Daktari Bingwa (Specialist Consultation)', category: 'Doctor', amountTzs: 40000, amountUsd: 16 },
-      { name: 'Kipimo cha Damu Kamili (Full Blood Count - CBC)', category: 'Laboratory', amountTzs: 25000, amountUsd: 10 },
-      { name: 'Kipimo cha Haraka cha Malaria (mRDT & BS)', category: 'Laboratory', amountTzs: 10000, amountUsd: 4 },
-      { name: 'Dawa za Kutibu Maambukizi (Amoxicillin & Analgesics)', category: 'Pharmacy', amountTzs: 20000, amountUsd: 8 },
-    ],
-    totalTzs: 95000,
-    totalUsd: 38,
-  },
-  {
-    id: 'bill-02',
-    invoiceNumber: 'INV-2026-9043',
-    facility: 'The Aga Khan Hospital Dar es Salaam',
-    department: 'Cardiology & Diagnostic Unit',
-    date: '15 Agosti 2026',
-    status: 'settled',
-    items: [
-      { name: 'Kipimo cha Umeme wa Moyo (12-Lead ECG)', category: 'Diagnostic', amountTzs: 45000, amountUsd: 18 },
-      { name: 'Ushauri wa Bingwa wa Mfumo wa Moyo (Cardiologist)', category: 'Doctor', amountTzs: 60000, amountUsd: 24 },
-    ],
-    totalTzs: 105000,
-    totalUsd: 42,
-  },
-];
-
 interface CheckoutProcedureModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -79,6 +48,7 @@ interface CheckoutProcedureModalProps {
   userCategory: UserCategory;
   localData: LocalFormData;
   intlData: InternationalFormData;
+  authUserId: string | null;
 }
 
 export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
@@ -89,6 +59,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
   userCategory,
   localData,
   intlData,
+  authUserId,
 }) => {
   const isDark = theme === 'dark';
   const isSwahili = language === 'sw';
@@ -108,9 +79,26 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
   // Navigation tab inside modal
   const [activeTab, setActiveTab] = useState<'checkout' | 'procedures_guide' | 'history'>('checkout');
 
-  // Selected Bill
-  const [bills, setBills] = useState<MedicalBill[]>(INITIAL_BILLS);
-  const [selectedBillId, setSelectedBillId] = useState<string>('bill-01');
+  // Bills loaded from Supabase for this patient
+  const [bills, setBills] = useState<MedicalBill[]>([]);
+  const [isLoadingBills, setIsLoadingBills] = useState(true);
+  const [selectedBillId, setSelectedBillId] = useState<string>('');
+
+  useEffect(() => {
+    if (!isOpen || !authUserId) return;
+    let active = true;
+    setIsLoadingBills(true);
+    fetchBills(authUserId).then(({ bills: fetched }) => {
+      if (!active) return;
+      setBills(fetched);
+      const firstPending = fetched.find((b) => b.status === 'pending');
+      setSelectedBillId(firstPending?.id || fetched[0]?.id || '');
+      setIsLoadingBills(false);
+    });
+    return () => {
+      active = false;
+    };
+  }, [isOpen, authUserId]);
 
   // Checkout Decision Mode: 'insurance' or 'cash'
   const [checkoutMode, setCheckoutMode] = useState<'insurance' | 'cash'>('insurance');
@@ -145,67 +133,94 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
 
   if (!isOpen) return null;
 
-  const currentBill = bills.find((b) => b.id === selectedBillId) || bills[0];
+  const currentBill = bills.find((b) => b.id === selectedBillId);
 
-  // Calculate breakdown for Insurance
-  const insuranceCoveredAmountTzs = Math.round(currentBill.totalTzs * (1 - insuranceCoPayPct / 100));
-  const patientCoPayAmountTzs = currentBill.totalTzs - insuranceCoveredAmountTzs;
+  // Calculate breakdown for Insurance (0 when there's no bill selected yet)
+  const insuranceCoveredAmountTzs = currentBill
+    ? Math.round(currentBill.totalTzs * (1 - insuranceCoPayPct / 100))
+    : 0;
+  const patientCoPayAmountTzs = currentBill ? currentBill.totalTzs - insuranceCoveredAmountTzs : 0;
 
   // Execute Insurance Claim Checkout
-  const handleAuthorizeInsuranceCheckout = () => {
+  const handleAuthorizeInsuranceCheckout = async () => {
+    if (!currentBill || !authUserId) return;
     setIsProcessingPayment(true);
-    setTimeout(() => {
-      setIsProcessingPayment(false);
-      setSettlementSuccess(true);
-      const newReceipt = {
-        receiptNo: `REC-INS-${Math.floor(100000 + Math.random() * 900000)}`,
-        mode: 'insurance' as const,
-        methodTitle: `Bima ya Afya (${selectedInsuranceProvider})`,
-        authRef: insurancePreAuthCode || `NHIF-CLAIM-${Date.now().toString().slice(-6)}`,
-        amountPaidTzs: insuranceCoveredAmountTzs,
-        amountPaidUsd: currentBill.totalUsd,
-        facility: currentBill.facility,
-        timestamp: new Date().toLocaleString(),
-      };
-      setSettlementReceipt(newReceipt);
+    const authRef = insurancePreAuthCode || `NHIF-CLAIM-${Date.now().toString().slice(-6)}`;
+    const { success } = await settleBill(currentBill.id, `Insurance (${selectedInsuranceProvider})`, authRef);
+    setIsProcessingPayment(false);
 
-      // Update Bill status
-      setBills((prev) =>
-        prev.map((b) => (b.id === currentBill.id ? { ...b, status: 'settled' } : b))
-      );
-    }, 1800);
+    if (!success) return;
+
+    setSettlementSuccess(true);
+    const newReceipt = {
+      receiptNo: `REC-INS-${Math.floor(100000 + Math.random() * 900000)}`,
+      mode: 'insurance' as const,
+      methodTitle: `Bima ya Afya (${selectedInsuranceProvider})`,
+      authRef,
+      amountPaidTzs: insuranceCoveredAmountTzs,
+      amountPaidUsd: currentBill.totalUsd,
+      facility: currentBill.facility,
+      timestamp: new Date().toLocaleString(),
+    };
+    setSettlementReceipt(newReceipt);
+
+    setBills((prev) => prev.map((b) => (b.id === currentBill.id ? { ...b, status: 'settled' } : b)));
+
+    insertMedicalRecord(authUserId, {
+      title: isSwahili ? `Ziara ya Kliniki - ${currentBill.department}` : `Clinic Visit - ${currentBill.department}`,
+      category: 'consultation',
+      hospitalName: currentBill.facility,
+      doctorName: currentBill.department,
+      date: currentBill.date,
+      department: currentBill.department,
+      status: 'verified',
+      summaryEn: `Consultation completed and billed at ${currentBill.facility}. Settled via insurance (${selectedInsuranceProvider}).`,
+      summarySw: `Huduma ilikamilika katika ${currentBill.facility}. Malipo yamekamilika kupitia bima (${selectedInsuranceProvider}).`,
+    });
   };
 
   // Execute Cash / Mobile Money Checkout
-  const handleAuthorizeCashCheckout = () => {
+  const handleAuthorizeCashCheckout = async () => {
+    if (!currentBill || !authUserId) return;
     setIsProcessingPayment(true);
-    setTimeout(() => {
-      setIsProcessingPayment(false);
-      setSettlementSuccess(true);
-      const methodLabel =
-        cashPaymentMethod === 'mpesa'
-          ? `Lipa Namba / ${mobileNetwork.toUpperCase()}`
-          : cashPaymentMethod === 'cash_counter'
-          ? `Fedha Taslimu Kaunta (Control No: ${controlNumber})`
-          : 'Kadi ya Benki (Visa/Mastercard)';
+    const methodLabel =
+      cashPaymentMethod === 'mpesa'
+        ? `Lipa Namba / ${mobileNetwork.toUpperCase()}`
+        : cashPaymentMethod === 'cash_counter'
+        ? `Fedha Taslimu Kaunta (Control No: ${controlNumber})`
+        : 'Kadi ya Benki (Visa/Mastercard)';
+    const authRef = `TXN-${Date.now().toString().slice(-8)}`;
+    const { success } = await settleBill(currentBill.id, methodLabel, authRef);
+    setIsProcessingPayment(false);
 
-      const newReceipt = {
-        receiptNo: `REC-CSH-${Math.floor(100000 + Math.random() * 900000)}`,
-        mode: 'cash' as const,
-        methodTitle: methodLabel,
-        authRef: `TXN-${Date.now().toString().slice(-8)}`,
-        amountPaidTzs: currentBill.totalTzs,
-        amountPaidUsd: currentBill.totalUsd,
-        facility: currentBill.facility,
-        timestamp: new Date().toLocaleString(),
-      };
-      setSettlementReceipt(newReceipt);
+    if (!success) return;
 
-      // Update Bill status
-      setBills((prev) =>
-        prev.map((b) => (b.id === currentBill.id ? { ...b, status: 'settled' } : b))
-      );
-    }, 1800);
+    setSettlementSuccess(true);
+    const newReceipt = {
+      receiptNo: `REC-CSH-${Math.floor(100000 + Math.random() * 900000)}`,
+      mode: 'cash' as const,
+      methodTitle: methodLabel,
+      authRef,
+      amountPaidTzs: currentBill.totalTzs,
+      amountPaidUsd: currentBill.totalUsd,
+      facility: currentBill.facility,
+      timestamp: new Date().toLocaleString(),
+    };
+    setSettlementReceipt(newReceipt);
+
+    setBills((prev) => prev.map((b) => (b.id === currentBill.id ? { ...b, status: 'settled' } : b)));
+
+    insertMedicalRecord(authUserId, {
+      title: isSwahili ? `Ziara ya Kliniki - ${currentBill.department}` : `Clinic Visit - ${currentBill.department}`,
+      category: 'consultation',
+      hospitalName: currentBill.facility,
+      doctorName: currentBill.department,
+      date: currentBill.date,
+      department: currentBill.department,
+      status: 'verified',
+      summaryEn: `Consultation completed and billed at ${currentBill.facility}. Settled via ${methodLabel}.`,
+      summarySw: `Huduma ilikamilika katika ${currentBill.facility}. Malipo yamekamilika kupitia ${methodLabel}.`,
+    });
   };
 
   const handleResetForNewCheckout = () => {
@@ -325,8 +340,27 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
         {/* BODY CONTENT */}
         {/* ========================================================================= */}
         <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-5">
+          {/* TAB 1: LOADING STATE */}
+          {activeTab === 'checkout' && !settlementSuccess && isLoadingBills && (
+            <div className="text-center py-16">
+              <RefreshCw className="w-6 h-6 text-slate-400 mx-auto animate-spin" />
+            </div>
+          )}
+
+          {/* TAB 1: EMPTY STATE — no invoices yet */}
+          {activeTab === 'checkout' && !settlementSuccess && !isLoadingBills && bills.length === 0 && (
+            <div className="text-center py-16 space-y-2">
+              <FileText className="w-10 h-10 text-slate-400 mx-auto opacity-50" />
+              <p className="text-sm font-bold text-slate-500">
+                {isSwahili
+                  ? 'Huna ankara za matibabu kwa sasa. Ankara huundwa kiotomatiki unapoweka miadi na daktari.'
+                  : 'You have no medical invoices yet. Invoices are generated automatically when you book a doctor appointment.'}
+              </p>
+            </div>
+          )}
+
           {/* TAB 1: ACTIVE BILL CHECKOUT FLOW */}
-          {activeTab === 'checkout' && !settlementSuccess && (
+          {activeTab === 'checkout' && !settlementSuccess && !isLoadingBills && currentBill && (
             <div className="space-y-5 animate-in fade-in">
               {/* SECTION A: Select Medical Bill / Encounter */}
               <div
@@ -1167,91 +1201,54 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
               </div>
 
               <div className="space-y-3">
-                {/* Past Receipt 1 */}
-                <div
-                  className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-                    isDark ? 'bg-[#0E1E31] border-slate-800' : 'bg-white border-slate-200 shadow-xs'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold flex-shrink-0">
-                      <CheckCircle2 className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h5 className="font-bold text-xs text-slate-900 dark:text-white">
-                          REC-INS-891042 (Bima ya NHIF)
-                        </h5>
-                        <span className="text-[10px] font-bold font-mono px-1.5 py-0.2 bg-emerald-500/20 text-emerald-400 rounded">
-                          Discharged ✓
-                        </span>
+                {bills.filter((b) => b.status === 'settled').length === 0 ? (
+                  <div className="text-center py-12 space-y-2">
+                    <FileText className="w-10 h-10 text-slate-400 mx-auto opacity-50" />
+                    <p className="text-xs font-bold text-slate-500">
+                      {isSwahili
+                        ? 'Huna risiti zilizolipwa bado.'
+                        : 'No settled receipts yet.'}
+                    </p>
+                  </div>
+                ) : (
+                  bills
+                    .filter((b) => b.status === 'settled')
+                    .map((b) => (
+                      <div
+                        key={b.id}
+                        className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                          isDark ? 'bg-[#0E1E31] border-slate-800' : 'bg-white border-slate-200 shadow-xs'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold flex-shrink-0">
+                            <CheckCircle2 className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h5 className="font-bold text-xs text-slate-900 dark:text-white">
+                                {b.invoiceNumber}
+                              </h5>
+                              <span className="text-[10px] font-bold font-mono px-1.5 py-0.2 bg-emerald-500/20 text-emerald-400 rounded">
+                                {isSwahili ? 'Imelipwa ✓' : 'Settled ✓'}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                              {b.facility} • {b.department} • {b.date}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 justify-between sm:justify-end">
+                          <div className="text-right">
+                            <span className="font-mono font-black text-xs text-emerald-400">
+                              TZS {b.totalTzs.toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                        The Aga Khan Hospital • Cardiology & ECG Review • 15 Agosti 2026
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 justify-between sm:justify-end">
-                    <div className="text-right">
-                      <span className="font-mono font-black text-xs text-emerald-400">
-                        TZS 105,000
-                      </span>
-                      <span className="text-[10px] text-slate-400 block">NHIF 100% Covered</span>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => alert('Risiti REC-INS-891042 imepakuliwa kama PDF.')}
-                      className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 cursor-pointer"
-                    >
-                      <Download className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Past Receipt 2 */}
-                <div
-                  className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-                    isDark ? 'bg-[#0E1E31] border-slate-800' : 'bg-white border-slate-200 shadow-xs'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold flex-shrink-0">
-                      <Smartphone className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h5 className="font-bold text-xs text-slate-900 dark:text-white">
-                          REC-CSH-449102 (Lipa kwa M-Pesa)
-                        </h5>
-                        <span className="text-[10px] font-bold font-mono px-1.5 py-0.2 bg-blue-500/20 text-cyan-400 rounded">
-                          Cleared ✓
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                        Muhimbili National Hospital • Dawa za Antibiotics • 02 Agosti 2026
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 justify-between sm:justify-end">
-                    <div className="text-right">
-                      <span className="font-mono font-black text-xs text-slate-900 dark:text-white">
-                        TZS 32,000
-                      </span>
-                      <span className="text-[10px] text-slate-400 block font-mono">TXN-882910</span>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => alert('Risiti REC-CSH-449102 imepakuliwa kama PDF.')}
-                      className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 cursor-pointer"
-                    >
-                      <Download className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
+                    ))
+                )}
               </div>
             </div>
           )}

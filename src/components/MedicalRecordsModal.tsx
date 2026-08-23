@@ -32,9 +32,16 @@ import {
   FileSpreadsheet,
   Layers,
 } from 'lucide-react';
-import { MedicalRecord, INITIAL_MEDICAL_RECORDS, PersonalFileItem, INITIAL_PERSONAL_FILES } from '../data/medicalRecords';
+import { MedicalRecord, PersonalFileItem } from '../data/medicalRecords';
 import { Language, Theme } from '../types';
 import { generateMedicalRecordPdf, generateCompiledMedicalPassportPdf } from '../utils/pdfGenerator';
+import {
+  fetchMedicalRecords,
+  fetchPersonalFiles,
+  insertPersonalFile,
+  deletePersonalFile,
+  updatePersonalFileStarred,
+} from '../lib/records';
 
 interface MedicalRecordsModalProps {
   isOpen: boolean;
@@ -50,6 +57,7 @@ interface MedicalRecordsModalProps {
   patientDocType?: string;
   patientDocNumber?: string;
   initialTab?: 'records' | 'personal_files';
+  authUserId: string | null;
 }
 
 export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
@@ -66,6 +74,7 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
   patientDocType = 'NIDA / NIN',
   patientDocNumber = '19950412111020000421',
   initialTab = 'records',
+  authUserId,
 }) => {
   const isDark = theme === 'dark';
   const isSwahili = language === 'sw';
@@ -73,24 +82,28 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
   // Primary active tab: 'records' | 'personal_files'
   const [activeTab, setActiveTab] = useState<'records' | 'personal_files'>(initialTab);
 
-  // Medical Records State
-  const [records, setRecords] = useState<MedicalRecord[]>(INITIAL_MEDICAL_RECORDS);
+  // Medical Records State — loaded from Supabase per patient
+  const [records, setRecords] = useState<MedicalRecord[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'lab' | 'radiology' | 'consultation' | 'vaccine'>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [expandedRecordId, setExpandedRecordId] = useState<string | null>('REC-TZ-2026-881');
+  const [expandedRecordId, setExpandedRecordId] = useState<string | null>(null);
 
-  // Personal Files State (persisted locally)
-  const [personalFiles, setPersonalFiles] = useState<PersonalFileItem[]>(() => {
-    try {
-      const saved = localStorage.getItem('niacare_personal_files');
-      if (saved) {
-        return JSON.parse(saved);
-      }
-    } catch {
-      // fallback
-    }
-    return INITIAL_PERSONAL_FILES;
-  });
+  // Personal Files State — loaded from Supabase per patient
+  const [personalFiles, setPersonalFiles] = useState<PersonalFileItem[]>([]);
+
+  useEffect(() => {
+    if (!isOpen || !authUserId) return;
+    let active = true;
+    fetchMedicalRecords(authUserId).then(({ records: fetched }) => {
+      if (active) setRecords(fetched);
+    });
+    fetchPersonalFiles(authUserId).then(({ files }) => {
+      if (active) setPersonalFiles(files);
+    });
+    return () => {
+      active = false;
+    };
+  }, [isOpen, authUserId]);
 
   const [personalFileSearch, setPersonalFileSearch] = useState('');
   const [personalFileCategory, setPersonalFileCategory] = useState<'all' | 'hospital_report' | 'lab_result' | 'vaccine_cert' | 'scan_image' | 'custom_upload'>('all');
@@ -106,15 +119,6 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
   const [uploadNotes, setUploadNotes] = useState('');
   const [selectedFileName, setSelectedFileName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Save personal files to local storage
-  useEffect(() => {
-    try {
-      localStorage.setItem('niacare_personal_files', JSON.stringify(personalFiles));
-    } catch {
-      // ignore
-    }
-  }, [personalFiles]);
 
   // Set initial tab on open
   useEffect(() => {
@@ -209,7 +213,8 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
   };
 
   // Handle Save / Store Record to Personal Files Vault
-  const handleSaveToPersonalFiles = (record: MedicalRecord) => {
+  const handleSaveToPersonalFiles = async (record: MedicalRecord) => {
+    if (!authUserId) return;
     const exists = personalFiles.some((f) => f.recordId === record.id);
     if (exists) {
       setActionNotice({
@@ -222,8 +227,7 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
       return;
     }
 
-    const newFile: PersonalFileItem = {
-      id: `FILE-PF-${Date.now().toString().slice(-4)}`,
+    const newFileData: Omit<PersonalFileItem, 'id'> = {
       title: `${record.title}.pdf`,
       category:
         record.category === 'lab'
@@ -245,7 +249,10 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
       starred: false,
     };
 
-    setPersonalFiles([newFile, ...personalFiles]);
+    const { file, error } = await insertPersonalFile(authUserId, newFileData);
+    if (error || !file) return;
+
+    setPersonalFiles([file, ...personalFiles]);
     setActionNotice({
       text: isSwahili
         ? `Rekodi ya "${record.title}" imehifadhiwa kikamilifu kwenye Faili Zako Binafsi!`
@@ -256,8 +263,9 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
   };
 
   // Handle Remove from Personal Files
-  const handleRemovePersonalFile = (id: string, title: string) => {
+  const handleRemovePersonalFile = async (id: string, title: string) => {
     setPersonalFiles((prev) => prev.filter((f) => f.id !== id));
+    await deletePersonalFile(id);
     setActionNotice({
       text: isSwahili
         ? `Faili la "${title}" limeondolewa kwenye faili zako binafsi.`
@@ -269,9 +277,13 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
 
   // Toggle Star / Favorite
   const handleToggleStar = (id: string) => {
+    const target = personalFiles.find((f) => f.id === id);
+    if (!target) return;
+    const nextStarred = !target.starred;
     setPersonalFiles((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, starred: !f.starred } : f))
+      prev.map((f) => (f.id === id ? { ...f, starred: nextStarred } : f))
     );
+    updatePersonalFileStarred(id, nextStarred);
   };
 
   // Handle Export Complete Medical Passport Archive PDF
@@ -301,14 +313,14 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
     }
   };
 
-  const handleSaveUpload = () => {
-    if (!uploadTitle.trim()) {
+  const handleSaveUpload = async () => {
+    if (!uploadTitle.trim() || !authUserId) {
       return;
     }
 
-    const newCustomFile: PersonalFileItem = {
-      id: `FILE-CUSTOM-${Date.now().toString().slice(-4)}`,
-      title: uploadTitle.endsWith('.pdf') ? uploadTitle : `${uploadTitle}.pdf`,
+    const title = uploadTitle.endsWith('.pdf') ? uploadTitle : `${uploadTitle}.pdf`;
+    const newCustomFileData: Omit<PersonalFileItem, 'id'> = {
+      title,
       category: uploadCategory,
       categoryLabel: {
         sw:
@@ -338,7 +350,10 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
       starred: true,
     };
 
-    setPersonalFiles([newCustomFile, ...personalFiles]);
+    const { file, error } = await insertPersonalFile(authUserId, newCustomFileData);
+    if (error || !file) return;
+
+    setPersonalFiles([file, ...personalFiles]);
     setIsUploadOpen(false);
     setUploadTitle('');
     setUploadFacility('');
@@ -347,8 +362,8 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
 
     setActionNotice({
       text: isSwahili
-        ? `Nyaraka ya "${newCustomFile.title}" imehifadhiwa kwenye Faili Zako Binafsi!`
-        : `Document "${newCustomFile.title}" successfully added to your Personal Files!`,
+        ? `Nyaraka ya "${title}" imehifadhiwa kwenye Faili Zako Binafsi!`
+        : `Document "${title}" successfully added to your Personal Files!`,
       type: 'success',
     });
     setTimeout(() => setActionNotice(null), 4500);

@@ -23,7 +23,7 @@ interface TwoFactorSecurityProps {
   setOtpChannel: (channel: OtpDeliveryChannel) => void;
   pdpaAccepted: boolean;
   setPdpaAccepted: (accepted: boolean) => void;
-  onSendOtp: (channel: OtpDeliveryChannel, target: string) => void;
+  onSendOtp: (channel: OtpDeliveryChannel, target: string) => Promise<{ success: boolean; error?: string }>;
   onOpenPdpaModal: () => void;
   onOpenRegistrationChoice: () => void;
   authMode?: 'register' | 'login';
@@ -49,6 +49,7 @@ export const TwoFactorSecurity: React.FC<TwoFactorSecurityProps> = ({
 }) => {
   const [customEmail, setCustomEmail] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [isSending, setIsSending] = useState(false);
   const t = TRANSLATIONS.twoFactor;
   const isDark = theme === 'dark';
 
@@ -79,7 +80,7 @@ export const TwoFactorSecurity: React.FC<TwoFactorSecurityProps> = ({
     }
   };
 
-  const handleSendOtpClick = () => {
+  const handleSendOtpClick = async () => {
     setErrorMessage('');
 
     if (otpChannel === 'phone') {
@@ -100,7 +101,12 @@ export const TwoFactorSecurity: React.FC<TwoFactorSecurityProps> = ({
     }
 
     const targetDestination = otpChannel === 'phone' ? rawPhone : activeEmail;
-    onSendOtp(otpChannel, targetDestination);
+    setIsSending(true);
+    const result = await onSendOtp(otpChannel, targetDestination);
+    setIsSending(false);
+    if (!result.success) {
+      setErrorMessage(result.error || t.phoneMissingError[language]);
+    }
   };
 
   return (
@@ -269,7 +275,10 @@ export const TwoFactorSecurity: React.FC<TwoFactorSecurityProps> = ({
           id="btn-tuma-otp-2fa"
           type="button"
           onClick={handleSendOtpClick}
-          className={`w-full p-3.5 rounded-2xl font-bold flex flex-col items-center justify-center gap-0.5 cursor-pointer transition-all transform hover:-translate-y-0.5 ${
+          disabled={isSending}
+          className={`w-full p-3.5 rounded-2xl font-bold flex flex-col items-center justify-center gap-0.5 transition-all transform hover:-translate-y-0.5 ${
+            isSending ? 'opacity-70 cursor-wait' : 'cursor-pointer'
+          } ${
             isDark
               ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-500/20'
               : 'bg-[#0A4275] hover:bg-[#08365f] text-white shadow-md shadow-[#0A4275]/20'
@@ -277,7 +286,7 @@ export const TwoFactorSecurity: React.FC<TwoFactorSecurityProps> = ({
         >
           <div className="flex items-center justify-center gap-2 text-sm sm:text-base font-extrabold tracking-wide">
             <Send className="w-4 h-4" />
-            <span>{t.sendOtpBtn[language]}</span>
+            <span>{isSending ? '...' : t.sendOtpBtn[language]}</span>
           </div>
           <span
             className={`text-[11px] sm:text-xs font-normal ${

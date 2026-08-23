@@ -31,6 +31,8 @@ import {
 import { Doctor, Appointment, TANZANIA_DOCTORS, TANZANIA_HOSPITALS, SPECIALTIES } from '../data/doctors';
 import { Language, Theme, UserCategory, LocalFormData, InternationalFormData } from '../types';
 import { getUpcomingDateISO, getTodayISO } from '../utils/dateUtils';
+import { insertAppointment, updateAppointmentStatus } from '../lib/appointments';
+import { insertBill } from '../lib/bills';
 
 interface AppointmentBookingModalProps {
   isOpen: boolean;
@@ -44,6 +46,7 @@ interface AppointmentBookingModalProps {
   initialDoctorId?: string;
   appointmentsList: Appointment[];
   setAppointmentsList: React.Dispatch<React.SetStateAction<Appointment[]>>;
+  authUserId: string | null;
 }
 
 export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = ({
@@ -58,6 +61,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
   initialDoctorId,
   appointmentsList,
   setAppointmentsList,
+  authUserId,
 }) => {
   const isDark = theme === 'dark';
   const isSwahili = language === 'sw';
@@ -96,6 +100,8 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
   const [symptomsNote, setSymptomsNote] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState<'insurance' | 'mpesa' | 'card'>('insurance');
   const [confirmedAppointment, setConfirmedAppointment] = useState<Appointment | null>(null);
+  const [isBooking, setIsBooking] = useState(false);
+  const [bookingError, setBookingError] = useState('');
 
   // Telehealth Video Call simulation state
   const [activeVideoCall, setActiveVideoCall] = useState<Appointment | null>(null);
@@ -159,8 +165,8 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
     setActiveTab('browse');
   };
 
-  const handleCompleteBooking = () => {
-    if (!selectedDoctor) return;
+  const handleCompleteBooking = async () => {
+    if (!selectedDoctor || !authUserId) return;
 
     const randomTicketSuffix = Math.floor(1000 + Math.random() * 9000);
     const hospitalPrefix = selectedDoctor.hospital.includes('Muhimbili')
@@ -171,8 +177,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
       ? 'KCMC'
       : 'NC';
 
-    const newAppointment: Appointment = {
-      id: `apt-${Date.now()}`,
+    const newAppointmentData: Omit<Appointment, 'id'> = {
       ticketNumber: `NC-${hospitalPrefix}-${randomTicketSuffix}`,
       doctorId: selectedDoctor.id,
       doctorName: selectedDoctor.name,
@@ -195,17 +200,59 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
       createdAt: new Date().toISOString().split('T')[0],
     };
 
-    setAppointmentsList((prev) => [newAppointment, ...prev]);
-    setConfirmedAppointment(newAppointment);
-    if (onAppointmentBooked) {
-      onAppointmentBooked(newAppointment);
+    setIsBooking(true);
+    setBookingError('');
+    const { appointment, error } = await insertAppointment(authUserId, newAppointmentData);
+    setIsBooking(false);
+
+    if (error || !appointment) {
+      setBookingError(error || 'Could not save the appointment. Please try again.');
+      return;
     }
+
+    setAppointmentsList((prev) => [appointment, ...prev]);
+    setConfirmedAppointment(appointment);
+    if (onAppointmentBooked) {
+      onAppointmentBooked(appointment);
+    }
+
+    // Every hospital visit generates a real invoice the patient can settle via Checkout.
+    const labFeeTzs = 15000;
+    insertBill(authUserId, appointment.id, {
+      invoiceNumber: `INV-${appointment.ticketNumber}`,
+      facility: appointment.hospitalName,
+      department: appointment.doctorSpecialty,
+      date: appointment.date,
+      items: [
+        {
+          name: `${isSwahili ? 'Ada ya Ushauri wa Daktari' : 'Doctor Consultation Fee'} - ${appointment.doctorName}`,
+          category: isSwahili ? 'Daktari' : 'Doctor',
+          amountTzs: selectedDoctor.consultationFeeTzs,
+          amountUsd: Math.round(selectedDoctor.consultationFeeTzs / 2500),
+        },
+        {
+          name: isSwahili ? 'Uchunguzi wa Kawaida & Maabara' : 'Routine Diagnostic & Lab Panel',
+          category: isSwahili ? 'Maabara' : 'Laboratory',
+          amountTzs: labFeeTzs,
+          amountUsd: Math.round(labFeeTzs / 2500),
+        },
+      ],
+      totalTzs: selectedDoctor.consultationFeeTzs + labFeeTzs,
+      totalUsd: Math.round((selectedDoctor.consultationFeeTzs + labFeeTzs) / 2500),
+    });
   };
 
-  const handleCancelAppointment = (id: string) => {
+  const handleCancelAppointment = async (id: string) => {
     setAppointmentsList((prev) =>
       prev.map((apt) => (apt.id === id ? { ...apt, status: 'cancelled' } : apt))
     );
+    const { success } = await updateAppointmentStatus(id, 'cancelled');
+    if (!success) {
+      // Revert on failure since the optimistic update above didn't stick server-side.
+      setAppointmentsList((prev) =>
+        prev.map((apt) => (apt.id === id ? { ...apt, status: 'confirmed' } : apt))
+      );
+    }
   };
 
   return (
@@ -984,15 +1031,28 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                     </div>
 
                     {/* Submit Booking Button */}
-                    <div className="pt-2">
+                    <div className="pt-2 space-y-2">
+                      {bookingError && (
+                        <p className="text-xs font-semibold text-rose-500 bg-rose-500/10 border border-rose-500/30 rounded-xl p-2.5 flex items-center gap-1.5">
+                          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                          {bookingError}
+                        </p>
+                      )}
                       <button
                         type="button"
                         onClick={handleCompleteBooking}
-                        className="w-full py-3.5 px-4 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20 cursor-pointer transition-all active:scale-98"
+                        disabled={isBooking}
+                        className={`w-full py-3.5 px-4 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20 transition-all active:scale-98 ${
+                          isBooking ? 'opacity-70 cursor-wait' : 'cursor-pointer'
+                        }`}
                       >
                         <CalendarCheck className="w-4 h-4" />
                         <span>
-                          {isSwahili
+                          {isBooking
+                            ? isSwahili
+                              ? 'Inathibitisha...'
+                              : 'Confirming...'
+                            : isSwahili
                             ? `Thibitisha Miadi na ${selectedDoctor.name}`
                             : `Confirm Appointment with ${selectedDoctor.name}`}
                         </span>

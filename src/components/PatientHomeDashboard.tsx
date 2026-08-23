@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
-  User,
   Shield,
   CreditCard,
   QrCode,
-  Heart,
-  Activity,
   Calendar,
   Pill,
   FileText,
@@ -16,17 +13,10 @@ import {
   LogOut,
   Sparkles,
   CheckCircle2,
-  Phone,
-  Copy,
   Check,
   Clock,
   Download,
-  AlertCircle,
   X,
-  Plus,
-  Send,
-  Navigation,
-  ExternalLink,
   CalendarCheck,
   Video,
   Banknote,
@@ -39,11 +29,18 @@ import { TANZANIA_INSURANCE_PROVIDERS } from '../data/insurance';
 import { AppointmentBookingModal } from './AppointmentBookingModal';
 import { CheckoutProcedureModal } from './CheckoutProcedureModal';
 import { MedicalRecordsModal } from './MedicalRecordsModal';
+import { QrPassportModal } from './QrPassportModal';
+import { PrescriptionsModal } from './PrescriptionsModal';
+import { InsuranceModal } from './InsuranceModal';
+import { FacilitiesModal } from './FacilitiesModal';
+import { AiTriageModal } from './AiTriageModal';
 import { Appointment, INITIAL_APPOINTMENTS } from '../data/doctors';
-import { INITIAL_MEDICAL_RECORDS, MedicalRecord } from '../data/medicalRecords';
+import { MedicalRecord } from '../data/medicalRecords';
 import { getPatientCountry } from '../data/countries';
 import { formatDob } from '../utils/dateUtils';
 import { generateMedicalRecordPdf, generateCompiledMedicalPassportPdf } from '../utils/pdfGenerator';
+import { fetchMedicalRecords } from '../lib/records';
+import { fetchPrescriptions, updatePrescriptionTaken, Prescription } from '../lib/prescriptions';
 
 interface PatientHomeDashboardProps {
   userCategory: UserCategory;
@@ -55,6 +52,7 @@ interface PatientHomeDashboardProps {
   onOpenSettings: () => void;
   appointmentsList?: Appointment[];
   setAppointmentsList?: React.Dispatch<React.SetStateAction<Appointment[]>>;
+  authUserId: string | null;
 }
 
 export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
@@ -67,6 +65,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
   onOpenSettings,
   appointmentsList: externalAppointmentsList,
   setAppointmentsList: externalSetAppointmentsList,
+  authUserId,
 }) => {
   const t = TRANSLATIONS.dashboard;
   const isDark = theme === 'dark';
@@ -84,14 +83,14 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
     e.stopPropagation();
     try {
       const patientMeta = {
-        name: isLocal ? localData.fullName || 'Amina Salum Bakari' : intlData.fullName || 'Marcus Alexander Vance',
-        id: isLocal ? localData.docNumber || 'TZ-NIDA-882194' : intlData.passportNumber || 'PASS-USA-99214',
-        dob: isLocal ? formatDob(localData.dob) || '12 Apr 1995' : intlData.dob || '12 Apr 1995',
-        bloodType: isLocal ? localData.bloodGroup || 'O+' : intlData.bloodGroup || 'O+',
-        phone: isLocal ? localData.phone || '+255 754 829 140' : intlData.phone || '+1 415 892 0192',
-        insurance: isLocal ? localData.insuranceProvider || 'NHIF Tanzania' : intlData.travelInsurance || 'Allianz Global Health',
-        docType: isLocal ? localData.docType || 'NIDA / NIN' : 'International Passport',
-        docNumber: isLocal ? localData.docNumber || '19950412111020000421' : intlData.passportNumber || 'A29381944',
+        name: patientName,
+        id: primaryDocNumber,
+        dob: patientDob,
+        bloodType: patientBloodType,
+        phone: patientPhone,
+        insurance: insuranceProviderName,
+        docType: primaryDocType,
+        docNumber: primaryDocNumber,
       };
       generateMedicalRecordPdf(record, patientMeta, language);
       setPdfToast(
@@ -109,16 +108,16 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
   const handleDirectPassportPdfDownload = () => {
     try {
       const patientMeta = {
-        name: isLocal ? localData.fullName || 'Amina Salum Bakari' : intlData.fullName || 'Marcus Alexander Vance',
-        id: isLocal ? localData.docNumber || 'TZ-NIDA-882194' : intlData.passportNumber || 'PASS-USA-99214',
-        dob: isLocal ? formatDob(localData.dob) || '12 Apr 1995' : intlData.dob || '12 Apr 1995',
-        bloodType: isLocal ? localData.bloodGroup || 'O+' : intlData.bloodGroup || 'O+',
-        phone: isLocal ? localData.phone || '+255 754 829 140' : intlData.phone || '+1 415 892 0192',
-        insurance: isLocal ? localData.insuranceProvider || 'NHIF Tanzania' : intlData.travelInsurance || 'Allianz Global Health',
-        docType: isLocal ? localData.docType || 'NIDA / NIN' : 'International Passport',
-        docNumber: isLocal ? localData.docNumber || '19950412111020000421' : intlData.passportNumber || 'A29381944',
+        name: patientName,
+        id: primaryDocNumber,
+        dob: patientDob,
+        bloodType: patientBloodType,
+        phone: patientPhone,
+        insurance: insuranceProviderName,
+        docType: primaryDocType,
+        docNumber: primaryDocNumber,
       };
-      generateCompiledMedicalPassportPdf(INITIAL_MEDICAL_RECORDS, patientMeta, language);
+      generateCompiledMedicalPassportPdf(medicalRecords, patientMeta, language);
       setPdfToast(
         language === 'sw'
           ? 'Pasipoti Kamili ya Afya (NiaCare Health Passport) imepakuliwa kama PDF!'
@@ -136,25 +135,34 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
   const setAppointmentsList = externalSetAppointmentsList || setInternalAppointmentsList;
   const [appointmentToast, setAppointmentToast] = useState<string | null>(null);
 
-  const [copiedId, setCopiedId] = useState(false);
-  const [pillTaken, setPillTaken] = useState(false);
-  const [selectedHospital, setSelectedHospital] = useState('Muhimbili National Hospital');
-  const [selectedSpecialty, setSelectedSpecialty] = useState('General Physician');
-  const [refillRequested, setRefillRequested] = useState(false);
+  // Real per-patient medical records & prescriptions loaded from Supabase.
+  const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([]);
+  const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
 
-  // AI Triage Chat state
-  const [aiMessage, setAiMessage] = useState('');
-  const [aiChatHistory, setAiChatHistory] = useState<Array<{ sender: 'user' | 'ai'; text: string }>>([
-    {
-      sender: 'ai',
-      text:
-        language === 'sw'
-          ? 'Habari! Mimi ni NiaAI, Mshauri wako wa Afya. Una dalili gani leo (mf. homa, maumivu ya kichwa, uchovu)?'
-          : language === 'fr'
-          ? 'Bonjour ! Je suis NiaAI, votre assistant santé. Quels symptômes ressentez-vous aujourd’hui ?'
-          : 'Hello! I am NiaAI, your smart health triage assistant. What symptoms are you experiencing today?',
-    },
-  ]);
+  useEffect(() => {
+    if (!authUserId) return;
+    let active = true;
+    fetchMedicalRecords(authUserId).then(({ records }) => {
+      if (active) setMedicalRecords(records);
+    });
+    fetchPrescriptions(authUserId).then(({ prescriptions: fetched }) => {
+      if (active) setPrescriptions(fetched);
+    });
+    return () => {
+      active = false;
+    };
+  }, [authUserId]);
+
+  const activePrescription = prescriptions.find((p) => !p.isSos) || null;
+
+  const handleTogglePillTaken = () => {
+    if (!activePrescription) return;
+    const nextValue = !activePrescription.takenToday;
+    setPrescriptions((prev) =>
+      prev.map((p) => (p.id === activePrescription.id ? { ...p, takenToday: nextValue } : p))
+    );
+    updatePrescriptionTaken(activePrescription.id, nextValue);
+  };
 
   const isLocal = userCategory === 'locals';
   const patientName = isLocal
@@ -198,25 +206,6 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
   const hour = new Date().getHours();
   const greeting =
     hour < 12 ? t.greetingMorning[language] : hour < 17 ? t.greetingAfternoon[language] : t.greetingEvening[language];
-
-  const handleSendAiMessage = () => {
-    if (!aiMessage.trim()) return;
-    const userMsg = aiMessage;
-    setAiMessage('');
-    setAiChatHistory((prev) => [...prev, { sender: 'user', text: userMsg }]);
-
-    setTimeout(() => {
-      let reply = '';
-      if (language === 'sw') {
-        reply = `Kulingana na maelezo yako ("${userMsg}"), inapendekezwa unywe maji mengi, upumzike, na upime joto. Ikiwa homa itaendelea zaidi ya saa 24, weka miadi na daktari kupitia kitufe cha "Weka Miadi" hapo juu.`;
-      } else if (language === 'fr') {
-        reply = `D'après vos symptômes ("${userMsg}"), il est conseillé de bien vous hydrater et de vous reposer. Si la fièvre persiste plus de 24h, veuillez consulter un médecin via l'onglet "Prendre RDV".`;
-      } else {
-        reply = `Based on your reported symptoms ("${userMsg}"), we recommend adequate hydration and rest. If symptoms persist beyond 24 hours, please book a clinical consultation with a physician.`;
-      }
-      setAiChatHistory((prev) => [...prev, { sender: 'ai', text: reply }]);
-    }, 900);
-  };
 
   return (
     <div id="patient-home-dashboard" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -548,60 +537,60 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
         );
       })()}
 
-      {/* 3. Active Prescription Banner with 1-Tap Pill Checkoff */}
-      <div
-        className={`p-3.5 rounded-2xl border flex items-center justify-between gap-3 transition-all ${
-          pillTaken
-            ? isDark
-              ? 'bg-emerald-950/40 border-emerald-800 text-emerald-200'
-              : 'bg-emerald-50 border-emerald-200 text-emerald-800'
-            : isDark
-            ? 'bg-amber-950/40 border-amber-800/80 text-amber-200'
-            : 'bg-amber-50 border-amber-200 text-amber-900'
-        }`}
-      >
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div
-            className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${
-              pillTaken
-                ? 'bg-emerald-500 text-white'
-                : isDark
-                ? 'bg-amber-500/20 text-amber-400'
-                : 'bg-amber-100 text-amber-700'
-            }`}
-          >
-            {pillTaken ? <Check className="w-5 h-5" /> : <Pill className="w-5 h-5" />}
-          </div>
-          <div className="min-w-0">
-            <span className="text-[10px] font-bold uppercase tracking-wider block opacity-80">
-              {pillTaken ? 'Dawa Imeshanywewa Leo' : 'Kumbusho la Dawa (14:00)'}
-            </span>
-            <p className="text-xs font-bold truncate">
-              {pillTaken
-                ? 'Amoxicillin 500mg - Imethibitishwa'
-                : 'Amoxicillin 500mg (Kidonge 1 baada ya chakula)'}
-            </p>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setPillTaken(!pillTaken)}
-          className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex-shrink-0 transition-all cursor-pointer shadow-xs ${
-            pillTaken
+      {/* 3. Active Prescription Banner with 1-Tap Pill Checkoff (only if a real prescription exists) */}
+      {activePrescription && (
+        <div
+          className={`p-3.5 rounded-2xl border flex items-center justify-between gap-3 transition-all ${
+            activePrescription.takenToday
               ? isDark
-                ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                : 'bg-white text-slate-700 hover:bg-slate-100'
+                ? 'bg-emerald-950/40 border-emerald-800 text-emerald-200'
+                : 'bg-emerald-50 border-emerald-200 text-emerald-800'
               : isDark
-              ? 'bg-amber-500 text-slate-950 hover:bg-amber-400'
-              : 'bg-amber-600 text-white hover:bg-amber-700'
+              ? 'bg-amber-950/40 border-amber-800/80 text-amber-200'
+              : 'bg-amber-50 border-amber-200 text-amber-900'
           }`}
         >
-          {pillTaken ? 'Badili' : t.takePillNow[language]}
-        </button>
-      </div>
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div
+              className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                activePrescription.takenToday
+                  ? 'bg-emerald-500 text-white'
+                  : isDark
+                  ? 'bg-amber-500/20 text-amber-400'
+                  : 'bg-amber-100 text-amber-700'
+              }`}
+            >
+              {activePrescription.takenToday ? <Check className="w-5 h-5" /> : <Pill className="w-5 h-5" />}
+            </div>
+            <div className="min-w-0">
+              <span className="text-[10px] font-bold uppercase tracking-wider block opacity-80">
+                {activePrescription.takenToday ? 'Dawa Imeshanywewa Leo' : 'Kumbusho la Dawa'}
+              </span>
+              <p className="text-xs font-bold truncate">
+                {activePrescription.takenToday
+                  ? `${activePrescription.medicationName} - Imethibitishwa`
+                  : `${activePrescription.medicationName} (${activePrescription.dosageInstructions})`}
+              </p>
+            </div>
+          </div>
 
-
+          <button
+            type="button"
+            onClick={handleTogglePillTaken}
+            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex-shrink-0 transition-all cursor-pointer shadow-xs ${
+              activePrescription.takenToday
+                ? isDark
+                  ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                  : 'bg-white text-slate-700 hover:bg-slate-100'
+                : isDark
+                ? 'bg-amber-500 text-slate-950 hover:bg-amber-400'
+                : 'bg-amber-600 text-white hover:bg-amber-700'
+            }`}
+          >
+            {activePrescription.takenToday ? 'Badili' : t.takePillNow[language]}
+          </button>
+        </div>
+      )}
 
       {/* Appointment Toast Notification if triggered */}
       {appointmentToast && (
@@ -890,20 +879,34 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
               {language === 'sw' ? 'Rekodi za Matibabu & Majibu ya Vipimo' : 'Medical Records & Diagnostic History'}
             </h3>
           </div>
-          <button
-            id="btn-view-all-records"
-            type="button"
-            onClick={() => setActiveModal('records')}
-            className="text-[11px] font-bold text-purple-600 dark:text-purple-400 hover:underline cursor-pointer flex items-center gap-1"
-          >
-            <span>{language === 'sw' ? 'Fungua Zote (5)' : 'View All (5)'}</span>
-            <ChevronRight className="w-3 h-3" />
-          </button>
+          {medicalRecords.length > 0 && (
+            <button
+              id="btn-view-all-records"
+              type="button"
+              onClick={() => setActiveModal('records')}
+              className="text-[11px] font-bold text-purple-600 dark:text-purple-400 hover:underline cursor-pointer flex items-center gap-1"
+            >
+              <span>
+                {language === 'sw' ? `Fungua Zote (${medicalRecords.length})` : `View All (${medicalRecords.length})`}
+              </span>
+              <ChevronRight className="w-3 h-3" />
+            </button>
+          )}
         </div>
 
+        {medicalRecords.length === 0 ? (
+          <div className="text-center py-6 space-y-1.5">
+            <FileText className="w-8 h-8 text-slate-400 mx-auto opacity-50" />
+            <p className="text-[11px] font-semibold text-slate-500">
+              {language === 'sw'
+                ? 'Hakuna rekodi za matibabu bado. Zitaonekana hapa baada ya ziara yako ya kwanza.'
+                : 'No medical records yet. They will appear here after your first visit.'}
+            </p>
+          </div>
+        ) : (
         <div className="space-y-2.5">
           {/* Quick preview of top 3 records */}
-          {INITIAL_MEDICAL_RECORDS.slice(0, 3).map((rec) => (
+          {medicalRecords.slice(0, 3).map((rec) => (
             <div
               key={rec.id}
               onClick={() => setActiveModal('records')}
@@ -952,6 +955,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
             </div>
           ))}
         </div>
+        )}
 
         {/* Big Check Medical Records CTA Button */}
         <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800">
@@ -976,55 +980,13 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
       {/* ========================================================================= */}
 
       {/* MODAL 1: FULLSCREEN QR CODE PASSPORT SCANNER */}
-      {activeModal === 'qr' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in">
-          <div
-            className={`w-full max-w-sm rounded-3xl p-6 border text-center relative ${
-              isDark ? 'bg-[#0E1B2C] border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
-            }`}
-          >
-            <button
-              type="button"
-              onClick={() => setActiveModal(null)}
-              className="absolute top-4 right-4 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="w-12 h-12 rounded-2xl bg-cyan-500/20 text-cyan-400 mx-auto flex items-center justify-center mb-3">
-              <QrCode className="w-6 h-6" />
-            </div>
-
-            <h3 className="text-base font-black tracking-tight mb-1">NiaCare Hospital QR Check-in</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
-              Onyesha msimbo huu kwenye kaunta ya mapokezi ya hospitali yoyote iliyosajiliwa.
-            </p>
-
-            {/* Generated High-Res Visual QR Block */}
-            <div className="bg-white p-4 rounded-2xl shadow-inner inline-block border-2 border-dashed border-cyan-400 mb-4">
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=NIACARE_PATIENT_${patientId}_${primaryDocNumber}`}
-                alt="Patient QR Code"
-                className="w-44 h-44 mx-auto rounded-lg"
-                referrerPolicy="no-referrer"
-              />
-              <span className="font-mono font-bold text-xs text-slate-800 mt-2 block tracking-widest">
-                {patientId}
-              </span>
-            </div>
-
-            <div className="space-y-2">
-              <button
-                type="button"
-                onClick={() => setActiveModal(null)}
-                className="w-full py-3 rounded-xl bg-[#0A4275] dark:bg-cyan-500 text-white dark:text-slate-950 font-bold text-xs cursor-pointer shadow-md"
-              >
-                Imekamilika / Funga
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <QrPassportModal
+        isOpen={activeModal === 'qr'}
+        onClose={() => setActiveModal(null)}
+        theme={theme}
+        patientId={patientId}
+        primaryDocNumber={primaryDocNumber}
+      />
 
       {/* MODAL 2: COMPREHENSIVE DOCTOR & HOSPITAL APPOINTMENT BOOKING */}
       <AppointmentBookingModal
@@ -1037,6 +999,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
         intlData={intlData}
         appointmentsList={appointmentsList}
         setAppointmentsList={setAppointmentsList}
+        authUserId={authUserId}
         onAppointmentBooked={(newApt) => {
           setAppointmentToast(`Miadi imepangwa: ${newApt.doctorName} (${newApt.timeSlot})`);
           setTimeout(() => setAppointmentToast(null), 4000);
@@ -1044,95 +1007,15 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
       />
 
       {/* MODAL 4: PRESCRIPTIONS & REFILLS */}
-      {activeModal === 'prescriptions' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in">
-          <div
-            className={`w-full max-w-md rounded-3xl p-5 sm:p-6 border relative max-h-[90vh] overflow-y-auto ${
-              isDark ? 'bg-[#0E1B2C] border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
-            }`}
-          >
-            <button
-              type="button"
-              onClick={() => setActiveModal(null)}
-              className="absolute top-4 right-4 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="flex items-center gap-2 mb-3">
-              <Pill className="w-5 h-5 text-emerald-500" />
-              <h3 className="text-base font-black">Dawa Zangu & Kumbusho</h3>
-            </div>
-
-            <div className="space-y-3">
-              {/* Pill 1 */}
-              <div
-                className={`p-3 rounded-2xl border ${
-                  isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <h4 className="font-bold text-xs text-slate-900 dark:text-white">Amoxicillin 500mg</h4>
-                  <span className="text-[10px] font-bold text-amber-500 bg-amber-50 dark:bg-amber-950 px-2 py-0.5 rounded">
-                    Zimebaki Siku 3
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Matumizi: Vidonge 3 kwa siku (kila baada ya saa 8) baada ya chakula.
-                </p>
-                <div className="mt-2 flex items-center justify-between text-[10px]">
-                  <span className="text-slate-400">Imeandikwa na: Dr. M. Kitundu</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setRefillRequested(true);
-                      setTimeout(() => setRefillRequested(false), 3000);
-                    }}
-                    className="font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
-                  >
-                    {refillRequested ? 'Maombi Yametumwa ✓' : 'Agiza Tena (Refill)'}
-                  </button>
-                </div>
-              </div>
-
-              {/* Pill 2 */}
-              <div
-                className={`p-3 rounded-2xl border ${
-                  isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <h4 className="font-bold text-xs text-slate-900 dark:text-white">Paracetamol 500mg</h4>
-                  <span className="text-[10px] font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded">
-                    Inahitajika tu (SOS)
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Matumizi: Vidonge 2 ikiwa maumivu ya kichwa yatajitokeza.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setActiveModal('checkout')}
-                  className="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs cursor-pointer flex items-center justify-center gap-1.5 shadow-md"
-                >
-                  <Banknote className="w-4 h-4" />
-                  <span>Lipa Dawa / Checkout</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveModal(null)}
-                  className="px-4 py-3 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs cursor-pointer"
-                >
-                  Funga
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <PrescriptionsModal
+        isOpen={activeModal === 'prescriptions'}
+        onClose={() => setActiveModal(null)}
+        theme={theme}
+        language={language}
+        prescriptions={prescriptions}
+        setPrescriptions={setPrescriptions}
+        onOpenCheckout={() => setActiveModal('checkout')}
+      />
 
       {/* MODAL 5: MEDICAL RECORDS & LAB REPORTS MODAL */}
       <MedicalRecordsModal
@@ -1142,242 +1025,40 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
         theme={theme}
         patientName={patientName}
         patientId={patientId}
-        patientDob={isLocal ? formatDob(localData.dob) || '12 Apr 1995' : intlData.dob || '12 Apr 1995'}
-        patientBloodType={isLocal ? localData.bloodGroup || 'O+' : intlData.bloodGroup || 'O+'}
-        patientPhone={isLocal ? localData.phone || '+255 754 829 140' : intlData.phone || '+1 415 892 0192'}
+        patientDob={patientDob}
+        patientBloodType={patientBloodType}
+        patientPhone={patientPhone}
         patientInsurance={insuranceProviderName}
-        patientDocType={isLocal ? localData.docType || 'NIDA / NIN' : 'International Passport'}
-        patientDocNumber={isLocal ? localData.docNumber || '19950412111020000421' : intlData.passportNumber || 'A29381944'}
+        patientDocType={primaryDocType}
+        patientDocNumber={primaryDocNumber}
         initialTab={activeModal === 'personal_files' ? 'personal_files' : 'records'}
+        authUserId={authUserId}
       />
 
       {/* MODAL 6: INSURANCE & CLAIMS */}
-      {activeModal === 'insurance' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in">
-          <div
-            className={`w-full max-w-md rounded-3xl p-5 sm:p-6 border relative max-h-[90vh] overflow-y-auto ${
-              isDark ? 'bg-[#0E1B2C] border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
-            }`}
-          >
-            <button
-              type="button"
-              onClick={() => setActiveModal(null)}
-              className="absolute top-4 right-4 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="flex items-center gap-2 mb-3">
-              <CreditCard className="w-5 h-5 text-amber-500" />
-              <h3 className="text-base font-black">Hali ya Bima & Madai (Coverage)</h3>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-900 to-[#0A4275] text-white">
-                <span className="text-[10px] text-cyan-200 uppercase font-bold block">MPANGO WA BIMA</span>
-                <h4 className="text-sm font-extrabold">{insuranceProviderName}</h4>
-                <div className="mt-3 flex items-center justify-between text-[11px] pt-2 border-t border-white/20">
-                  <span>Hali: Inatumika (Active)</span>
-                  <span className="font-mono">Kikomo: TZS 10,000,000/Yr</span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <h5 className="font-bold text-xs">Madai ya Hivi Karibuni:</h5>
-                <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                  <div>
-                    <span className="font-bold block">Aga Khan Hospital Consultation</span>
-                    <span className="text-[10px] text-slate-400">12 Agosti 2026</span>
-                  </div>
-                  <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                    TZS 45,000 (Imelipwa)
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setActiveModal('checkout')}
-                  className="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs cursor-pointer flex items-center justify-center gap-1.5 shadow-md"
-                >
-                  <Banknote className="w-4 h-4" />
-                  <span>Taratibu za Malipo (Checkout)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveModal(null)}
-                  className="px-4 py-3 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs cursor-pointer"
-                >
-                  Funga
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <InsuranceModal
+        isOpen={activeModal === 'insurance'}
+        onClose={() => setActiveModal(null)}
+        theme={theme}
+        insuranceProviderName={insuranceProviderName}
+        authUserId={authUserId}
+        onOpenCheckout={() => setActiveModal('checkout')}
+      />
 
       {/* MODAL 7: NEARBY HOSPITALS MAP / DIRECTORY */}
-      {activeModal === 'facilities' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in">
-          <div
-            className={`w-full max-w-md rounded-3xl p-5 sm:p-6 border relative max-h-[90vh] overflow-y-auto ${
-              isDark ? 'bg-[#0E1B2C] border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
-            }`}
-          >
-            <button
-              type="button"
-              onClick={() => setActiveModal(null)}
-              className="absolute top-4 right-4 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="flex items-center gap-2 mb-3">
-              <MapPin className="w-5 h-5 text-rose-500" />
-              <h3 className="text-base font-black">Hospitali & Vituo vya Afya vya Karibu</h3>
-            </div>
-
-            <div className="space-y-2.5 text-xs">
-              {/* Facility 1 */}
-              <div
-                className={`p-3 rounded-2xl border flex items-center justify-between ${
-                  isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'
-                }`}
-              >
-                <div>
-                  <h4 className="font-bold text-slate-900 dark:text-white">Muhimbili National Hospital (MNH)</h4>
-                  <p className="text-[10px] text-slate-400">Upanga, Dar es Salaam • Umbali: 1.8 km</p>
-                  <span className="text-[9px] font-bold text-emerald-500">Inapokea Bima zote • 24/7 ICU</span>
-                </div>
-                <a
-                  href="tel:112"
-                  className="px-3 py-1.5 rounded-xl bg-rose-600 text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer"
-                >
-                  <Phone className="w-3 h-3" />
-                  <span>Piga</span>
-                </a>
-              </div>
-
-              {/* Facility 2 */}
-              <div
-                className={`p-3 rounded-2xl border flex items-center justify-between ${
-                  isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'
-                }`}
-              >
-                <div>
-                  <h4 className="font-bold text-slate-900 dark:text-white">The Aga Khan Hospital</h4>
-                  <p className="text-[10px] text-slate-400">Ocean Road, Dar es Salaam • Umbali: 2.4 km</p>
-                  <span className="text-[9px] font-bold text-emerald-500">Huduma za Dharura 24/7</span>
-                </div>
-                <a
-                  href="tel:112"
-                  className="px-3 py-1.5 rounded-xl bg-rose-600 text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer"
-                >
-                  <Phone className="w-3 h-3" />
-                  <span>Piga</span>
-                </a>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setActiveModal(null)}
-                className="w-full py-3 rounded-xl bg-[#0A4275] dark:bg-cyan-500 text-white dark:text-slate-950 font-bold text-xs cursor-pointer"
-              >
-                Funga Orodha
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <FacilitiesModal
+        isOpen={activeModal === 'facilities'}
+        onClose={() => setActiveModal(null)}
+        theme={theme}
+      />
 
       {/* MODAL 8: NIAAI HEALTH TRIAGE CHAT */}
-      {activeModal === 'ai' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in">
-          <div
-            className={`w-full max-w-md rounded-3xl p-5 sm:p-6 border relative flex flex-col h-[520px] ${
-              isDark ? 'bg-[#0E1B2C] border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
-            }`}
-          >
-            <button
-              type="button"
-              onClick={() => setActiveModal(null)}
-              className="absolute top-4 right-4 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="flex items-center gap-2 mb-3 flex-shrink-0">
-              <div className="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center">
-                <Sparkles className="w-4 h-4" />
-              </div>
-              <div>
-                <h3 className="text-sm font-black">NiaAI Smart Triage Assistant</h3>
-                <span className="text-[10px] text-emerald-500 font-semibold block leading-none">
-                  ● Mfumo wa AI wa Ushauri wa Afya Mtandaoni
-                </span>
-              </div>
-            </div>
-
-            {/* Chat message bubbles */}
-            <div className="flex-1 overflow-y-auto space-y-2.5 pr-1 text-xs">
-              {aiChatHistory.map((msg, i) => (
-                <div
-                  key={i}
-                  className={`p-3 rounded-2xl max-w-[85%] leading-relaxed ${
-                    msg.sender === 'user'
-                      ? 'ml-auto bg-[#0A4275] text-white rounded-br-xs'
-                      : isDark
-                      ? 'bg-slate-800/90 text-slate-200 rounded-bl-xs border border-slate-700/60'
-                      : 'bg-slate-100 text-slate-800 rounded-bl-xs'
-                  }`}
-                >
-                  {msg.text}
-                </div>
-              ))}
-            </div>
-
-            {/* Quick symptom suggestions */}
-            <div className="flex items-center gap-1.5 overflow-x-auto py-2 flex-shrink-0 text-[10px]">
-              <button
-                type="button"
-                onClick={() => setAiMessage('Nina maumivu ya kichwa na homa kidogo')}
-                className="px-2.5 py-1 rounded-full border border-slate-700 bg-slate-800/60 text-slate-300 whitespace-nowrap cursor-pointer hover:border-cyan-400"
-              >
-                🤒 Homa & Kichwa
-              </button>
-              <button
-                type="button"
-                onClick={() => setAiMessage('Nahitaji ushauri wa kipimo cha Malaria')}
-                className="px-2.5 py-1 rounded-full border border-slate-700 bg-slate-800/60 text-slate-300 whitespace-nowrap cursor-pointer hover:border-cyan-400"
-              >
-                🧪 Kipimo cha Malaria
-              </button>
-            </div>
-
-            {/* Chat input form */}
-            <div className="pt-2 flex items-center gap-2 flex-shrink-0 border-t border-slate-200 dark:border-slate-800">
-              <input
-                type="text"
-                placeholder="Eleza dalili zako hapa..."
-                value={aiMessage}
-                onChange={(e) => setAiMessage(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSendAiMessage()}
-                className={`flex-1 text-xs p-3 rounded-xl border outline-none ${
-                  isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'
-                }`}
-              />
-              <button
-                type="button"
-                onClick={handleSendAiMessage}
-                className="p-3 rounded-xl bg-cyan-500 text-slate-950 font-bold cursor-pointer hover:bg-cyan-400 transition-all flex-shrink-0"
-              >
-                <Send className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AiTriageModal
+        isOpen={activeModal === 'ai'}
+        onClose={() => setActiveModal(null)}
+        theme={theme}
+        language={language}
+      />
 
       {/* MODAL 9: COMPREHENSIVE HOSPITAL CHECKOUT & BILLING PROCEDURES */}
       <CheckoutProcedureModal
@@ -1388,6 +1069,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
         userCategory={userCategory}
         localData={localData}
         intlData={intlData}
+        authUserId={authUserId}
       />
     </div>
   );

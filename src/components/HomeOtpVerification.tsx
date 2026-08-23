@@ -19,7 +19,7 @@ interface HomeOtpVerificationProps {
   phone?: string;
   userName?: string;
   userCategory: UserCategory;
-  onVerifySuccess: () => void;
+  onVerify: (code: string) => Promise<{ success: boolean; error?: string }>;
   onBackToCredentials: () => void;
   onResendOtp?: (channel: OtpDeliveryChannel) => void;
   autoFillCode?: string;
@@ -33,7 +33,7 @@ export const HomeOtpVerification: React.FC<HomeOtpVerificationProps> = ({
   phone,
   userName,
   userCategory,
-  onVerifySuccess,
+  onVerify,
   onBackToCredentials,
   onResendOtp,
   autoFillCode,
@@ -68,20 +68,6 @@ export const HomeOtpVerification: React.FC<HomeOtpVerificationProps> = ({
       }, 50);
     }
   }, [autoFillCode]);
-
-  // Automatic message arrival auto-fill simulation: populates the received OTP automatically
-  useEffect(() => {
-    const autoFillTimer = setTimeout(() => {
-      setOtpCode((current) => {
-        if (current.every((d) => d === '')) {
-          setIsAutoFilled(true);
-          return ['8', '2', '9', '1', '4', '0'];
-        }
-        return current;
-      });
-    }, 700);
-    return () => clearTimeout(autoFillTimer);
-  }, [currentChannel]);
 
   // Focus first input on mount
   useEffect(() => {
@@ -153,23 +139,19 @@ export const HomeOtpVerification: React.FC<HomeOtpVerificationProps> = ({
     }
   };
 
-  const handleFillDemoCode = async () => {
-    // Try to read clipboard first if available, otherwise fill the demo/dispatched code
-    let codeToUse = ['8', '2', '9', '1', '4', '0'];
-    if (navigator.clipboard && navigator.clipboard.readText) {
-      try {
-        const clipText = await navigator.clipboard.readText();
-        const clean = clipText.replace(/\D/g, '').slice(0, 6);
-        if (clean.length === 6) {
-          codeToUse = clean.split('');
-        }
-      } catch {
-        // Fallback to default
+  const handlePasteFromClipboard = async () => {
+    if (!navigator.clipboard || !navigator.clipboard.readText) return;
+    try {
+      const clipText = await navigator.clipboard.readText();
+      const clean = clipText.replace(/\D/g, '').slice(0, 6);
+      if (clean.length === 6) {
+        setOtpCode(clean.split(''));
+        setErrorMessage('');
+        inputRefs.current[5]?.focus();
       }
+    } catch {
+      // Clipboard read denied or unavailable — no-op
     }
-    setOtpCode(codeToUse);
-    setErrorMessage('');
-    inputRefs.current[5]?.focus();
   };
 
   const handleResend = (newChan?: OtpDeliveryChannel) => {
@@ -186,7 +168,7 @@ export const HomeOtpVerification: React.FC<HomeOtpVerificationProps> = ({
     }
   };
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
     const fullCode = otpCode.join('');
     if (fullCode.length < 6) {
       setErrorMessage(tOtp.errorLength[language]);
@@ -194,10 +176,19 @@ export const HomeOtpVerification: React.FC<HomeOtpVerificationProps> = ({
     }
 
     setIsVerifying(true);
-    setTimeout(() => {
-      setIsVerifying(false);
-      onVerifySuccess();
-    }, 600);
+    const result = await onVerify(fullCode);
+    setIsVerifying(false);
+
+    if (!result.success) {
+      setErrorMessage(
+        result.error ||
+          (language === 'sw'
+            ? 'Namba ya OTP si sahihi. Tafadhali jaribu tena.'
+            : language === 'fr'
+            ? 'Code OTP invalide. Veuillez réessayer.'
+            : 'Invalid OTP code. Please try again.')
+      );
+    }
   };
 
   return (
@@ -296,7 +287,9 @@ export const HomeOtpVerification: React.FC<HomeOtpVerificationProps> = ({
           {otpCode.map((digit, idx) => (
             <input
               key={idx}
-              ref={(el) => (inputRefs.current[idx] = el)}
+              ref={(el) => {
+                inputRefs.current[idx] = el;
+              }}
               id={`home-otp-digit-${idx}`}
               type="text"
               inputMode="numeric"
@@ -356,13 +349,13 @@ export const HomeOtpVerification: React.FC<HomeOtpVerificationProps> = ({
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs px-1">
           <button
             type="button"
-            onClick={handleFillDemoCode}
+            onClick={handlePasteFromClipboard}
             className={`font-bold flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border cursor-pointer transition-all ${
               isDark
                 ? 'bg-cyan-950/60 border-cyan-700 text-cyan-300 hover:bg-cyan-900/60 hover:text-white'
                 : 'bg-blue-50 border-blue-200 text-[#0A4275] hover:bg-blue-100'
             }`}
-            title="Auto-fill OTP code"
+            title="Paste OTP code from clipboard"
           >
             <Sparkles className="w-3.5 h-3.5 text-cyan-500" />
             <span className="font-extrabold">{t.autoFillHelper[language]}</span>

@@ -12,12 +12,14 @@ import {
 import { Language } from '../types';
 import { NEARBY_HOSPITALS } from '../data/countries';
 import { TRANSLATIONS } from '../data/translations';
+import { createDispatch } from '../lib/emergency';
 
 interface EmergencyBarProps {
   language: Language;
+  authUserId?: string | null;
 }
 
-export const EmergencyBar: React.FC<EmergencyBarProps> = ({ language }) => {
+export const EmergencyBar: React.FC<EmergencyBarProps> = ({ language, authUserId = null }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCondition, setSelectedCondition] = useState<'trauma' | 'cardiac' | 'respiratory' | 'maternity' | 'unconscious'>('trauma');
   const [countdown, setCountdown] = useState<number | null>(null);
@@ -64,12 +66,24 @@ export const EmergencyBar: React.FC<EmergencyBarProps> = ({ language }) => {
         setCountdown(countdown - 1);
       }, 1000);
     } else if (countdown === 0) {
-      setIsDispatched(true);
       setCountdown(null);
-      setDispatchId(`NC-EMS-${Math.floor(100000 + Math.random() * 900000)}`);
       setDispatchedTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+
+      // Real dispatch: creates an auditable record (works even without login —
+      // an emergency should never be gated behind an auth screen).
+      createDispatch({
+        condition: selectedCondition,
+        latitude: gpsLocation.lat,
+        longitude: gpsLocation.lng,
+        address: gpsLocation.address,
+        patientId: authUserId,
+      }).then(({ dispatchRef }) => {
+        setDispatchId(dispatchRef);
+        setIsDispatched(true);
+      });
     }
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [countdown]);
 
   const cancelDispatch = () => {

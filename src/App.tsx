@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { EmergencyBar } from './components/EmergencyBar';
 import { IdentityCard } from './components/IdentityCard';
 import { TwoFactorSecurity } from './components/TwoFactorSecurity';
 import { HomeOtpVerification } from './components/HomeOtpVerification';
-import { SmsNotificationBanner } from './components/SmsNotificationBanner';
 import { PatientHomeDashboard } from './components/PatientHomeDashboard';
 import { TrustBar } from './components/TrustBar';
 import { OtpModal } from './components/OtpModal';
@@ -14,9 +13,19 @@ import { SuccessPassportModal } from './components/SuccessPassportModal';
 import { RegistrationModal } from './components/RegistrationModal';
 import { LanguageSelectorModal } from './components/LanguageSelectorModal';
 import { SettingsModal } from './components/SettingsModal';
-import { AppointmentBookingModal } from './components/AppointmentBookingModal';
-import { Appointment, INITIAL_APPOINTMENTS } from './data/doctors';
+import { Appointment } from './data/doctors';
 import { UserCategory, Language, LocalFormData, InternationalFormData, Theme, OtpDeliveryChannel } from './types';
+import { supabase } from './lib/supabaseClient';
+import {
+  sendOtp,
+  verifyOtp,
+  buildProfilePayload,
+  upsertProfile,
+  fetchProfile,
+  mapProfileToFormData,
+  signOut as supabaseSignOut,
+} from './lib/auth';
+import { fetchAppointments } from './lib/appointments';
 
 export default function App() {
   const [language, setLanguage] = useState<Language>('en'); // Default to English, toggleable to Swahili, French, etc.
@@ -24,11 +33,12 @@ export default function App() {
   const [authMode, setAuthMode] = useState<'register' | 'login'>('register');
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isAppointmentsOpen, setIsAppointmentsOpen] = useState(false);
-  const [appointmentsList, setAppointmentsList] = useState<Appointment[]>(INITIAL_APPOINTMENTS);
+  const [appointmentsList, setAppointmentsList] = useState<Appointment[]>([]);
   const [userCategory, setUserCategory] = useState<UserCategory>('locals');
   const [intlContactMode, setIntlContactMode] = useState<'phone' | 'email'>('phone');
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isSessionLoading, setIsSessionLoading] = useState(true);
+  const [authUserId, setAuthUserId] = useState<string | null>(null);
 
   // Dual-mode OTP state (Phone vs Email)
   const [otpDeliveryChannel, setOtpDeliveryChannel] = useState<OtpDeliveryChannel>('phone');
@@ -36,13 +46,6 @@ export default function App() {
 
   // In-page Home OTP states
   const [isHomeOtpActive, setIsHomeOtpActive] = useState(false);
-  const [smsNotification, setSmsNotification] = useState<{
-    isVisible: boolean;
-    code: string;
-    channel: OtpDeliveryChannel;
-    target: string;
-  } | null>(null);
-  const [autoFillCode, setAutoFillCode] = useState<string>('');
 
   const handleToggleTheme = () => {
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
@@ -112,54 +115,124 @@ export default function App() {
   const activeName =
     userCategory === 'locals' ? localData.fullName : intlData.fullName;
 
-  const handleTriggerOtp = (channel: OtpDeliveryChannel = otpDeliveryChannel, target?: string) => {
+  // Restore an existing Supabase session on load (e.g. after a page refresh) instead of
+  // always dropping back to the registration form.
+  useEffect(() => {
+    let active = true;
+
+    const restoreSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      const session = data.session;
+      if (!active) return;
+
+      if (session?.user) {
+        setAuthUserId(session.user.id);
+        const { profile } = await fetchProfile(session.user.id);
+        if (!active) return;
+        if (profile) {
+          const mapped = mapProfileToFormData(profile);
+          setUserCategory(mapped.userCategory);
+          if (mapped.localData) {
+            setLocalData((prev) => ({ ...prev, ...mapped.localData }));
+          }
+          if (mapped.intlData) {
+            setIntlData((prev) => ({ ...prev, ...mapped.intlData }));
+          }
+          setIsAuthenticated(true);
+        }
+      }
+      setIsSessionLoading(false);
+    };
+
+    restoreSession();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Load the patient's real appointments from Supabase whenever they're authenticated.
+  useEffect(() => {
+    if (!isAuthenticated || !authUserId) return;
+    let active = true;
+    fetchAppointments(authUserId).then(({ appointments, error }) => {
+      if (!active || error) return;
+      setAppointmentsList(appointments);
+    });
+    return () => {
+      active = false;
+    };
+  }, [isAuthenticated, authUserId]);
+
+  const handleSendOtp = async (
+    channel: OtpDeliveryChannel
+  ): Promise<{ success: boolean; error?: string }> => {
     setOtpDeliveryChannel(channel);
-    const resolvedTarget = target || (channel === 'phone' ? activePhone : activeEmail);
+    const resolvedTarget = channel === 'phone' ? activePhone : activeEmail;
     setOtpTarget(resolvedTarget);
 
-    // Switch to Home OTP view right on the home page
+    const normalizedTarget =
+      channel === 'phone' ? `+${resolvedTarget.replace(/\D/g, '')}` : resolvedTarget.trim();
+
+    const result = await sendOtp(channel, normalizedTarget, authMode === 'register');
+    if (!result.success) {
+      return result;
+    }
+
     setIsHomeOtpActive(true);
-    setAutoFillCode('');
-
-    // Trigger incoming Notification banner (SMS or Email)
-    const generatedOtp = '829140';
-    setSmsNotification({
-      isVisible: true,
-      code: generatedOtp,
-      channel,
-      target: resolvedTarget,
-    });
-
-    // Automatically auto-fill the OTP when the message arrives - no manual typing required
-    setTimeout(() => {
-      setAutoFillCode(generatedOtp);
-    }, 600);
+    return { success: true };
   };
 
-  const handleSmsAutoFill = (code: string) => {
-    setAutoFillCode(code);
-    setSmsNotification(null);
+  const handleVerifyOtp = async (code: string): Promise<{ success: boolean; error?: string }> => {
+    const normalizedTarget =
+      otpDeliveryChannel === 'phone' ? `+${otpTarget.replace(/\D/g, '')}` : otpTarget.trim();
+
+    const verifyResult = await verifyOtp(otpDeliveryChannel, normalizedTarget, code);
+    if (!verifyResult.success || !verifyResult.userId) {
+      return { success: false, error: verifyResult.error };
+    }
+
+    const userId = verifyResult.userId;
+    setAuthUserId(userId);
+
+    if (authMode === 'register') {
+      const payload = buildProfilePayload(userId, userCategory, localData, intlData);
+      const upsertResult = await upsertProfile(payload);
+      if (!upsertResult.success) {
+        return { success: false, error: upsertResult.error };
+      }
+    } else {
+      const { profile, error } = await fetchProfile(userId);
+      if (error) return { success: false, error };
+      if (profile) {
+        const mapped = mapProfileToFormData(profile);
+        setUserCategory(mapped.userCategory);
+        if (mapped.localData) {
+          setLocalData((prev) => ({ ...prev, ...mapped.localData }));
+        }
+        if (mapped.intlData) {
+          setIntlData((prev) => ({ ...prev, ...mapped.intlData }));
+        }
+      }
+    }
+
+    setIsOtpOpen(false);
+    setIsHomeOtpActive(false);
+    setBiometricModal({ isOpen: false, mode: 'fingerprint' });
+    setIsAuthenticated(true);
+    setIsSuccessPassportOpen(true);
+    return { success: true };
   };
 
   const handleTriggerBiometric = (mode: 'fingerprint' | 'faceid') => {
     setBiometricModal({ isOpen: true, mode });
   };
 
-  const handleAuthSuccess = () => {
-    setIsOtpOpen(false);
-    setIsHomeOtpActive(false);
-    setSmsNotification(null);
-    setBiometricModal({ isOpen: false, mode: 'fingerprint' });
-    setIsAuthenticated(true);
-    setIsSuccessPassportOpen(true);
-  };
-
-  const handleResetForm = () => {
+  const handleResetForm = async () => {
+    await supabaseSignOut();
+    setAuthUserId(null);
     setIsSuccessPassportOpen(false);
     setIsHomeOtpActive(false);
     setIsAuthenticated(false);
-    setSmsNotification(null);
-    setAutoFillCode('');
     setOtpDeliveryChannel('phone');
     setOtpTarget('');
     setLocalData({
@@ -199,12 +272,26 @@ export default function App() {
     setPdpaAccepted(true);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await supabaseSignOut();
+    setAuthUserId(null);
     setIsAuthenticated(false);
     setIsSuccessPassportOpen(false);
   };
 
   const isDark = theme === 'dark';
+
+  if (isSessionLoading) {
+    return (
+      <div
+        className={`min-h-screen flex items-center justify-center ${
+          isDark ? 'bg-[#080E17] text-slate-100' : 'bg-[#F0F5FA] text-slate-800'
+        }`}
+      >
+        <span className="text-sm font-semibold animate-pulse">Loading…</span>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -230,21 +317,7 @@ export default function App() {
         />
 
         {/* Emergency Action: Red Bar for 1-Tap Ambulance Dispatch */}
-        <EmergencyBar language={language} />
-
-        {/* Incoming Push Notification Banner (Dispatched via SMS or Email) */}
-        {smsNotification && smsNotification.isVisible && (
-          <SmsNotificationBanner
-            isVisible={smsNotification.isVisible}
-            code={smsNotification.code}
-            channel={smsNotification.channel}
-            target={smsNotification.target}
-            onAutoFill={handleSmsAutoFill}
-            onDismiss={() => setSmsNotification(null)}
-            language={language}
-            theme={theme}
-          />
-        )}
+        <EmergencyBar language={language} authUserId={authUserId} />
 
         {/* Main Content: Authenticated Patient Dashboard OR Credentials Form & OTP */}
         <div className="px-4 sm:px-5 pb-6 flex-1 flex flex-col">
@@ -261,6 +334,7 @@ export default function App() {
                 onOpenSettings={() => setIsSettingsOpen(true)}
                 appointmentsList={appointmentsList}
                 setAppointmentsList={setAppointmentsList}
+                authUserId={authUserId}
               />
             </div>
           ) : isHomeOtpActive ? (
@@ -272,10 +346,11 @@ export default function App() {
                 phone={activePhone}
                 userName={activeName}
                 userCategory={userCategory}
-                onVerifySuccess={handleAuthSuccess}
+                onVerify={handleVerifyOtp}
                 onBackToCredentials={() => setIsHomeOtpActive(false)}
-                onResendOtp={(newChan) => handleTriggerOtp(newChan)}
-                autoFillCode={autoFillCode}
+                onResendOtp={(newChan) => {
+                  handleSendOtp(newChan);
+                }}
                 language={language}
                 theme={theme}
               />
@@ -311,7 +386,7 @@ export default function App() {
                 setOtpChannel={setOtpDeliveryChannel}
                 pdpaAccepted={pdpaAccepted}
                 setPdpaAccepted={setPdpaAccepted}
-                onSendOtp={handleTriggerOtp}
+                onSendOtp={handleSendOtp}
                 onOpenPdpaModal={() => setIsPdpaModalOpen(true)}
                 onOpenRegistrationChoice={() => {
                   setAuthMode((prev) => (prev === 'register' ? 'login' : 'register'));
@@ -358,7 +433,7 @@ export default function App() {
         isOpen={isOtpOpen}
         onClose={() => setIsOtpOpen(false)}
         phone={activePhone}
-        onVerifySuccess={handleAuthSuccess}
+        onVerifySuccess={() => setIsOtpOpen(false)}
         language={language}
         theme={theme}
       />
@@ -366,7 +441,7 @@ export default function App() {
       <BiometricModal
         isOpen={biometricModal.isOpen}
         onClose={() => setBiometricModal({ ...biometricModal, isOpen: false })}
-        onSuccess={handleAuthSuccess}
+        onSuccess={() => setBiometricModal({ ...biometricModal, isOpen: false })}
         mode={biometricModal.mode}
         language={language}
       />
@@ -399,18 +474,6 @@ export default function App() {
         theme={theme}
       />
 
-      {/* Global Appointment Booking Modal */}
-      <AppointmentBookingModal
-        isOpen={isAppointmentsOpen}
-        onClose={() => setIsAppointmentsOpen(false)}
-        language={language}
-        theme={theme}
-        userCategory={userCategory}
-        localData={localData}
-        intlData={intlData}
-        appointmentsList={appointmentsList}
-        setAppointmentsList={setAppointmentsList}
-      />
     </div>
   );
 }
