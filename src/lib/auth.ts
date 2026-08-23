@@ -75,6 +75,10 @@ const buildDob = (year?: string, month?: string, day?: string): string | null =>
   return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
 };
 
+// Local subscriber numbers are dialed with a leading 0 (e.g. 0627990768) but
+// E.164 requires it stripped (+255627990768, not +2550627990768).
+const toE164Digits = (raw: string): string => raw.replace(/\D/g, '').replace(/^0+/, '');
+
 export const buildProfilePayload = (
   userId: string,
   userCategory: UserCategory,
@@ -90,7 +94,7 @@ export const buildProfilePayload = (
       gender: localData.gender || null,
       blood_type: localData.bloodType || null,
       dob: buildDob(localData.birthYear, localData.birthMonth, localData.birthDay),
-      phone: localData.phone ? `+255${localData.phone.replace(/\D/g, '')}` : null,
+      phone: localData.phone ? `+255${toE164Digits(localData.phone)}` : null,
       email: localData.email || null,
       doc_type: localData.selectedDocType,
       nida_number: localData.nidaNumber || null,
@@ -112,7 +116,7 @@ export const buildProfilePayload = (
     gender: intlData.gender || null,
     blood_type: intlData.bloodType || null,
     dob: buildDob(intlData.birthYear, intlData.birthMonth, intlData.birthDay),
-    phone: intlData.phone ? `${intlData.countryCode || ''}${intlData.phone.replace(/\D/g, '')}` : null,
+    phone: intlData.phone ? `${intlData.countryCode || ''}${toE164Digits(intlData.phone)}` : null,
     email: intlData.email || null,
     doc_type: null,
     nida_number: null,

@@ -102,10 +102,16 @@ export default function App() {
   const [isSuccessPassportOpen, setIsSuccessPassportOpen] = useState(false);
   const [isRegistrationChoiceOpen, setIsRegistrationChoiceOpen] = useState(false);
 
+  // Local subscriber numbers are dialed with a leading 0 (e.g. 0627990768) but
+  // E.164 phone auth requires it stripped (+255627990768, not +2550627990768).
+  const stripLeadingZero = (num: string) => num.replace(/^0+/, '');
+
   const activePhone =
     userCategory === 'locals'
-      ? localData.phone ? `+255 ${localData.phone}` : '+255 754 829 140'
-      : intlData.phone ? `${intlData.countryCode || '+1'} ${intlData.phone}` : '+1 791 112 3456';
+      ? localData.phone ? `+255 ${stripLeadingZero(localData.phone)}` : '+255 754 829 140'
+      : intlData.phone
+      ? `${intlData.countryCode || '+1'} ${stripLeadingZero(intlData.phone)}`
+      : '+1 791 112 3456';
 
   const activeEmail =
     userCategory === 'locals'
