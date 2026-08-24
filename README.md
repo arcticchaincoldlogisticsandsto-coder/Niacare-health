@@ -59,7 +59,8 @@ This is a real full-stack app: **Supabase** (Postgres + Auth) for persistence an
 
 ```text
 api/
-└── triage.ts                    # Vercel Serverless Function: proxies chat to Groq, holds GROQ_API_KEY server-side
+├── triage.ts                    # Vercel Serverless Function: proxies chat to Groq, holds GROQ_API_KEY server-side
+└── video-room.ts                # Vercel Serverless Function: creates/reuses a real Daily.co room + meeting token, holds DAILY_API_KEY server-side
 src/
 ├── App.tsx                      # Root state machine: auth flow (real Supabase), theme, language, modals
 ├── main.tsx                     # React entrypoint
@@ -71,6 +72,9 @@ src/
 │   ├── appointments.ts           # Appointment CRUD
 │   ├── bills.ts                  # Bill CRUD, settlement
 │   ├── records.ts                # Medical records + personal files CRUD
+│   ├── storage.ts                # Supabase Storage: real file upload/download/delete for the personal files vault
+│   ├── video.ts                  # Frontend helper that calls /api/video-room for a real telehealth room
+│   ├── routing.ts                # Real driving distance/ETA via OSRM (used by emergency dispatch)
 │   ├── prescriptions.ts          # Prescription CRUD
 │   └── emergency.ts              # Emergency dispatch creation (works unauthenticated)
 ├── components/
@@ -83,9 +87,9 @@ src/
 │   ├── RegistrationModal.tsx     # Locals vs Internationals chooser
 │   ├── SuccessPassportModal.tsx  # Post-auth success screen
 │   ├── PatientHomeDashboard.tsx  # Main authenticated dashboard
-│   ├── AppointmentBookingModal.tsx # Doctor browse + booking wizard + video room
+│   ├── AppointmentBookingModal.tsx # Doctor browse + booking wizard + real Daily.co telehealth video room
 │   ├── CheckoutProcedureModal.tsx  # Real billing/checkout, settles bills, generates records
-│   ├── MedicalRecordsModal.tsx   # Real medical records + personal files vault
+│   ├── MedicalRecordsModal.tsx   # Real medical records + personal files vault (real file uploads via Supabase Storage)
 │   ├── PrescriptionsModal.tsx    # Real prescriptions list
 │   ├── InsuranceModal.tsx        # Real settled-claims history
 │   ├── FacilitiesModal.tsx       # Hospital directory (real catalog, static content)
@@ -106,23 +110,24 @@ src/
     └── pdfGenerator.ts            # jsPDF record & passport generation
 
 supabase/
-└── schema.sql                    # Full Postgres schema + RLS policies (run in Supabase SQL Editor)
+└── schema.sql                    # Full Postgres schema + RLS policies + the personal-files storage bucket (run in Supabase SQL Editor)
 ```
 
 ---
 
 ## Getting Started
 
-**Prerequisites:** Node.js 18+, a Supabase project, a Groq API key (for AI triage).
+**Prerequisites:** Node.js 18+, a Supabase project, a Groq API key (for AI triage), a Daily.co API key (for telehealth video).
 
 ```bash
 npm install
 ```
 
-1. Run [supabase/schema.sql](supabase/schema.sql) in your Supabase project's SQL Editor (safe to re-run).
+1. Run [supabase/schema.sql](supabase/schema.sql) in your Supabase project's SQL Editor (safe to re-run). This also creates the private `personal-files` storage bucket and its RLS policies.
 2. Copy `.env.example` to `.env.local` and fill in:
    - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` — from Supabase → Settings → API. **Required** — the app throws on startup without them.
    - `GROQ_API_KEY` — server-only, used by `api/triage.ts`. Not needed for `npm run dev` (plain Vite doesn't serve `/api` routes locally — use `vercel dev` to test AI triage locally, or test on a deployed preview).
+   - `DAILY_API_KEY` — server-only, used by `api/video-room.ts` to create real telehealth rooms via Daily.co. Same local-testing caveat as above — use `vercel dev` or a deployed preview.
 
 ```bash
 npm run dev       # starts Vite on http://localhost:3000
@@ -133,13 +138,11 @@ npm run preview    # preview the production build
 
 ### Deployment
 
-Hosted on Vercel, connected to this repo's `main` branch. Required Vercel environment variables: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (Production + Development), and `GROQ_API_KEY` (Production + Development, server-only — do **not** prefix with `VITE_`).
+Hosted on Vercel, connected to this repo's `main` branch. Required Vercel environment variables: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (Production + Development), `GROQ_API_KEY` (Production + Development, server-only — do **not** prefix with `VITE_`), and `DAILY_API_KEY` (Production + Development, server-only — do **not** prefix with `VITE_`).
 
 ---
 
 ## Known Limitations
 
-- **Telehealth video call** is a UI simulation — no real WebRTC/video infrastructure.
-- **Emergency dispatch** creates a real database record (location, condition, timestamp) but the countdown, hospital ETA/distance numbers, and ambulance routing are illustrative — there's no real dispatch network or hospital coordinate data behind them.
 - **Doctor/hospital directory** (`data/doctors.ts`) is static seed content representing NiaCare's affiliated network, not live data from real hospitals.
-- **Personal file uploads** save metadata (title, category, notes) to Supabase but don't store the actual file bytes — no Supabase Storage integration yet.
+- **Ambulance dispatch routing** uses OSRM's public routing engine for real road-network distance/ETA (not straight-line), and the emergency record persists the computed nearest facility + distance/ETA — but there's still no real dispatch network to physically route an ambulance to the patient; a human dispatcher/ops layer would need to consume the `emergency_dispatches` table.

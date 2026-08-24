@@ -6,6 +6,9 @@ export interface DispatchInput {
   longitude: number | null;
   address: string;
   patientId: string | null;
+  targetFacility?: string;
+  facilityDistanceKm?: number;
+  facilityEtaMin?: number;
 }
 
 export const createDispatch = async (
@@ -20,6 +23,9 @@ export const createDispatch = async (
     longitude: input.longitude,
     address: input.address,
     dispatch_ref: dispatchRef,
+    target_facility: input.targetFacility || null,
+    facility_distance_km: input.facilityDistanceKm ?? null,
+    facility_eta_min: input.facilityEtaMin ?? null,
   });
 
   if (error) return { dispatchRef, error: error.message };

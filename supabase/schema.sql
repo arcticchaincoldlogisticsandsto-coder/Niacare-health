@@ -217,8 +217,18 @@ create table if not exists public.emergency_dispatches (
   address text,
   dispatch_ref text not null,
   status text not null default 'dispatched' check (status in ('dispatched', 'cancelled')),
+  -- Nearest facility + real driving distance/ETA, computed via a road-network
+  -- routing engine (OSRM) at the moment of dispatch — not illustrative numbers.
+  target_facility text,
+  facility_distance_km double precision,
+  facility_eta_min integer,
   created_at timestamptz not null default now()
 );
+
+alter table public.emergency_dispatches
+  add column if not exists target_facility text,
+  add column if not exists facility_distance_km double precision,
+  add column if not exists facility_eta_min integer;
 
 alter table public.emergency_dispatches enable row level security;
 
@@ -231,6 +241,40 @@ drop policy if exists "Owners can view their dispatches" on public.emergency_dis
 create policy "Owners can view their dispatches"
   on public.emergency_dispatches for select
   using (auth.uid() = patient_id);
+
+-- ============================================================================
+-- STORAGE — private bucket for real personal-file uploads (bytes, not just
+-- metadata). Files are stored under a path prefixed with the owner's user id
+-- (e.g. "<uid>/<uuid>-filename.pdf"), which the RLS policies below enforce so
+-- a patient can only read/write/delete objects inside their own folder.
+-- ============================================================================
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('personal-files', 'personal-files', false, 26214400) -- 25MB
+on conflict (id) do nothing;
+
+drop policy if exists "Personal files are uploadable by owner" on storage.objects;
+create policy "Personal files are uploadable by owner"
+  on storage.objects for insert
+  with check (
+    bucket_id = 'personal-files'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists "Personal files are readable by owner" on storage.objects;
+create policy "Personal files are readable by owner"
+  on storage.objects for select
+  using (
+    bucket_id = 'personal-files'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists "Personal files are deletable by owner" on storage.objects;
+create policy "Personal files are deletable by owner"
+  on storage.objects for delete
+  using (
+    bucket_id = 'personal-files'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
 
 -- ============================================================================
 -- updated_at auto-touch trigger for profiles

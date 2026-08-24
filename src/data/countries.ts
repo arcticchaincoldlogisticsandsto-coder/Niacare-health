@@ -175,8 +175,41 @@ export function getPatientCountry(
 }
 
 export const NEARBY_HOSPITALS = [
-  { name: 'Muhimbili National Hospital (MNH)', distance: '3.4 km', eta: '6 mins', type: 'Level 5 Super-Specialised', hotline: '+255 22 215 1367' },
-  { name: 'The Aga Khan Hospital, Dar es Salaam', distance: '2.1 km', eta: '4 mins', type: 'JCI Accredited Trauma Center', hotline: '+255 22 211 5151' },
-  { name: 'Hubert Kairuki Memorial Hospital', distance: '4.8 km', eta: '9 mins', type: 'General & Emergency Care', hotline: '+255 22 277 5510' },
-  { name: 'Sanitas Hospital Mikocheni', distance: '5.2 km', eta: '11 mins', type: '24/7 Rapid Emergency Unit', hotline: '+255 754 710 400' },
+  {
+    name: 'Muhimbili National Hospital (MNH)',
+    distance: '3.4 km',
+    eta: '6 mins',
+    type: 'Level 5 Super-Specialised',
+    hotline: '+255 22 215 1367',
+    lat: -6.80773,
+    lng: 39.27221,
+  },
+  {
+    name: 'The Aga Khan Hospital, Dar es Salaam',
+    distance: '2.1 km',
+    eta: '4 mins',
+    type: 'JCI Accredited Trauma Center',
+    hotline: '+255 22 211 5151',
+    lat: -6.803487,
+    lng: 39.287841,
+  },
+  {
+    name: 'Hubert Kairuki Memorial Hospital',
+    distance: '4.8 km',
+    eta: '9 mins',
+    type: 'General & Emergency Care',
+    hotline: '+255 22 277 5510',
+    lat: -6.77306,
+    lng: 39.255,
+  },
+  {
+    name: 'Sanitas Hospital Mikocheni',
+    distance: '5.2 km',
+    eta: '11 mins',
+    type: '24/7 Rapid Emergency Unit',
+    hotline: '+255 754 710 400',
+    lat: -6.763743,
+    lng: 39.245342,
+  },
 ];
+

@@ -42,6 +42,13 @@ import {
   deletePersonalFile,
   updatePersonalFileStarred,
 } from '../lib/records';
+import {
+  uploadPersonalFile,
+  getPersonalFileSignedUrl,
+  deleteStoredFile,
+  formatFileSize,
+  validateUploadFile,
+} from '../lib/storage';
 
 interface MedicalRecordsModalProps {
   isOpen: boolean;
@@ -118,6 +125,9 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
   const [uploadCategory, setUploadCategory] = useState<PersonalFileItem['category']>('custom_upload');
   const [uploadNotes, setUploadNotes] = useState('');
   const [selectedFileName, setSelectedFileName] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Set initial tab on open
@@ -178,12 +188,45 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
   };
 
   // Handle Download from Personal Files list
-  const handleDownloadPersonalFile = (file: PersonalFileItem) => {
+  const handleDownloadPersonalFile = async (file: PersonalFileItem) => {
+    // Real user-uploaded bytes live in Supabase Storage — fetch a short-lived
+    // signed URL (bucket is private) and open the actual file the patient uploaded.
+    if (file.source === 'user_upload' && file.fileUrl) {
+      const { url, error } = await getPersonalFileSignedUrl(file.fileUrl);
+      if (error || !url) {
+        setActionNotice({
+          text: isSwahili
+            ? 'Imeshindikana kupakua faili. Jaribu tena.'
+            : 'Could not download the file. Please try again.',
+          type: 'info',
+        });
+        setTimeout(() => setActionNotice(null), 4000);
+        return;
+      }
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = file.title;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      setActionNotice({
+        text: isSwahili
+          ? `Faili la "${file.title}" linapakuliwa!`
+          : `Downloading "${file.title}"!`,
+        type: 'success',
+      });
+      setTimeout(() => setActionNotice(null), 4500);
+      return;
+    }
+
+    // Hospital-synced records (and legacy entries with no stored bytes) fall
+    // back to generating the official record PDF.
     const matchedRecord = records.find((r) => r.id === file.recordId);
     if (matchedRecord) {
       generateMedicalRecordPdf(matchedRecord, patientMeta, language);
     } else {
-      // Create a mock medical record entry to generate official PDF for custom uploads
       const customRecord: MedicalRecord = {
         id: file.id,
         title: file.title,
@@ -264,8 +307,12 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
 
   // Handle Remove from Personal Files
   const handleRemovePersonalFile = async (id: string, title: string) => {
+    const target = personalFiles.find((f) => f.id === id);
     setPersonalFiles((prev) => prev.filter((f) => f.id !== id));
     await deletePersonalFile(id);
+    if (target?.source === 'user_upload' && target.fileUrl) {
+      await deleteStoredFile(target.fileUrl);
+    }
     setActionNotice({
       text: isSwahili
         ? `Faili la "${title}" limeondolewa kwenye faili zako binafsi.`
@@ -305,20 +352,50 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
   // Handle Custom File Upload into Personal Files
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFileName(file.name);
-      if (!uploadTitle) {
-        setUploadTitle(file.name.replace(/\.[^/.]+$/, ''));
-      }
+    if (!file) return;
+
+    const validationError = validateUploadFile(file, isSwahili);
+    if (validationError) {
+      setUploadError(validationError);
+      setSelectedFile(null);
+      setSelectedFileName('');
+      e.target.value = '';
+      return;
+    }
+
+    setUploadError('');
+    setSelectedFile(file);
+    setSelectedFileName(file.name);
+    if (!uploadTitle) {
+      setUploadTitle(file.name.replace(/\.[^/.]+$/, ''));
     }
   };
 
   const handleSaveUpload = async () => {
-    if (!uploadTitle.trim() || !authUserId) {
+    if (!uploadTitle.trim() || !authUserId || !selectedFile || isUploading) {
+      if (!selectedFile) {
+        setUploadError(isSwahili ? 'Tafadhali chagua faili kwanza.' : 'Please select a file first.');
+      }
       return;
     }
 
-    const title = uploadTitle.endsWith('.pdf') ? uploadTitle : `${uploadTitle}.pdf`;
+    setIsUploading(true);
+    setUploadError('');
+
+    // Upload the actual file bytes to Supabase Storage, scoped to this patient's folder.
+    const { path, error: uploadErr } = await uploadPersonalFile(authUserId, selectedFile);
+    if (uploadErr || !path) {
+      setUploadError(
+        isSwahili
+          ? `Imeshindikana kupakia faili: ${uploadErr}`
+          : `Failed to upload file: ${uploadErr}`
+      );
+      setIsUploading(false);
+      return;
+    }
+
+    const originalExt = selectedFile.name.includes('.') ? selectedFile.name.split('.').pop() : 'pdf';
+    const title = uploadTitle.endsWith(`.${originalExt}`) ? uploadTitle : `${uploadTitle}.${originalExt}`;
     const newCustomFileData: Omit<PersonalFileItem, 'id'> = {
       title,
       category: uploadCategory,
@@ -343,15 +420,24 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
       dateAdded: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
       facility: uploadFacility.trim() || 'Personal Upload (Mgonjwa)',
       source: 'user_upload',
-      fileSize: '850 KB',
-      pdfFileName: `${uploadTitle.replace(/\s+/g, '_')}.pdf`,
+      fileSize: formatFileSize(selectedFile.size),
+      pdfFileName: `${uploadTitle.replace(/\s+/g, '_')}.${originalExt}`,
       notes: uploadNotes.trim() || 'Nyaraka ya afya iliyopakiwa na mgonjwa.',
+      fileUrl: path,
       isEncrypted: true,
       starred: true,
     };
 
     const { file, error } = await insertPersonalFile(authUserId, newCustomFileData);
-    if (error || !file) return;
+    setIsUploading(false);
+    if (error || !file) {
+      // Metadata insert failed after a successful upload — clean up the orphaned object.
+      await deleteStoredFile(path);
+      setUploadError(
+        isSwahili ? `Imeshindikana kuhifadhi: ${error}` : `Failed to save record: ${error}`
+      );
+      return;
+    }
 
     setPersonalFiles([file, ...personalFiles]);
     setIsUploadOpen(false);
@@ -359,6 +445,7 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
     setUploadFacility('');
     setUploadNotes('');
     setSelectedFileName('');
+    setSelectedFile(null);
 
     setActionNotice({
       text: isSwahili
@@ -970,7 +1057,13 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
                 </div>
                 <button
                   type="button"
-                  onClick={() => setIsUploadOpen(false)}
+                  onClick={() => {
+                    if (isUploading) return;
+                    setIsUploadOpen(false);
+                    setSelectedFile(null);
+                    setSelectedFileName('');
+                    setUploadError('');
+                  }}
                   className="p-1 rounded-full text-slate-400 hover:text-white"
                 >
                   <X className="w-5 h-5" />
@@ -1005,6 +1098,12 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
                     </p>
                     <span className="text-[10px] text-slate-400">PDF, JPG, PNG hadi 25MB</span>
                   </div>
+                  {uploadError && (
+                    <p className="mt-1.5 text-[11px] font-bold text-red-500 flex items-center gap-1">
+                      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                      {uploadError}
+                    </p>
+                  )}
                 </div>
 
                 {/* Title */}
@@ -1082,8 +1181,14 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
                 <button
                   type="button"
-                  onClick={() => setIsUploadOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs cursor-pointer"
+                  onClick={() => {
+                    setIsUploadOpen(false);
+                    setSelectedFile(null);
+                    setSelectedFileName('');
+                    setUploadError('');
+                  }}
+                  disabled={isUploading}
+                  className="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs cursor-pointer disabled:opacity-50"
                 >
                   {isSwahili ? 'Ghairi' : 'Cancel'}
                 </button>
@@ -1091,10 +1196,16 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
                 <button
                   type="button"
                   onClick={handleSaveUpload}
-                  disabled={!uploadTitle.trim()}
+                  disabled={!uploadTitle.trim() || !selectedFile || isUploading}
                   className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-black text-xs cursor-pointer shadow-md"
                 >
-                  {isSwahili ? 'Hifadhi kwenye Faili Zangu' : 'Save to Vault'}
+                  {isUploading
+                    ? isSwahili
+                      ? 'Inapakia...'
+                      : 'Uploading...'
+                    : isSwahili
+                    ? 'Hifadhi kwenye Faili Zangu'
+                    : 'Save to Vault'}
                 </button>
               </div>
             </div>

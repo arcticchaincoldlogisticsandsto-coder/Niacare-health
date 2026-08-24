@@ -13,6 +13,7 @@ import { Language } from '../types';
 import { NEARBY_HOSPITALS } from '../data/countries';
 import { TRANSLATIONS } from '../data/translations';
 import { createDispatch } from '../lib/emergency';
+import { getDrivingRoutesToMany, RouteResult } from '../lib/routing';
 
 interface EmergencyBarProps {
   language: Language;
@@ -31,6 +32,46 @@ export const EmergencyBar: React.FC<EmergencyBarProps> = ({ language, authUserId
     lng: 39.2083,
     address: 'Oysterbay / Kinondoni, Dar es Salaam (GPS Pinpoint)',
   });
+
+  // Real driving distance/ETA per hospital, computed from the patient's
+  // actual GPS location via a real road-network routing engine (OSRM) —
+  // not the static placeholder numbers in NEARBY_HOSPITALS.
+  const [hospitalRoutes, setHospitalRoutes] = useState<(RouteResult | null)[]>(
+    NEARBY_HOSPITALS.map(() => null)
+  );
+  const [isRoutingLoading, setIsRoutingLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setIsRoutingLoading(true);
+    getDrivingRoutesToMany(
+      gpsLocation.lat,
+      gpsLocation.lng,
+      NEARBY_HOSPITALS.map((h) => ({ lat: h.lat, lng: h.lng }))
+    ).then((routes) => {
+      if (!cancelled) {
+        setHospitalRoutes(routes);
+        setIsRoutingLoading(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [gpsLocation.lat, gpsLocation.lng]);
+
+  // Nearest hospital by real driving time, falling back to the static list
+  // order if routing hasn't resolved yet.
+  const nearestHospitalIndex = hospitalRoutes.some((r) => r)
+    ? hospitalRoutes.reduce(
+        (bestIdx, route, idx) =>
+          route && (!hospitalRoutes[bestIdx] || route.durationMin < (hospitalRoutes[bestIdx] as RouteResult).durationMin)
+            ? idx
+            : bestIdx,
+        0
+      )
+    : 0;
+  const nearestHospital = NEARBY_HOSPITALS[nearestHospitalIndex];
+  const nearestRoute = hospitalRoutes[nearestHospitalIndex];
 
   const t = TRANSLATIONS.emergency;
 
@@ -70,13 +111,17 @@ export const EmergencyBar: React.FC<EmergencyBarProps> = ({ language, authUserId
       setDispatchedTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
 
       // Real dispatch: creates an auditable record (works even without login —
-      // an emergency should never be gated behind an auth screen).
+      // an emergency should never be gated behind an auth screen). Includes
+      // the nearest facility + real driving distance/ETA computed via routing.
       createDispatch({
         condition: selectedCondition,
         latitude: gpsLocation.lat,
         longitude: gpsLocation.lng,
         address: gpsLocation.address,
         patientId: authUserId,
+        targetFacility: nearestHospital.name,
+        facilityDistanceKm: nearestRoute?.distanceKm,
+        facilityEtaMin: nearestRoute?.durationMin,
       }).then(({ dispatchRef }) => {
         setDispatchId(dispatchRef);
         setIsDispatched(true);
@@ -203,7 +248,10 @@ export const EmergencyBar: React.FC<EmergencyBarProps> = ({ language, authUserId
                     </div>
                     <div className="flex justify-between text-slate-600">
                       <span>{t.targetFacility[language]}</span>
-                      <span className="font-semibold text-slate-900">Aga Khan Trauma Center (2.1 km)</span>
+                      <span className="font-semibold text-slate-900">
+                        {nearestHospital.name}
+                        {nearestRoute ? ` (${nearestRoute.distanceKm} km)` : ` (${nearestHospital.distance})`}
+                      </span>
                     </div>
                   </div>
 
@@ -293,7 +341,7 @@ export const EmergencyBar: React.FC<EmergencyBarProps> = ({ language, authUserId
                     </div>
                   </div>
 
-                  {/* Nearby Hospitals ETA */}
+                  {/* Nearby Hospitals ETA — real driving distance/time from the patient's GPS */}
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2 flex items-center justify-between">
                       <span>{t.nearestHospitalsTitle[language]}</span>
@@ -302,23 +350,32 @@ export const EmergencyBar: React.FC<EmergencyBarProps> = ({ language, authUserId
                       </span>
                     </label>
                     <div className="space-y-1.5">
-                      {NEARBY_HOSPITALS.slice(0, 2).map((hosp, i) => (
-                        <div
-                          key={i}
-                          className="bg-white border border-slate-200 rounded-xl p-2.5 flex items-center justify-between text-xs"
-                        >
-                          <div>
-                            <p className="font-bold text-slate-900">{hosp.name}</p>
-                            <p className="text-[11px] text-slate-500">{hosp.type}</p>
+                      {NEARBY_HOSPITALS.slice(0, 2).map((hosp, i) => {
+                        const route = hospitalRoutes[i];
+                        return (
+                          <div
+                            key={i}
+                            className="bg-white border border-slate-200 rounded-xl p-2.5 flex items-center justify-between text-xs"
+                          >
+                            <div>
+                              <p className="font-bold text-slate-900">{hosp.name}</p>
+                              <p className="text-[11px] text-slate-500">{hosp.type}</p>
+                            </div>
+                            <div className="text-right">
+                              <span className="inline-block bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded text-[11px]">
+                                {isRoutingLoading && !route
+                                  ? '...'
+                                  : route
+                                  ? `${route.durationMin} mins`
+                                  : hosp.eta}
+                              </span>
+                              <p className="text-[10px] text-slate-400 mt-0.5">
+                                {route ? `${route.distanceKm} km` : hosp.distance}
+                              </p>
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <span className="inline-block bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded text-[11px]">
-                              {hosp.eta}
-                            </span>
-                            <p className="text-[10px] text-slate-400 mt-0.5">{hosp.distance}</p>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
 

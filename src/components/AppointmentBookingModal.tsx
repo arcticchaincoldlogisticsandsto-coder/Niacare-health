@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -33,6 +33,8 @@ import { Language, Theme, UserCategory, LocalFormData, InternationalFormData } f
 import { getUpcomingDateISO, getTodayISO } from '../utils/dateUtils';
 import { insertAppointment, updateAppointmentStatus } from '../lib/appointments';
 import { insertBill } from '../lib/bills';
+import { requestVideoRoom } from '../lib/video';
+import DailyIframe, { DailyCall } from '@daily-co/daily-js';
 
 interface AppointmentBookingModalProps {
   isOpen: boolean;
@@ -103,10 +105,77 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
   const [isBooking, setIsBooking] = useState(false);
   const [bookingError, setBookingError] = useState('');
 
-  // Telehealth Video Call simulation state
+  // Telehealth Video Call — real Daily.co WebRTC room, embedded via prebuilt UI
   const [activeVideoCall, setActiveVideoCall] = useState<Appointment | null>(null);
-  const [videoMuted, setVideoMuted] = useState(false);
-  const [audioMuted, setAudioMuted] = useState(false);
+  const [videoJoinState, setVideoJoinState] = useState<'idle' | 'connecting' | 'joined' | 'error'>('idle');
+  const [videoError, setVideoError] = useState('');
+  const videoContainerRef = useRef<HTMLDivElement>(null);
+  const callFrameRef = useRef<DailyCall | null>(null);
+
+  useEffect(() => {
+    if (!activeVideoCall || !videoContainerRef.current) return;
+
+    let cancelled = false;
+    setVideoJoinState('connecting');
+    setVideoError('');
+
+    const join = async () => {
+      const { room, error } = await requestVideoRoom(activeVideoCall.ticketNumber, patientName);
+      if (cancelled) return;
+
+      if (error || !room) {
+        setVideoError(error || 'Could not start the video call.');
+        setVideoJoinState('error');
+        return;
+      }
+
+      if (!videoContainerRef.current) return;
+
+      const frame = DailyIframe.createFrame(videoContainerRef.current, {
+        showLeaveButton: true,
+        iframeStyle: {
+          width: '100%',
+          height: '100%',
+          border: '0',
+          borderRadius: '16px',
+        },
+      });
+      callFrameRef.current = frame;
+
+      frame.on('left-meeting', () => setActiveVideoCall(null));
+      frame.on('error', (ev: any) => {
+        setVideoError(ev?.errorMsg || 'Video call error.');
+        setVideoJoinState('error');
+      });
+
+      try {
+        await frame.join({ url: room.url, token: room.token });
+        if (!cancelled) setVideoJoinState('joined');
+      } catch (err: any) {
+        if (!cancelled) {
+          setVideoError(err?.message || 'Could not join the video call.');
+          setVideoJoinState('error');
+        }
+      }
+    };
+
+    join();
+
+    return () => {
+      cancelled = true;
+      if (callFrameRef.current) {
+        callFrameRef.current.destroy();
+        callFrameRef.current = null;
+      }
+    };
+  }, [activeVideoCall, patientName]);
+
+  const handleLeaveVideoCall = () => {
+    if (callFrameRef.current) {
+      callFrameRef.current.leave();
+    }
+    setActiveVideoCall(null);
+  };
 
   // Quick symptom tags
   const symptomPresets = [
@@ -353,77 +422,67 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
         {/* MAIN BODY CONTENT */}
         {/* ========================================================================= */}
         <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4">
-          {/* VIEW 1: TELEHEALTH VIDEO ROOM */}
+          {/* VIEW 1: TELEHEALTH VIDEO ROOM (real Daily.co WebRTC call) */}
           {activeVideoCall && (
             <div className="rounded-3xl border border-cyan-500/40 p-5 bg-gradient-to-br from-slate-900 via-[#0B1B30] to-slate-950 text-white space-y-4 animate-in zoom-in-95">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-rose-500 animate-ping" />
+                  <span
+                    className={`w-3 h-3 rounded-full ${
+                      videoJoinState === 'joined' ? 'bg-rose-500 animate-ping' : 'bg-amber-500 animate-pulse'
+                    }`}
+                  />
                   <span className="font-bold text-xs uppercase tracking-wider text-rose-400">
-                    LIVE TELEHEALTH CONSULTATION (ENCRYPTED)
+                    {videoJoinState === 'joined'
+                      ? 'LIVE TELEHEALTH CONSULTATION (ENCRYPTED)'
+                      : videoJoinState === 'error'
+                      ? isSwahili
+                        ? 'IMESHINDIKANA KUUNGANISHA'
+                        : 'CONNECTION FAILED'
+                      : isSwahili
+                      ? 'INAUNGANISHA...'
+                      : 'CONNECTING...'}
                   </span>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setActiveVideoCall(null)}
+                  onClick={handleLeaveVideoCall}
                   className="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl cursor-pointer"
                 >
                   End Call (Kata Simu)
                 </button>
               </div>
 
-              {/* Video Interface Simulation */}
-              <div className="relative aspect-video rounded-2xl bg-slate-950 border border-cyan-500/30 overflow-hidden flex items-center justify-center">
-                {/* Doctor Big Frame */}
-                <div className="text-center space-y-2">
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 mx-auto flex items-center justify-center text-3xl font-black shadow-xl">
-                    {activeVideoCall.doctorName.charAt(4) || 'D'}
-                  </div>
-                  <div>
-                    <h3 className="font-black text-sm">{activeVideoCall.doctorName}</h3>
-                    <p className="text-xs text-cyan-300">{activeVideoCall.doctorSpecialty}</p>
-                    <p className="text-[10px] text-emerald-400 mt-1 flex items-center justify-center gap-1">
-                      <Shield className="w-3 h-3" /> Connected • 1080p HD Audio & Video
+              {/* Real embedded Daily.co call frame */}
+              <div className="relative aspect-video rounded-2xl bg-slate-950 border border-cyan-500/30 overflow-hidden">
+                {videoJoinState === 'error' ? (
+                  <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-center px-6">
+                    <AlertCircle className="w-8 h-8 text-rose-400" />
+                    <p className="text-xs text-rose-300 font-bold">
+                      {isSwahili
+                        ? 'Imeshindikana kuanzisha video call. Jaribu tena baadaye.'
+                        : 'Could not start the video call. Please try again shortly.'}
                     </p>
+                    {videoError && <p className="text-[10px] text-slate-400">{videoError}</p>}
                   </div>
-                </div>
-
-                {/* Patient Small PiP Picture in Picture */}
-                <div className="absolute bottom-4 right-4 w-28 h-20 rounded-xl bg-slate-900/90 border border-white/20 p-2 flex flex-col justify-between">
-                  <span className="text-[9px] font-bold text-white/80">Wewe (You)</span>
-                  <div className="text-[10px] font-bold text-cyan-300 truncate">{patientName}</div>
-                </div>
+                ) : (
+                  <>
+                    {videoJoinState === 'connecting' && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 z-10 bg-slate-950/80">
+                        <div className="w-10 h-10 rounded-full border-2 border-cyan-400 border-t-transparent animate-spin" />
+                        <p className="text-xs text-cyan-300 font-bold">
+                          {isSwahili ? 'Inaunganisha na daktari...' : 'Connecting to your doctor...'}
+                        </p>
+                      </div>
+                    )}
+                    <div ref={videoContainerRef} className="w-full h-full" />
+                  </>
+                )}
               </div>
 
-              {/* Call Controls */}
-              <div className="flex items-center justify-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setAudioMuted(!audioMuted)}
-                  className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 cursor-pointer ${
-                    audioMuted ? 'bg-rose-600 text-white' : 'bg-white/10 text-white hover:bg-white/20'
-                  }`}
-                >
-                  <span>{audioMuted ? 'Unmute Mic' : 'Mute Mic'}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setVideoMuted(!videoMuted)}
-                  className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 cursor-pointer ${
-                    videoMuted ? 'bg-rose-600 text-white' : 'bg-white/10 text-white hover:bg-white/20'
-                  }`}
-                >
-                  <Video className="w-4 h-4" />
-                  <span>{videoMuted ? 'Start Camera' : 'Stop Camera'}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveVideoCall(null)}
-                  className="px-5 py-2.5 rounded-xl font-black text-xs bg-rose-600 text-white hover:bg-rose-500 cursor-pointer shadow-lg"
-                >
-                  Leave Call
-                </button>
-              </div>
+              <p className="text-[10px] text-slate-400 text-center flex items-center justify-center gap-1">
+                <Shield className="w-3 h-3" /> {activeVideoCall.doctorName} • {activeVideoCall.doctorSpecialty} — end-to-end encrypted video, powered by Daily.co
+              </p>
             </div>
           )}
 
