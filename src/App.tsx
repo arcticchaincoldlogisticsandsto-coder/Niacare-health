@@ -423,6 +423,7 @@ export default function App() {
         userCategory={userCategory}
         localData={localData}
         intlData={intlData}
+        authUserId={authUserId}
       />
 
       {/* World Language Selector Modal */}
@@ -450,6 +451,8 @@ export default function App() {
         onSuccess={() => setBiometricModal({ ...biometricModal, isOpen: false })}
         mode={biometricModal.mode}
         language={language}
+        authUserId={authUserId}
+        patientName={userCategory === 'internationals' ? intlData.fullName : localData.fullName}
       />
 
       <PdpaConsentModal

@@ -243,6 +243,51 @@ create policy "Owners can view their dispatches"
   using (auth.uid() = patient_id);
 
 -- ============================================================================
+-- WEBAUTHN CREDENTIALS — real FIDO2/WebAuthn public-key credentials
+-- (fingerprint / Face ID / Windows Hello via the device's platform
+-- authenticator), registered and verified through api/webauthn-*.ts.
+-- ============================================================================
+create table if not exists public.webauthn_credentials (
+  id uuid primary key default gen_random_uuid(),
+  patient_id uuid not null references auth.users(id) on delete cascade,
+  credential_id text not null unique,
+  public_key text not null,
+  counter bigint not null default 0,
+  device_type text,
+  backed_up boolean not null default false,
+  transports text[],
+  nickname text,
+  created_at timestamptz not null default now(),
+  last_used_at timestamptz
+);
+
+alter table public.webauthn_credentials enable row level security;
+
+drop policy if exists "WebAuthn credentials are manageable by owner" on public.webauthn_credentials;
+create policy "WebAuthn credentials are manageable by owner"
+  on public.webauthn_credentials for all
+  using (auth.uid() = patient_id)
+  with check (auth.uid() = patient_id);
+
+-- One pending challenge per patient — written by webauthn-*-options.ts,
+-- consumed and deleted by webauthn-*-verify.ts. Serverless functions are
+-- stateless between invocations, so the in-flight WebAuthn challenge has to
+-- live somewhere between the "options" and "verify" calls.
+create table if not exists public.webauthn_challenges (
+  patient_id uuid primary key references auth.users(id) on delete cascade,
+  challenge text not null,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.webauthn_challenges enable row level security;
+
+drop policy if exists "WebAuthn challenges are manageable by owner" on public.webauthn_challenges;
+create policy "WebAuthn challenges are manageable by owner"
+  on public.webauthn_challenges for all
+  using (auth.uid() = patient_id)
+  with check (auth.uid() = patient_id);
+
+-- ============================================================================
 -- STORAGE — private bucket for real personal-file uploads (bytes, not just
 -- metadata). Files are stored under a path prefixed with the owner's user id
 -- (e.g. "<uid>/<uuid>-filename.pdf"), which the RLS policies below enforce so

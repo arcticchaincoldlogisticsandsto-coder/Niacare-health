@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Settings,
   X,
@@ -20,12 +20,14 @@ import {
   Palette,
   Languages,
   IdCard,
+  AlertTriangle,
 } from 'lucide-react';
 import { Language, Theme, UserCategory, LocalFormData, InternationalFormData } from '../types';
 import { TRANSLATIONS } from '../data/translations';
 import { WORLD_LANGUAGES } from '../data/languages';
 import { getPatientCountry } from '../data/countries';
 import { formatDob } from '../utils/dateUtils';
+import { checkBiometricSupport, hasRegisteredBiometric, unregisterAllBiometrics, BiometricSupport } from '../lib/webauthn';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -42,6 +44,7 @@ interface SettingsModalProps {
   userCategory?: UserCategory;
   localData?: LocalFormData;
   intlData?: InternationalFormData;
+  authUserId?: string | null;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -59,17 +62,57 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   userCategory = 'local',
   localData,
   intlData,
+  authUserId = null,
 }) => {
-  const [fingerprintEnabled, setFingerprintEnabled] = useState(true);
-  const [faceIdEnabled, setFaceIdEnabled] = useState(true);
-  const [directOtpEnabled, setDirectOtpEnabled] = useState(true);
   const [activeBiometricTab, setActiveBiometricTab] = useState<'fingerprint' | 'faceid'>('fingerprint');
   const [copiedId, setCopiedId] = useState(false);
+  const [directOtpEnabled, setDirectOtpEnabled] = useState(true);
+
+  // Real biometric state — checked against the actual browser/device, and
+  // against whether this account has a registered WebAuthn credential.
+  const [biometricSupport, setBiometricSupport] = useState<BiometricSupport | null>(null);
+  const [isBiometricRegistered, setIsBiometricRegistered] = useState<boolean | null>(null);
+  const [isBiometricBusy, setIsBiometricBusy] = useState(false);
 
   const t = TRANSLATIONS.settings;
   const isDark = theme === 'dark';
+  const isSwahili = language === 'sw';
   const isLocal = userCategory === 'locals' || userCategory === 'local';
   const patientCountry = getPatientCountry(userCategory === 'internationals' ? 'internationals' : 'locals', localData, intlData);
+
+  const refreshBiometricState = async () => {
+    const support = await checkBiometricSupport();
+    setBiometricSupport(support);
+    if (authUserId) {
+      setIsBiometricRegistered(await hasRegisteredBiometric(authUserId));
+    } else {
+      setIsBiometricRegistered(null);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      refreshBiometricState();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, authUserId]);
+
+  const handleToggleBiometricEnabled = async () => {
+    if (!authUserId || isBiometricBusy) return;
+
+    if (isBiometricRegistered) {
+      // Turning off: actually deletes the stored credential(s).
+      setIsBiometricBusy(true);
+      const result = await unregisterAllBiometrics(authUserId);
+      setIsBiometricBusy(false);
+      if (result.success) {
+        setIsBiometricRegistered(false);
+      }
+    } else {
+      // Turning on: opens the real registration ceremony (BiometricModal).
+      handleTestBiometric(activeBiometricTab);
+    }
+  };
 
   const resolvedPatientName = localData?.fullName || intlData?.fullName || patientName;
   const resolvedPatientPhone = isLocal
@@ -487,12 +530,22 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
               <span
                 className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                  isDark
-                    ? 'bg-emerald-950/80 text-emerald-300 border-emerald-800'
-                    : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  biometricSupport?.platformAuthenticatorAvailable
+                    ? isDark
+                      ? 'bg-emerald-950/80 text-emerald-300 border-emerald-800'
+                      : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : isDark
+                    ? 'bg-amber-950/60 text-amber-300 border-amber-800'
+                    : 'bg-amber-50 text-amber-700 border-amber-200'
                 }`}
               >
-                ✓ WebAuthn
+                {biometricSupport === null
+                  ? '...'
+                  : biometricSupport.platformAuthenticatorAvailable
+                  ? '✓ WebAuthn'
+                  : isSwahili
+                  ? '⚠ Haipo'
+                  : '⚠ Unavailable'}
               </span>
             </div>
 
@@ -500,13 +553,38 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               {t.biometricDesc[language]}
             </p>
 
+            {!authUserId ? (
+              <div
+                className={`mb-4 p-3 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+                  isDark ? 'bg-amber-950/40 text-amber-300 border border-amber-900' : 'bg-amber-50 text-amber-800 border border-amber-200'
+                }`}
+              >
+                <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                <span>{isSwahili ? 'Ingia kwenye akaunti yako kwanza kusanidi hii.' : 'Sign in to your account first to set this up.'}</span>
+              </div>
+            ) : biometricSupport && !biometricSupport.platformAuthenticatorAvailable ? (
+              <div
+                className={`mb-4 p-3 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+                  isDark ? 'bg-amber-950/40 text-amber-300 border border-amber-900' : 'bg-amber-50 text-amber-800 border border-amber-200'
+                }`}
+              >
+                <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                <span>
+                  {isSwahili
+                    ? 'Kifaa/kivinjari hiki hakina kihisi cha bayometriki (Touch ID/Face ID/Windows Hello).'
+                    : 'This device or browser has no platform biometric sensor (Touch ID / Face ID / Windows Hello).'}
+                </span>
+              </div>
+            ) : null}
+
             {/* Primary Action: Login with Fingerprint / Face ID Trigger Button */}
             <div className="space-y-2 mb-4">
               <button
                 id="btn-settings-login-biometric"
                 type="button"
                 onClick={() => handleTestBiometric(activeBiometricTab)}
-                className={`w-full p-3.5 rounded-2xl font-bold flex items-center justify-between transition-all cursor-pointer group border ${
+                disabled={!authUserId || !biometricSupport?.platformAuthenticatorAvailable}
+                className={`w-full p-3.5 rounded-2xl font-bold flex items-center justify-between transition-all cursor-pointer group border disabled:opacity-50 disabled:cursor-not-allowed ${
                   isDark
                     ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 border-cyan-400 shadow-md shadow-cyan-500/20'
                     : 'bg-[#0A4275] hover:bg-[#08365f] text-white border-[#0A4275] shadow-md shadow-[#0A4275]/20'
@@ -526,7 +604,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </div>
                   <div className="text-left">
                     <h5 className="font-black text-xs sm:text-sm tracking-wide">
-                      {t.testBiometricBtn[language]}
+                      {isBiometricRegistered
+                        ? t.testBiometricBtn[language]
+                        : isSwahili
+                        ? 'Sajili Bayometriki'
+                        : 'Register Biometric Login'}
                     </h5>
                     <p className={`text-[11px] ${isDark ? 'text-slate-900/80 font-medium' : 'text-blue-100'}`}>
                       {t.testBiometricSubtext[language]}
@@ -580,59 +662,62 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </div>
             </div>
 
-            {/* Biometric Toggle Switches */}
+            {/* Real Biometric Enabled Toggle — reflects (and controls) whether
+                this account actually has a registered WebAuthn credential */}
             <div className="space-y-2.5 pt-1 border-t border-slate-200 dark:border-slate-800">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Fingerprint className="w-3.5 h-3.5 text-cyan-500" />
                   <span className={`text-xs font-semibold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
-                    {t.fingerprintToggle[language]}
+                    {isSwahili ? 'Uthibitishaji wa Kibiolojia Umewashwa' : 'Biometric Login Enabled'}
                   </span>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setFingerprintEnabled(!fingerprintEnabled)}
-                  className={`w-11 h-6 rounded-full transition-colors cursor-pointer relative p-0.5 ${
-                    fingerprintEnabled ? (isDark ? 'bg-cyan-500' : 'bg-[#0A4275]') : 'bg-slate-300 dark:bg-slate-700'
+                  onClick={handleToggleBiometricEnabled}
+                  disabled={!authUserId || isBiometricBusy || !biometricSupport?.platformAuthenticatorAvailable}
+                  className={`w-11 h-6 rounded-full transition-colors cursor-pointer relative p-0.5 disabled:opacity-40 disabled:cursor-not-allowed ${
+                    isBiometricRegistered ? (isDark ? 'bg-cyan-500' : 'bg-[#0A4275]') : 'bg-slate-300 dark:bg-slate-700'
                   }`}
                 >
                   <div
                     className={`w-5 h-5 rounded-full bg-white transition-transform ${
-                      fingerprintEnabled ? 'translate-x-5' : 'translate-x-0'
+                      isBiometricRegistered ? 'translate-x-5' : 'translate-x-0'
                     }`}
                   />
                 </button>
               </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Scan className="w-3.5 h-3.5 text-cyan-500" />
-                  <span className={`text-xs font-semibold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
-                    {t.faceIdToggle[language]}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setFaceIdEnabled(!faceIdEnabled)}
-                  className={`w-11 h-6 rounded-full transition-colors cursor-pointer relative p-0.5 ${
-                    faceIdEnabled ? (isDark ? 'bg-cyan-500' : 'bg-[#0A4275]') : 'bg-slate-300 dark:bg-slate-700'
-                  }`}
-                >
-                  <div
-                    className={`w-5 h-5 rounded-full bg-white transition-transform ${
-                      faceIdEnabled ? 'translate-x-5' : 'translate-x-0'
-                    }`}
-                  />
-                </button>
-              </div>
+              {isBiometricRegistered && (
+                <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                  {isSwahili
+                    ? 'Kuzima kutafuta kifaa kilichosajiliwa kwenye akaunti yako.'
+                    : 'Turning this off removes the registered credential from your account.'}
+                </p>
+              )}
             </div>
 
-            {/* Hardware Status */}
+            {/* Hardware Status — real, not a static claim */}
             <div className={`mt-3 p-2 rounded-xl text-[11px] font-medium flex items-center gap-2 ${
               isDark ? 'bg-[#08121E] text-slate-400' : 'bg-white border border-slate-200 text-slate-600'
             }`}>
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-              <span>{t.deviceStatus[language]}</span>
+              <ShieldCheck className={`w-3.5 h-3.5 ${biometricSupport?.platformAuthenticatorAvailable ? 'text-emerald-500' : 'text-slate-400'}`} />
+              <span>
+                {biometricSupport === null
+                  ? isSwahili
+                    ? 'Inaangalia kifaa...'
+                    : 'Checking device...'
+                  : !biometricSupport.platformAuthenticatorAvailable
+                  ? isSwahili
+                    ? 'Hali ya Kifaa: Hakuna Kihisi cha Bayometriki'
+                    : 'Device Status: No Biometric Sensor Detected'
+                  : isBiometricRegistered
+                  ? isSwahili
+                    ? 'Hali ya Kifaa: Bayometriki Imesajiliwa (WebAuthn)'
+                    : 'Device Status: Biometric Registered (WebAuthn)'
+                  : isSwahili
+                  ? 'Hali ya Kifaa: Tayari Kusajili (WebAuthn)'
+                  : 'Device Status: Ready to Register (WebAuthn)'}
+              </span>
             </div>
           </div>
 

@@ -48,3 +48,23 @@ export const getAuthedUser = async (
 
   return { client, userId: data.user.id };
 };
+
+/**
+ * Relying-party identity for the WebAuthn ceremony. Prefers explicit env
+ * vars (needed for a custom production domain), otherwise derives sensible
+ * defaults from the request's Origin header so it works out of the box on
+ * Vercel preview URLs and local `vercel dev` without extra configuration.
+ */
+export const getRpConfig = (req: VercelRequest) => {
+  const origin = (req.headers.origin as string) || process.env.WEBAUTHN_ORIGIN || 'http://localhost:3000';
+  let rpID = process.env.WEBAUTHN_RP_ID;
+  if (!rpID) {
+    try {
+      rpID = new URL(origin).hostname;
+    } catch {
+      rpID = 'localhost';
+    }
+  }
+  const rpName = process.env.WEBAUTHN_RP_NAME || 'NiaCare Health';
+  return { rpID, rpName, origin };
+};

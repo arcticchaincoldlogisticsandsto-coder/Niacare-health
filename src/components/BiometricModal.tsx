@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Fingerprint, Scan, CheckCircle2, ShieldCheck, X, Sparkles } from 'lucide-react';
+import { Fingerprint, Scan, CheckCircle2, ShieldCheck, X, Sparkles, AlertCircle } from 'lucide-react';
 import { Language } from '../types';
 import { TRANSLATIONS } from '../data/translations';
+import { registerBiometric, authenticateBiometric, hasRegisteredBiometric } from '../lib/webauthn';
 
 interface BiometricModalProps {
   isOpen: boolean;
@@ -9,6 +10,8 @@ interface BiometricModalProps {
   onSuccess: () => void;
   mode: 'fingerprint' | 'faceid';
   language: Language;
+  authUserId: string | null;
+  patientName: string;
 }
 
 export const BiometricModal: React.FC<BiometricModalProps> = ({
@@ -17,36 +20,65 @@ export const BiometricModal: React.FC<BiometricModalProps> = ({
   onSuccess,
   mode,
   language,
+  authUserId,
+  patientName,
 }) => {
-  const [scanProgress, setScanProgress] = useState(0);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [authLatency, setAuthLatency] = useState('0.42s');
+  const [status, setStatus] = useState<'scanning' | 'success' | 'error'>('scanning');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [authLatency, setAuthLatency] = useState('0.00s');
+  const [ceremony, setCeremony] = useState<'register' | 'authenticate'>('authenticate');
 
   const t = TRANSLATIONS.biometricModal;
+  const isSwahili = language === 'sw';
 
   useEffect(() => {
-    if (isOpen) {
-      setScanProgress(0);
-      setIsSuccess(false);
+    if (!isOpen) return;
 
-      // Simulate 1-second ultra-fast biometric authentication
-      const interval = setInterval(() => {
-        setScanProgress((prev) => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            setIsSuccess(true);
-            setAuthLatency(`${(0.35 + Math.random() * 0.2).toFixed(2)}s`);
-            setTimeout(() => {
-              onSuccess();
-            }, 800);
-            return 100;
-          }
-          return prev + 25;
-        });
-      }, 180);
+    setStatus('scanning');
+    setErrorMessage('');
+    let cancelled = false;
 
-      return () => clearInterval(interval);
-    }
+    const run = async () => {
+      if (!authUserId) {
+        setErrorMessage(
+          isSwahili ? 'Ingia kwanza kabla ya kusanidi uthibitishaji wa kibiolojia.' : 'Sign in first to set up biometric login.'
+        );
+        setStatus('error');
+        return;
+      }
+
+      const started = performance.now();
+      const alreadyRegistered = await hasRegisteredBiometric(authUserId);
+      if (cancelled) return;
+
+      setCeremony(alreadyRegistered ? 'authenticate' : 'register');
+
+      // Triggers the real OS biometric prompt (Touch ID / Face ID / Windows
+      // Hello) via the browser's WebAuthn API — this is not a timer.
+      const result = alreadyRegistered
+        ? await authenticateBiometric(isSwahili)
+        : await registerBiometric(patientName, isSwahili);
+
+      if (cancelled) return;
+
+      if (result.success) {
+        setAuthLatency(`${((performance.now() - started) / 1000).toFixed(2)}s`);
+        setStatus('success');
+        setTimeout(() => {
+          if (!cancelled) onSuccess();
+        }, 900);
+      } else {
+        setErrorMessage(result.error || (isSwahili ? 'Imeshindikana.' : 'Failed.'));
+        setStatus('error');
+      }
+    };
+
+    run();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   if (!isOpen) return null;
@@ -71,24 +103,19 @@ export const BiometricModal: React.FC<BiometricModalProps> = ({
 
         {/* Biometric Scanner Visual */}
         <div className="relative my-6 flex items-center justify-center">
-          {/* Radial animated rings */}
           <div
             className={`w-32 h-32 rounded-full border-2 flex items-center justify-center relative transition-all duration-300 ${
-              isSuccess
+              status === 'success'
                 ? 'border-emerald-400 bg-emerald-500/10 shadow-[0_0_30px_rgba(16,185,129,0.4)]'
+                : status === 'error'
+                ? 'border-rose-400 bg-rose-500/10 shadow-[0_0_30px_rgba(244,63,94,0.3)]'
                 : 'border-blue-400/50 bg-blue-500/10 shadow-[0_0_30px_rgba(15,76,129,0.3)]'
             }`}
           >
-            {/* Animated Laser Scanning Line */}
-            {!isSuccess && (
-              <div
-                className="absolute inset-x-4 h-0.5 bg-cyan-400 shadow-[0_0_8px_#22d3ee] rounded-full transition-all duration-150"
-                style={{ top: `${scanProgress}%` }}
-              ></div>
-            )}
-
-            {isSuccess ? (
+            {status === 'success' ? (
               <CheckCircle2 className="w-16 h-16 text-emerald-400 animate-in zoom-in duration-200" />
+            ) : status === 'error' ? (
+              <AlertCircle className="w-16 h-16 text-rose-400 animate-in zoom-in duration-200" />
             ) : mode === 'fingerprint' ? (
               <Fingerprint className="w-16 h-16 text-blue-400 animate-pulse" />
             ) : (
@@ -99,26 +126,54 @@ export const BiometricModal: React.FC<BiometricModalProps> = ({
 
         {/* Status Text */}
         <div className="space-y-1.5">
-          <div className="inline-flex items-center gap-1 text-[11px] bg-blue-500/20 text-blue-300 font-mono px-2.5 py-0.5 rounded-full border border-blue-400/30">
+          <div
+            className={`inline-flex items-center gap-1 text-[11px] font-mono px-2.5 py-0.5 rounded-full border ${
+              status === 'error'
+                ? 'bg-rose-500/20 text-rose-300 border-rose-400/30'
+                : 'bg-blue-500/20 text-blue-300 border-blue-400/30'
+            }`}
+          >
             <Sparkles className="w-3 h-3 text-cyan-300" />
             <span>
-              {isSuccess
+              {status === 'success'
                 ? `${t.verifiedIn[language]} ${authLatency}`
-                : `${t.scanning[language]} ${scanProgress}%`}
+                : status === 'error'
+                ? (isSwahili ? 'Kosa' : 'Error')
+                : ceremony === 'register'
+                ? (isSwahili ? 'Inasajili kifaa...' : 'Registering this device...')
+                : (isSwahili ? 'Inasubiri OS...' : 'Waiting for device prompt...')}
             </span>
           </div>
 
           <h3 className="text-lg font-bold text-white">
-            {isSuccess
+            {status === 'success'
               ? t.verifiedTitle[language]
+              : status === 'error'
+              ? (isSwahili ? 'Imeshindikana' : 'Authentication Failed')
               : mode === 'fingerprint'
               ? t.touchFingerprint[language]
               : t.lookCamera[language]}
           </h3>
 
           <p className="text-xs text-slate-400 max-w-xs mx-auto">
-            {t.subtext[language]}
+            {status === 'error' ? errorMessage : t.subtext[language]}
           </p>
+
+          {status === 'error' && (
+            <button
+              type="button"
+              onClick={() => {
+                setStatus('scanning');
+                setErrorMessage('');
+                // Re-trigger the effect by closing then reopening isn't ideal;
+                // simplest is to let the user close and tap the trigger again.
+                onClose();
+              }}
+              className="mt-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs cursor-pointer"
+            >
+              {isSwahili ? 'Funga' : 'Close'}
+            </button>
+          )}
         </div>
 
         {/* Security badge */}
