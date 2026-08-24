@@ -416,9 +416,9 @@ const RAW_TRANSLATIONS = {
       fr: "VÉRIFIER ET FINALISER L'INSCRIPTION",
     },
     autoFillHelper: {
-      sw: 'Jaza Kiotomatiki (829140)',
-      en: 'Auto-fill Demo OTP (829140)',
-      fr: 'Remplir auto le code (829140)',
+      sw: 'Bandika Kutoka kwa Clipboard',
+      en: 'Paste from Clipboard',
+      fr: 'Coller depuis le presse-papiers',
     },
     backToEdit: {
       sw: 'Rudi Kurekebisha Taarifa za Usajili',
