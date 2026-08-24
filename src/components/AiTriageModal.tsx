@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Sparkles, Send, AlertCircle } from 'lucide-react';
 import { Language, Theme } from '../types';
+import { supabase } from '../lib/supabaseClient';
 
 interface AiTriageModalProps {
   isOpen: boolean;
@@ -52,9 +53,18 @@ export const AiTriageModal: React.FC<AiTriageModalProps> = ({ isOpen, onClose, t
     setIsSending(true);
 
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+
       const response = await fetch('/api/triage', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          // Optional — when present, the server grounds its reply in this
+          // patient's real medical records/prescriptions. Triage still
+          // works without it, just without personalization.
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
         body: JSON.stringify({
           language,
           messages: nextHistory.map((entry) => ({

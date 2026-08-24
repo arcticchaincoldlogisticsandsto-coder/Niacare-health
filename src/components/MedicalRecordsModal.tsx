@@ -41,6 +41,7 @@ import {
   insertPersonalFile,
   deletePersonalFile,
   updatePersonalFileStarred,
+  updatePersonalFileNotes,
 } from '../lib/records';
 import {
   uploadPersonalFile,
@@ -49,6 +50,7 @@ import {
   formatFileSize,
   validateUploadFile,
 } from '../lib/storage';
+import { requestDocumentSummary } from '../lib/documentParsing';
 
 interface MedicalRecordsModalProps {
   isOpen: boolean;
@@ -441,6 +443,7 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
 
     setPersonalFiles([file, ...personalFiles]);
     setIsUploadOpen(false);
+    const hadManualNotes = !!uploadNotes.trim();
     setUploadTitle('');
     setUploadFacility('');
     setUploadNotes('');
@@ -454,6 +457,25 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
       type: 'success',
     });
     setTimeout(() => setActionNotice(null), 4500);
+
+    // Best-effort, non-blocking: for a PDF with no manually-typed notes, ask
+    // the server to extract the real text and summarize it via Groq. Image
+    // uploads and scanned PDFs with no text layer simply come back null —
+    // there's no vision model on this Groq account to fall back to.
+    if (originalExt === 'pdf' && !hadManualNotes) {
+      requestDocumentSummary(file.id, language).then(({ summary }) => {
+        if (!summary) return;
+        setPersonalFiles((prev) => prev.map((f) => (f.id === file.id ? { ...f, notes: summary } : f)));
+        updatePersonalFileNotes(file.id, summary);
+        setActionNotice({
+          text: isSwahili
+            ? `Muhtasari wa AI umeongezwa kwa "${title}"!`
+            : `AI summary added to "${title}"!`,
+          type: 'success',
+        });
+        setTimeout(() => setActionNotice(null), 4500);
+      });
+    }
   };
 
   return (

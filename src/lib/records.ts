@@ -177,3 +177,12 @@ export const updatePersonalFileStarred = async (
   if (error) return { success: false, error: error.message };
   return { success: true };
 };
+
+export const updatePersonalFileNotes = async (
+  id: string,
+  notes: string
+): Promise<{ success: boolean; error?: string }> => {
+  const { error } = await supabase.from('personal_files').update({ notes }).eq('id', id);
+  if (error) return { success: false, error: error.message };
+  return { success: true };
+};
