@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { getAuthedUser } from './_lib/supabaseAuth';
 
 const DAILY_API_URL = 'https://api.daily.co/v1';
 // Rooms auto-expire 4 hours after creation so stale telehealth rooms don't linger.
@@ -35,6 +36,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
+  // Require the caller's own Supabase session — a room+token must never be
+  // mintable just by knowing/guessing a ticket number.
+  const { client, userId, error: authError } = await getAuthedUser(req);
+  if (authError || !client || !userId) {
+    res.status(401).json({ error: authError || 'Not authenticated.' });
+    return;
+  }
+
   const { ticketNumber, participantName } = (req.body || {}) as {
     ticketNumber?: string;
     participantName?: string;
@@ -42,6 +51,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (!ticketNumber || typeof ticketNumber !== 'string') {
     res.status(400).json({ error: 'ticketNumber is required' });
+    return;
+  }
+
+  // Confirm this appointment actually belongs to the caller (RLS on
+  // `appointments` already enforces patient_id = auth.uid(), so this select
+  // simply returns nothing for someone else's ticket) and is telehealth.
+  const { data: appointment, error: apptError } = await client
+    .from('appointments')
+    .select('id, consultation_type, status')
+    .eq('ticket_number', ticketNumber)
+    .maybeSingle();
+
+  if (apptError || !appointment) {
+    res.status(403).json({ error: 'This appointment does not belong to you or was not found.' });
+    return;
+  }
+  if (appointment.consultation_type !== 'telehealth') {
+    res.status(400).json({ error: 'This appointment is not a telehealth consultation.' });
+    return;
+  }
+  if (appointment.status === 'cancelled') {
+    res.status(400).json({ error: 'This appointment has been cancelled.' });
     return;
   }
 
