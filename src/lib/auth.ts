@@ -18,10 +18,24 @@ export const sendOtp = async (
   target: string,
   shouldCreateUser: boolean
 ): Promise<SendOtpResult> => {
-  const { error } =
+  const request =
     channel === 'phone'
-      ? await supabase.auth.signInWithOtp({ phone: target, options: { shouldCreateUser } })
-      : await supabase.auth.signInWithOtp({ email: target, options: { shouldCreateUser } });
+      ? supabase.auth.signInWithOtp({ phone: target, options: { shouldCreateUser } })
+      : supabase.auth.signInWithOtp({ email: target, options: { shouldCreateUser } });
+
+  // A missing SMTP configuration or unreachable Auth endpoint can leave the
+  // browser request pending indefinitely. Give the user control back instead.
+  const result = await Promise.race([
+    request,
+    new Promise<never>((_, reject) => {
+      window.setTimeout(
+        () => reject(new Error('The verification service did not respond. Check your Supabase Auth email/SMTP settings and try again.')),
+        15000
+      );
+    }),
+  ]).catch((error: unknown) => ({ error: error instanceof Error ? error : new Error('Unable to request a verification code.') }));
+
+  const { error } = result;
 
   if (error) return { success: false, error: error.message };
   return { success: true };
