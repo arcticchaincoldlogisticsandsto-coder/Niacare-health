@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getAuthedUser } from './_lib/supabaseAuth';
+import { getAuthedUser } from './_lib/supabaseAuth.js';
 
 const DAILY_API_URL = 'https://api.daily.co/v1';
 // Rooms auto-expire 4 hours after creation so stale telehealth rooms don't linger.

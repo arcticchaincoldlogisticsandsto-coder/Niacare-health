@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { verifyAuthenticationResponse } from '@simplewebauthn/server';
 import { isoBase64URL } from '@simplewebauthn/server/helpers';
 import type { AuthenticationResponseJSON } from '@simplewebauthn/server';
-import { getAuthedUser, getRpConfig } from './_lib/supabaseAuth';
+import { getAuthedUser, getRpConfig } from './_lib/supabaseAuth.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
