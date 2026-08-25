@@ -57,7 +57,9 @@ export const HomeOtpVerification: React.FC<HomeOtpVerificationProps> = ({
   const isDark = theme === 'dark';
 
   const isEmail = currentChannel === 'email';
-  const isLogin = authMode === 'login';
+  // Email OTP is also used for existing-account access. Present it as sign-in
+  // so an administrator who enters from the registration form is not misled.
+  const isLogin = authMode === 'login' || isEmail;
   const displayTarget = target || phone || (isEmail ? 'user@example.com' : '+255 754 829 140');
 
   // Handle incoming autoFillCode from notification banner - instantly fills without manual writing
@@ -248,7 +250,7 @@ export const HomeOtpVerification: React.FC<HomeOtpVerificationProps> = ({
           {isEmail ? (language === 'sw' ? 'Uthibitishaji wa barua pepe' : 'Email verification') : t.title[language]}
         </h2>
 
-        {userName && (
+        {userName && !isLogin && (
           <p className={`text-xs font-bold mt-1 ${isDark ? 'text-cyan-300' : 'text-[#0A4275]'}`}>
             👤 {userName}
           </p>
