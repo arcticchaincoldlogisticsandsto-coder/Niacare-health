@@ -35,7 +35,34 @@ create table if not exists public.profiles (
   updated_at timestamptz not null default now()
 );
 
+-- `create table if not exists` does not update an older profiles table. These
+-- migrations keep an existing project compatible with the current role model.
+alter table public.profiles
+  add column if not exists role text not null default 'patient'
+    check (role in ('patient', 'doctor', 'provider_staff', 'admin')),
+  add column if not exists status text not null default 'pending'
+    check (status in ('pending', 'active', 'suspended'));
+
 alter table public.profiles enable row level security;
+
+-- SECURITY DEFINER prevents recursive RLS evaluation when a policy needs to
+-- determine whether the signed-in user is an administrator.
+create or replace function public.is_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce((
+    select p.role = 'admin'
+    from public.profiles p
+    where p.id = auth.uid()
+  ), false);
+$$;
+
+revoke all on function public.is_admin() from public;
+grant execute on function public.is_admin() to authenticated;
 
 drop policy if exists "Profiles are viewable by owner" on public.profiles;
 create policy "Profiles are viewable by owner"
@@ -57,24 +84,14 @@ create policy "Provider staff can read patient profiles they serve"
   on public.profiles for select
   using (
     auth.uid() = id
-    or exists (
-      select 1 from public.profiles where id = auth.uid() and role = 'admin'
-    )
-    or exists (
-      select 1 from public.appointments a
-      where a.patient_id = profiles.id
-      and (
-        exists (
-          select 1 from public.doctor_profiles dp
-          where dp.id = a.doctor_profile_id and dp.user_id = auth.uid()
-        )
-        or exists (
-          select 1 from public.provider_staff ps
-          where ps.provider_id = a.provider_id and ps.user_id = auth.uid()
-        )
-      )
-    )
+    or public.is_admin()
   );
+
+drop policy if exists "Admins can manage all profiles" on public.profiles;
+create policy "Admins can manage all profiles"
+  on public.profiles for all to authenticated
+  using (public.is_admin())
+  with check (public.is_admin());
 
 -- ============================================================================
 -- PROVIDERS — hospitals, clinics, and affiliated facilities
@@ -220,6 +237,11 @@ create table if not exists public.appointments (
   created_at timestamptz not null default now()
 );
 
+-- Compatibility migration for databases created before provider/doctor roles.
+alter table public.appointments
+  add column if not exists provider_id uuid references public.providers(id) on delete set null,
+  add column if not exists doctor_profile_id uuid references public.doctor_profiles(id) on delete set null;
+
 alter table public.appointments enable row level security;
 
 drop policy if exists "Appointments are manageable by owner" on public.appointments;
@@ -250,6 +272,30 @@ create policy "Appointments are manageable by owner"
     )
   );
 
+-- This policy is defined only after appointments, doctor_profiles, and
+-- provider_staff exist, so a new project can run the complete schema once.
+drop policy if exists "Provider staff can read patient profiles they serve" on public.profiles;
+create policy "Provider staff can read patient profiles they serve"
+  on public.profiles for select
+  using (
+    auth.uid() = id
+    or public.is_admin()
+    or exists (
+      select 1 from public.appointments a
+      where a.patient_id = profiles.id
+      and (
+        exists (
+          select 1 from public.doctor_profiles dp
+          where dp.id = a.doctor_profile_id and dp.user_id = auth.uid()
+        )
+        or exists (
+          select 1 from public.provider_staff ps
+          where ps.provider_id = a.provider_id and ps.user_id = auth.uid()
+        )
+      )
+    )
+  );
+
 -- ============================================================================
 -- MEDICAL RECORDS
 -- ============================================================================
@@ -272,6 +318,10 @@ create table if not exists public.medical_records (
   created_at timestamptz not null default now()
 );
 
+alter table public.medical_records
+  add column if not exists appointment_id uuid references public.appointments(id) on delete set null,
+  add column if not exists created_by uuid references auth.users(id) on delete set null;
+
 alter table public.medical_records enable row level security;
 
 drop policy if exists "Medical records are viewable by owner" on public.medical_records;
@@ -290,7 +340,7 @@ create policy "Medical records are viewable by owner"
     )
   );
 
-drop policy if exists "Medical records are insertable by owner" on public.medical_records;
+drop policy if exists "Medical records are insertable by clinical staff" on public.medical_records;
 create policy "Medical records are insertable by clinical staff"
   on public.medical_records for insert
   with check (
@@ -340,9 +390,13 @@ create table if not exists public.prescriptions (
   created_at timestamptz not null default now()
 );
 
+alter table public.prescriptions
+  add column if not exists appointment_id uuid references public.appointments(id) on delete set null,
+  add column if not exists created_by uuid references auth.users(id) on delete set null;
+
 alter table public.prescriptions enable row level security;
 
-drop policy if exists "Prescriptions are manageable by owner" on public.prescriptions;
+drop policy if exists "Prescriptions are manageable by patient and clinical staff" on public.prescriptions;
 create policy "Prescriptions are manageable by patient and clinical staff"
   on public.prescriptions for all
   using (
@@ -426,7 +480,7 @@ create table if not exists public.bills (
 
 alter table public.bills enable row level security;
 
-drop policy if exists "Bills are manageable by owner" on public.bills;
+drop policy if exists "Bills are viewable by patient and staff" on public.bills;
 create policy "Bills are viewable by patient and staff"
   on public.bills for select
   using (
@@ -617,6 +671,11 @@ create table if not exists public.emergency_dispatches (
   created_at timestamptz not null default now()
 );
 
+alter table public.emergency_dispatches
+  add column if not exists target_facility text,
+  add column if not exists facility_distance_km double precision,
+  add column if not exists facility_eta_min integer;
+
 alter table public.emergency_dispatches enable row level security;
 
 drop policy if exists "Anyone can create a dispatch" on public.emergency_dispatches;
@@ -784,4 +843,38 @@ create trigger ensure_doctor_profile_after_staff_insert
   for each row
   when (new.job_title ilike '%doctor%' or new.job_title ilike '%physician%' or new.job_title ilike '%specialist%')
   execute function public.ensure_doctor_profile();
+
+-- ============================================================================
+-- ADMINISTRATOR ACCESS + FIRST-ADMIN BOOTSTRAP
+-- Adds a full-access administrator path without removing the role-specific
+-- policies above. On an empty project, the latest registered profile becomes
+-- the first active administrator. Re-running this never replaces an existing
+-- administrator.
+-- ============================================================================
+do $$
+declare
+  target_table text;
+begin
+  foreach target_table in array array[
+    'profiles', 'providers', 'doctor_profiles', 'provider_staff',
+    'appointments', 'medical_records', 'prescriptions', 'personal_files',
+    'bills', 'bill_items', 'payments', 'doctor_schedule',
+    'emergency_dispatches'
+  ]
+  loop
+    execute format('drop policy if exists "Admins have full access" on public.%I', target_table);
+    execute format(
+      'create policy "Admins have full access" on public.%I for all to authenticated using (public.is_admin()) with check (public.is_admin())',
+      target_table
+    );
+  end loop;
+
+  if not exists (select 1 from public.profiles where role = 'admin') then
+    update public.profiles
+    set role = 'admin', status = 'active'
+    where id = (
+      select id from public.profiles order by created_at desc nulls last limit 1
+    );
+  end if;
+end $$;
 

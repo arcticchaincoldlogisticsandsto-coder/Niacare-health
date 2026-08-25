@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings } from 'lucide-react';
+import { Settings, ShieldCheck } from 'lucide-react';
 import { Language, Theme } from '../types';
 import { TRANSLATIONS } from '../data/translations';
 
@@ -17,10 +17,10 @@ export const Header: React.FC<HeaderProps> = ({
   const isDark = theme === 'dark';
 
   return (
-    <header className="w-full pt-3 pb-3 px-3 sm:px-5 relative bg-transparent transition-colors duration-300">
+    <header className="w-full pt-4 pb-3 px-4 sm:px-6 relative bg-transparent transition-colors duration-300">
       {/* Settings Button */}
       {onOpenSettingsModal && (
-        <div className="flex items-center justify-end mb-3 px-1 sm:px-2">
+        <div className="flex items-center justify-end mb-2 px-1 sm:px-2">
           <button
             id="btn-open-settings"
             type="button"
@@ -43,9 +43,9 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Main Logo & Slogan Header */}
       <div className="flex flex-col items-center justify-center text-center">
         {/* NiaCare Logo Container */}
-        <div className="flex items-center justify-center gap-2.5 mb-1">
+        <div className="flex items-center justify-center gap-2.5 mb-1.5">
           {/* NiaCare App Logo */}
-          <div className="w-11 h-11 relative flex items-center justify-center rounded-2xl overflow-hidden shadow-sm">
+          <div className="w-11 h-11 relative flex items-center justify-center rounded-xl overflow-hidden border border-slate-200/80 dark:border-slate-700 shadow-sm">
             <img
               src="/src/assets/images/niacare_app_logo_1787113371659.jpg"
               alt="NiaCare Logo"
@@ -71,9 +71,12 @@ export const Header: React.FC<HeaderProps> = ({
         >
           {TRANSLATIONS.header.slogan[language]}
         </p>
+        <div className={`mt-2 inline-flex items-center gap-1.5 text-[10px] font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+          <span>{language === 'sw' ? 'Huduma salama na ya faragha' : 'Private, secure health services'}</span>
+        </div>
       </div>
     </header>
   );
 };
-
 

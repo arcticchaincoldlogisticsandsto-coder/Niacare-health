@@ -310,10 +310,10 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-start antialiased transition-colors duration-300 nc-bg nc-text">
-      {/* Top Mobile Screen Wrapper matching Screenshot Frame */}
+    <div className="min-h-screen flex flex-col items-center justify-start antialiased transition-colors duration-300 nc-bg nc-text app-canvas">
+      {/* A focused patient workspace on mobile, with a more natural clinical layout on larger screens. */}
       <main
-        className={`w-full max-w-[430px] sm:max-w-[460px] mx-auto min-h-screen flex flex-col sm:my-4 sm:rounded-[36px] overflow-hidden relative border transition-all duration-300 ${
+        className={`w-full max-w-[430px] md:max-w-[720px] lg:max-w-[980px] mx-auto min-h-screen flex flex-col sm:my-4 sm:rounded-[28px] overflow-hidden relative border transition-all duration-300 ${
           isDark
             ? 'bg-[#0B1522] border-slate-800 shadow-[0_25px_60px_rgba(0,0,0,0.85)]'
             : 'bg-white border-slate-200/80 shadow-xl'

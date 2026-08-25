@@ -147,23 +147,22 @@ export const EmergencyBar: React.FC<EmergencyBarProps> = ({ language, authUserId
   return (
     <>
       {/* 1-Tap Emergency Bar Container Matching Screenshot */}
-      <section className="w-full px-4 sm:px-5 mt-2.5 mb-3 relative z-20">
+      <section className="w-full px-4 sm:px-6 mt-2.5 mb-4 relative z-20">
         <button
           id="btn-emergency-dispatch"
           type="button"
           onClick={handleOpenEmergency}
           aria-label="Emergency Ambulance 1-Tap Dispatch"
-          className="w-full bg-[#E51E2B] hover:bg-[#D01824] active:bg-[#B7131D] text-white p-3 sm:p-3.5 rounded-2xl shadow-lg shadow-red-600/25 border border-red-500/30 flex items-center justify-between transition-all transform hover:-translate-y-0.5 cursor-pointer emergency-glow"
+          className="w-full bg-[#D92D3A] hover:bg-[#BF2330] active:bg-[#A71E29] text-white p-3 sm:p-3.5 rounded-2xl shadow-md shadow-red-950/15 border border-red-400/30 flex items-center justify-between transition-colors cursor-pointer"
         >
           {/* Left: Ambulance and Beacon */}
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5 bg-white/20 px-2 py-1.5 rounded-xl backdrop-blur-xs flex-shrink-0">
-              <span className="text-xl">🚑</span>
-              <span className="text-sm animate-bounce">🚨</span>
+              <Siren className="w-5 h-5" />
             </div>
 
             <div className="text-left">
-              <h2 className="text-sm sm:text-base font-black tracking-wide text-white uppercase leading-tight font-sans">
+              <h2 className="text-sm sm:text-base font-extrabold tracking-wide text-white uppercase leading-tight font-sans">
                 {t.barTitle[language]}
               </h2>
               <p className="text-xs sm:text-[13px] text-white/90 font-medium">

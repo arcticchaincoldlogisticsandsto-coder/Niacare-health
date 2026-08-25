@@ -85,11 +85,11 @@ export const TrustBar: React.FC<TrustBarProps> = ({ language, theme = 'light' })
         isDark ? 'bg-[#0A1522] border-slate-800' : 'bg-[#EBF3FB] border-[#D5E5F5]'
       }`}
     >
-      <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="max-w-5xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
         {trustItems.map((item) => (
           <div
             key={item.id}
-            className={`rounded-2xl p-3.5 border flex items-center gap-3.5 shadow-xs transition-all ${
+            className={`rounded-2xl p-3 border flex items-center gap-2.5 shadow-xs transition-all ${
               isDark
                 ? 'bg-[#101F31] border-slate-800 text-slate-200 hover:bg-[#14263D] hover:border-slate-700'
                 : 'bg-white/80 backdrop-blur-xs border-[#D0E2F4] text-slate-800 hover:bg-white hover:shadow-md'
@@ -97,7 +97,7 @@ export const TrustBar: React.FC<TrustBarProps> = ({ language, theme = 'light' })
           >
             {item.icon}
             <div className="min-w-0 flex-1">
-              <h4 className={`text-sm font-bold leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              <h4 className={`text-xs font-bold leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
                 {item.title}
               </h4>
               <p className={`text-[11px] leading-snug mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
