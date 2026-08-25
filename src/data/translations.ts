@@ -1241,3 +1241,46 @@ export function getTranslation<T = string>(
 ): T {
   return obj[lang] || obj.en || obj.sw || (Object.values(obj)[0] as T);
 }
+
+/**
+ * Typed path-based translation helper. Falls back to English, then to the first
+ * available language, then returns the path itself so missing keys are visible
+ * in development but never crash production.
+ */
+export function t(path: string, lang: Language = 'en'): string {
+  const parts = path.split('.');
+  let current: any = RAW_TRANSLATIONS;
+  for (const part of parts) {
+    if (current == null || typeof current !== 'object' || !(part in current)) {
+      if (import.meta.env.DEV) {
+        console.warn(`[i18n] Missing translation path: ${path}`);
+      }
+      return path;
+    }
+    current = current[part];
+  }
+  if (current == null || typeof current !== 'object') {
+    return String(current ?? path);
+  }
+  return getTranslation(lang, current);
+}
+
+const LANGUAGE_STORAGE_KEY = 'niacare-language';
+
+export function getStoredLanguage(): Language {
+  if (typeof window === 'undefined') return 'en';
+  const stored = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
+  if (stored === 'en' || stored === 'sw' || stored === 'fr') return stored;
+  return 'en';
+}
+
+export function storeLanguage(lang: Language): void {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
+}
+
+export const SUPPORTED_LANGUAGES: { code: Language; label: string; flag: string }[] = [
+  { code: 'en', label: 'English', flag: '🇬🇧' },
+  { code: 'sw', label: 'Kiswahili', flag: '🇹🇿' },
+  { code: 'fr', label: 'Français', flag: '🇫🇷' },
+];

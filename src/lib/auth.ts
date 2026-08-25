@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient';
-import { LocalFormData, InternationalFormData, UserCategory, LocalDocType } from '../types';
+import { LocalFormData, InternationalFormData, UserCategory, LocalDocType, UserRole, UserStatus } from '../types';
 
 export type OtpAuthChannel = 'phone' | 'email';
 
@@ -52,6 +52,8 @@ export const verifyOtp = async (
 export interface ProfileRow {
   id: string;
   user_category: UserCategory;
+  role: UserRole;
+  status: UserStatus;
   full_name: string;
   age: string | null;
   gender: string | null;
@@ -83,12 +85,16 @@ export const buildProfilePayload = (
   userId: string,
   userCategory: UserCategory,
   localData: LocalFormData,
-  intlData: InternationalFormData
+  intlData: InternationalFormData,
+  role: UserRole = 'patient',
+  status: UserStatus = 'pending'
 ): ProfileRow => {
   if (userCategory === 'locals') {
     return {
       id: userId,
       user_category: 'locals',
+      role,
+      status,
       full_name: localData.fullName,
       age: localData.age || null,
       gender: localData.gender || null,
@@ -111,6 +117,8 @@ export const buildProfilePayload = (
   return {
     id: userId,
     user_category: 'internationals',
+    role,
+    status,
     full_name: intlData.fullName,
     age: intlData.age || null,
     gender: intlData.gender || null,
@@ -139,9 +147,13 @@ export const upsertProfile = async (payload: ProfileRow): Promise<{ success: boo
 export const fetchProfile = async (
   userId: string
 ): Promise<{ profile: ProfileRow | null; error?: string }> => {
-  const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .maybeSingle();
   if (error) return { profile: null, error: error.message };
-  return { profile: data as ProfileRow | null };
+  return { profile: (data as ProfileRow | null) };
 };
 
 export const mapProfileToFormData = (

@@ -165,42 +165,39 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
   };
 
   const isLocal = userCategory === 'locals';
-  const patientName = isLocal
-    ? localData.fullName || 'Amina Salum Bakari'
-    : intlData.fullName || 'Marcus Alexander Vance';
-
-  const patientAge = isLocal ? localData.age || '29' : intlData.age || '34';
+  const patientName = isLocal ? localData.fullName : intlData.fullName;
+  const patientAge = isLocal ? localData.age : intlData.age;
   const patientDob = isLocal
-    ? formatDob(localData.birthYear, localData.birthMonth, localData.birthDay, language) || '12 Apr 1995'
-    : formatDob(intlData.birthYear, intlData.birthMonth, intlData.birthDay, language) || '24 Aug 1990';
-  const patientBloodType = (isLocal ? localData.bloodType : intlData.bloodType) || 'O+';
-  const patientGender = isLocal ? localData.gender || 'female' : intlData.gender || 'male';
+    ? formatDob(localData.birthYear, localData.birthMonth, localData.birthDay, language)
+    : formatDob(intlData.birthYear, intlData.birthMonth, intlData.birthDay, language);
+  const patientBloodType = (isLocal ? localData.bloodType : intlData.bloodType) || '';
+  const patientGender = isLocal ? localData.gender : intlData.gender;
   const patientPhone = isLocal
-    ? localData.phone ? `+255 ${localData.phone}` : '+255 754 829 140'
-    : intlData.phone ? `${intlData.countryCode || '+1'} ${intlData.phone}` : '+1 791 112 3456';
+    ? localData.phone ? `+255 ${localData.phone}` : ''
+    : intlData.phone ? `${intlData.countryCode || ''} ${intlData.phone}` : '';
 
   let primaryDocType = 'NIDA / NIN';
-  let primaryDocNumber = localData.nidaNumber || '19950412111020000421';
+  let primaryDocNumber = localData.nidaNumber;
 
   if (isLocal) {
     if (localData.selectedDocType === 'insurance') {
       primaryDocType = 'Bima ID';
-      primaryDocNumber = localData.insuranceNumber || 'NHIF-TZ-8849201';
+      primaryDocNumber = localData.insuranceNumber;
     } else if (localData.selectedDocType === 'birth_cert') {
       primaryDocType = 'RITA Cert';
-      primaryDocNumber = localData.birthCertId || 'RITA-2018-938210';
+      primaryDocNumber = localData.birthCertId;
     }
   } else {
     primaryDocType = 'Passport';
-    primaryDocNumber = intlData.passportNumber || 'US89240182A';
+    primaryDocNumber = intlData.passportNumber;
   }
 
   const insuranceProviderName = isLocal
-    ? (TANZANIA_INSURANCE_PROVIDERS.find((p) => p.id === localData.insuranceProvider)?.name || 'NHIF (Mfuko wa Taifa)')
-    : 'Allianz Global Travel Health';
+    ? (TANZANIA_INSURANCE_PROVIDERS.find((p) => p.id === localData.insuranceProvider)?.name || '')
+    : (intlData.travelInsuranceProvider || '');
 
-  const patientId = 'NC-TZ-8849201';
   const patientCountry = getPatientCountry(userCategory, localData, intlData);
+  const patientId = authUserId ? `NC-${patientCountry.code}-${authUserId.slice(0, 8).toUpperCase()}` : '';
 
   // Greeting based on real-time hour of day
   const hour = new Date().getHours();
@@ -228,7 +225,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
                     : 'bg-gradient-to-br from-[#0A4275] to-[#041D34] text-white border-blue-200'
                 }`}
               >
-                {patientName.charAt(0)}
+                {patientName ? patientName.charAt(0).toUpperCase() : '?'}
               </div>
               <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-white dark:bg-slate-900 shadow-md border border-slate-200 dark:border-slate-700 flex items-center justify-center text-xs leading-none" title={`Country: ${patientCountry.name}`}>
                 {patientCountry.flag}

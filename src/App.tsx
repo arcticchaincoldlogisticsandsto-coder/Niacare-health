@@ -13,8 +13,10 @@ import { SuccessPassportModal } from './components/SuccessPassportModal';
 import { RegistrationModal } from './components/RegistrationModal';
 import { LanguageSelectorModal } from './components/LanguageSelectorModal';
 import { SettingsModal } from './components/SettingsModal';
+import { useTheme } from './components/ThemeProvider';
 import { Appointment } from './data/doctors';
-import { UserCategory, Language, LocalFormData, InternationalFormData, Theme, OtpDeliveryChannel } from './types';
+import { UserCategory, Language, LocalFormData, InternationalFormData, OtpDeliveryChannel, UserRole } from './types';
+import { getStoredLanguage, storeLanguage } from './data/translations';
 import { supabase } from './lib/supabaseClient';
 import {
   sendOtp,
@@ -26,11 +28,19 @@ import {
   signOut as supabaseSignOut,
 } from './lib/auth';
 import { fetchAppointments } from './lib/appointments';
+import { DoctorDashboard } from './components/DoctorDashboard';
+import { ProviderDashboard } from './components/ProviderDashboard';
+import { AdminDashboard } from './components/AdminDashboard';
 
 export default function App() {
-  const [language, setLanguage] = useState<Language>('en'); // Default to English, toggleable to Swahili, French, etc.
-  const [theme, setTheme] = useState<Theme>('light');
+  const { theme, isDark, toggleTheme } = useTheme();
+  const [language, setLanguageState] = useState<Language>(() => getStoredLanguage());
   const [authMode, setAuthMode] = useState<'register' | 'login'>('register');
+
+  const setLanguage = (lang: Language) => {
+    setLanguageState(lang);
+    storeLanguage(lang);
+  };
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [appointmentsList, setAppointmentsList] = useState<Appointment[]>([]);
@@ -39,6 +49,7 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isSessionLoading, setIsSessionLoading] = useState(true);
   const [authUserId, setAuthUserId] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<UserRole>('patient');
 
   // Dual-mode OTP state (Phone vs Email)
   const [otpDeliveryChannel, setOtpDeliveryChannel] = useState<OtpDeliveryChannel>('phone');
@@ -47,9 +58,7 @@ export default function App() {
   // In-page Home OTP states
   const [isHomeOtpActive, setIsHomeOtpActive] = useState(false);
 
-  const handleToggleTheme = () => {
-    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
-  };
+  const handleToggleTheme = toggleTheme;
 
   // Form states for Locals
   const [localData, setLocalData] = useState<LocalFormData>({
@@ -90,7 +99,7 @@ export default function App() {
   });
 
   // Security & 2FA states
-  const [pdpaAccepted, setPdpaAccepted] = useState(true); // Pre-checked as in screenshot
+  const [pdpaAccepted, setPdpaAccepted] = useState(false); // Explicit consent required before OTP send
 
   // Modals
   const [isOtpOpen, setIsOtpOpen] = useState(false);
@@ -108,15 +117,15 @@ export default function App() {
 
   const activePhone =
     userCategory === 'locals'
-      ? localData.phone ? `+255 ${stripLeadingZero(localData.phone)}` : '+255 754 829 140'
+      ? localData.phone ? `+255 ${stripLeadingZero(localData.phone)}` : ''
       : intlData.phone
       ? `${intlData.countryCode || '+1'} ${stripLeadingZero(intlData.phone)}`
-      : '+1 791 112 3456';
+      : '';
 
   const activeEmail =
     userCategory === 'locals'
-      ? localData.email || 'mwananchi@niacare.go.tz'
-      : intlData.email || 'visitor@globalhealth.org';
+      ? localData.email || ''
+      : intlData.email || '';
 
   const activeName =
     userCategory === 'locals' ? localData.fullName : intlData.fullName;
@@ -138,6 +147,7 @@ export default function App() {
         if (profile) {
           const mapped = mapProfileToFormData(profile);
           setUserCategory(mapped.userCategory);
+          setUserRole(profile.role || 'patient');
           if (mapped.localData) {
             setLocalData((prev) => ({ ...prev, ...mapped.localData }));
           }
@@ -206,12 +216,14 @@ export default function App() {
       if (!upsertResult.success) {
         return { success: false, error: upsertResult.error };
       }
+      setUserRole('patient');
     } else {
       const { profile, error } = await fetchProfile(userId);
       if (error) return { success: false, error };
       if (profile) {
         const mapped = mapProfileToFormData(profile);
         setUserCategory(mapped.userCategory);
+        setUserRole(profile.role || 'patient');
         if (mapped.localData) {
           setLocalData((prev) => ({ ...prev, ...mapped.localData }));
         }
@@ -275,7 +287,8 @@ export default function App() {
       travelInsuranceProvider: 'allianz',
       insuranceNumber: '',
     });
-    setPdpaAccepted(true);
+    setPdpaAccepted(false);
+    setUserRole('patient');
   };
 
   const handleLogout = async () => {
@@ -285,28 +298,19 @@ export default function App() {
     setIsSuccessPassportOpen(false);
   };
 
-  const isDark = theme === 'dark';
-
   if (isSessionLoading) {
     return (
-      <div
-        className={`min-h-screen flex items-center justify-center ${
-          isDark ? 'bg-[#080E17] text-slate-100' : 'bg-[#F0F5FA] text-slate-800'
-        }`}
-      >
-        <span className="text-sm font-semibold animate-pulse">Loading…</span>
+      <div className="min-h-screen flex items-center justify-center nc-bg nc-text">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#0A4275] to-[#041D34] dark:from-cyan-500 dark:to-blue-600 animate-pulse" />
+          <span className="text-sm font-semibold animate-pulse">Loading NiaCare…</span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div
-      className={`min-h-screen flex flex-col items-center justify-start antialiased transition-colors duration-300 ${
-        isDark
-          ? 'bg-[#080E17] text-slate-100 selection:bg-cyan-500 selection:text-slate-950'
-          : 'bg-[#F0F5FA] text-slate-800 selection:bg-[#0A4275] selection:text-white'
-      }`}
-    >
+    <div className="min-h-screen flex flex-col items-center justify-start antialiased transition-colors duration-300 nc-bg nc-text">
       {/* Top Mobile Screen Wrapper matching Screenshot Frame */}
       <main
         className={`w-full max-w-[430px] sm:max-w-[460px] mx-auto min-h-screen flex flex-col sm:my-4 sm:rounded-[36px] overflow-hidden relative border transition-all duration-300 ${
@@ -328,20 +332,28 @@ export default function App() {
         {/* Main Content: Authenticated Patient Dashboard OR Credentials Form & OTP */}
         <div className="px-4 sm:px-5 pb-6 flex-1 flex flex-col">
           {isAuthenticated ? (
-            /* Authenticated Patient Home Dashboard */
+            /* Authenticated role-based dashboard */
             <div className="pt-2">
-              <PatientHomeDashboard
-                userCategory={userCategory}
-                localData={localData}
-                intlData={intlData}
-                language={language}
-                theme={theme}
-                onLogout={handleLogout}
-                onOpenSettings={() => setIsSettingsOpen(true)}
-                appointmentsList={appointmentsList}
-                setAppointmentsList={setAppointmentsList}
-                authUserId={authUserId}
-              />
+              {userRole === 'doctor' ? (
+                <DoctorDashboard language={language} authUserId={authUserId} onLogout={handleLogout} />
+              ) : userRole === 'provider_staff' ? (
+                <ProviderDashboard language={language} authUserId={authUserId} onLogout={handleLogout} />
+              ) : userRole === 'admin' ? (
+                <AdminDashboard language={language} authUserId={authUserId} onLogout={handleLogout} />
+              ) : (
+                <PatientHomeDashboard
+                  userCategory={userCategory}
+                  localData={localData}
+                  intlData={intlData}
+                  language={language}
+                  theme={theme}
+                  onLogout={handleLogout}
+                  onOpenSettings={() => setIsSettingsOpen(true)}
+                  appointmentsList={appointmentsList}
+                  setAppointmentsList={setAppointmentsList}
+                  authUserId={authUserId}
+                />
+              )}
             </div>
           ) : isHomeOtpActive ? (
             /* Home Page In-Place OTP Verification */

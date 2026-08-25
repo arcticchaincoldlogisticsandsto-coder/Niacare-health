@@ -188,7 +188,7 @@ export const LanguageSelectorModal: React.FC<LanguageSelectorModalProps> = ({
                   key={lang.code}
                   type="button"
                   onClick={() => {
-                    onSelectLanguage(lang.code);
+                    onSelectLanguage(lang.code as Language);
                     onClose();
                   }}
                   className={`flex items-center justify-between p-3 rounded-2xl border text-left transition-all cursor-pointer ${

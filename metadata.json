@@ -1,6 +1,6 @@
 {
   "name": "NiaCare Health",
-  "description": "Hybrid onboarding and authentication interface for NiaCare digital health platform with 1-tap emergency dispatch, localized citizen and international credentials, and 2FA biometrics.",
+  "description": "Hybrid onboarding and multi-role digital health platform for NiaCare with patient, doctor, provider staff, and admin interfaces, 1-tap emergency dispatch, localized credentials, 2FA, and AI triage.",
   "requestFramePermissions": ["geolocation"],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_LLM_API"]
 }

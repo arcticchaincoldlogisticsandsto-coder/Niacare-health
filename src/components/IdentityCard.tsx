@@ -21,6 +21,7 @@ import { TANZANIA_INSURANCE_PROVIDERS } from '../data/insurance';
 import { DateOfBirthSelector } from './DateOfBirthSelector';
 import { BloodTypeSelector } from './BloodTypeSelector';
 import { extractDobFromNida, formatDob, calculateAgeFromDob } from '../utils/dateUtils';
+import { FEATURE_FLAGS } from '../config/app';
 
 interface IdentityCardProps {
   userCategory: UserCategory;
@@ -143,19 +144,21 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
         </p>
 
         {/* Demo Preset Trigger */}
-        <button
-          type="button"
-          onClick={handleAutoFillDemo}
-          className={`absolute right-0 top-0 text-[11px] px-2 py-1 rounded-lg border font-bold flex items-center gap-1 cursor-pointer transition-all ${
-            isDark
-              ? 'text-cyan-300 bg-cyan-950/60 hover:bg-cyan-900/60 border-cyan-800'
-              : 'text-[#0A4275] hover:text-[#062847] bg-blue-50 hover:bg-blue-100 border-blue-200'
-          }`}
-          title="Auto-fill realistic test data"
-        >
-          <Sparkles className="w-3 h-3" />
-          <span className="hidden sm:inline">{t.demoFill[language]}</span>
-        </button>
+        {FEATURE_FLAGS.showDemoFill && (
+          <button
+            type="button"
+            onClick={handleAutoFillDemo}
+            className={`absolute right-0 top-0 text-[11px] px-2 py-1 rounded-lg border font-bold flex items-center gap-1 cursor-pointer transition-all ${
+              isDark
+                ? 'text-cyan-300 bg-cyan-950/60 hover:bg-cyan-900/60 border-cyan-800'
+                : 'text-[#0A4275] hover:text-[#062847] bg-blue-50 hover:bg-blue-100 border-blue-200'
+            }`}
+            title="Auto-fill realistic test data"
+          >
+            <Sparkles className="w-3 h-3" />
+            <span className="hidden sm:inline">{t.demoFill[language]}</span>
+          </button>
+        )}
       </div>
 
       {/* Mode Switcher: First Time Registration vs Quick Login */}

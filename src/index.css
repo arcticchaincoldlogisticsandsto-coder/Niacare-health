@@ -1,12 +1,136 @@
 @import "tailwindcss";
 
+:root {
+  /* NiaCare brand palette */
+  --nc-primary: #0A4275;
+  --nc-primary-dark: #041D34;
+  --nc-primary-light: #186EBA;
+  --nc-accent: #06B6D4;
+  --nc-accent-light: #67E8F9;
+
+  /* Semantic colors */
+  --nc-success: #10B981;
+  --nc-success-subtle: #D1FAE5;
+  --nc-warning: #F59E0B;
+  --nc-warning-subtle: #FEF3C7;
+  --nc-danger: #EF4444;
+  --nc-danger-subtle: #FEE2E2;
+  --nc-info: #3B82F6;
+  --nc-info-subtle: #DBEAFE;
+  --nc-purple: #8B5CF6;
+  --nc-purple-subtle: #EDE9FE;
+
+  /* Light mode surfaces */
+  --nc-bg: #F0F5FA;
+  --nc-surface: #FFFFFF;
+  --nc-surface-elevated: #F9FBFE;
+  --nc-border: rgba(203, 213, 225, 0.8);
+  --nc-border-strong: #CBD5E1;
+  --nc-text: #0F172A;
+  --nc-text-secondary: #475569;
+  --nc-text-muted: #64748B;
+  --nc-placeholder: #94A3B8;
+}
+
+.dark {
+  /* Dark mode surfaces */
+  --nc-bg: #080E17;
+  --nc-surface: #0B1522;
+  --nc-surface-elevated: #101F31;
+  --nc-border: rgba(51, 65, 85, 0.9);
+  --nc-border-strong: #334155;
+  --nc-text: #F8FAFC;
+  --nc-text-secondary: #CBD5E1;
+  --nc-text-muted: #94A3B8;
+  --nc-placeholder: #64748B;
+}
+
 @layer base {
   body {
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--nc-bg);
+    color: var(--nc-text);
   }
 
   .font-mono {
     font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Selection theming */
+  ::selection {
+    background-color: var(--nc-primary);
+    color: #FFFFFF;
+  }
+
+  .dark ::selection {
+    background-color: var(--nc-accent);
+    color: #020617;
+  }
+}
+
+@layer utilities {
+  .nc-bg { background-color: var(--nc-bg); }
+  .nc-surface { background-color: var(--nc-surface); }
+  .nc-surface-elevated { background-color: var(--nc-surface-elevated); }
+  .nc-border { border-color: var(--nc-border); }
+  .nc-border-strong { border-color: var(--nc-border-strong); }
+  .nc-text { color: var(--nc-text); }
+  .nc-text-secondary { color: var(--nc-text-secondary); }
+  .nc-text-muted { color: var(--nc-text-muted); }
+
+  .nc-btn-primary {
+    @apply rounded-xl font-black text-xs transition-all active:scale-[0.98];
+    background-color: var(--nc-primary);
+    color: #FFFFFF;
+  }
+  .nc-btn-primary:hover {
+    background-color: var(--nc-primary-light);
+  }
+
+  .dark .nc-btn-primary {
+    background-color: var(--nc-accent);
+    color: #020617;
+  }
+  .dark .nc-btn-primary:hover {
+    background-color: var(--nc-accent-light);
+  }
+
+  .nc-card {
+    @apply rounded-3xl border transition-all;
+    background-color: var(--nc-surface);
+    border-color: var(--nc-border);
+  }
+
+  .dark .nc-card {
+    background-color: var(--nc-surface-elevated);
+    border-color: var(--nc-border-strong);
+  }
+
+  .nc-input {
+    @apply w-full text-sm rounded-xl border outline-none transition-all;
+    background-color: var(--nc-surface);
+    border-color: var(--nc-border-strong);
+    color: var(--nc-text);
+  }
+  .nc-input::placeholder {
+    color: var(--nc-placeholder);
+  }
+  .nc-input:focus {
+    border-color: var(--nc-primary);
+    --tw-ring-color: var(--nc-primary);
+  }
+
+  .dark .nc-input {
+    background-color: #091422;
+    border-color: var(--nc-border-strong);
+  }
+  .dark .nc-input:focus {
+    border-color: var(--nc-accent);
+    --tw-ring-color: var(--nc-accent);
+  }
+
+  .nc-gradient-passport {
+    background: linear-gradient(135deg, #062444 0%, #0A4275 50%, #041D34 100%);
   }
 }
 
@@ -30,12 +154,12 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #F4F6F8;
+  background: var(--nc-surface-elevated);
 }
 ::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
+  background: var(--nc-border-strong);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94A3B8;
+  background: var(--nc-text-muted);
 }
