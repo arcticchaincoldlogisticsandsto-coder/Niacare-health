@@ -31,6 +31,7 @@ import { fetchAppointments } from './lib/appointments';
 import { DoctorDashboard } from './components/DoctorDashboard';
 import { ProviderDashboard } from './components/ProviderDashboard';
 import { AdminDashboard } from './components/AdminDashboard';
+import { QuickLogin } from './components/QuickLogin';
 
 export default function App() {
   const { theme, isDark, toggleTheme } = useTheme();
@@ -180,10 +181,11 @@ export default function App() {
   }, [isAuthenticated, authUserId]);
 
   const handleSendOtp = async (
-    channel: OtpDeliveryChannel
+    channel: OtpDeliveryChannel,
+    targetOverride = ''
   ): Promise<{ success: boolean; error?: string }> => {
     setOtpDeliveryChannel(channel);
-    const resolvedTarget = channel === 'phone' ? activePhone : activeEmail;
+    const resolvedTarget = targetOverride.trim() || (channel === 'phone' ? activePhone : activeEmail);
     setOtpTarget(resolvedTarget);
 
     const normalizedTarget =
@@ -373,6 +375,13 @@ export default function App() {
                 theme={theme}
               />
             </div>
+          ) : authMode === 'login' ? (
+            <QuickLogin
+              language={language}
+              theme={theme}
+              onSendOtp={handleSendOtp}
+              onRegister={() => setAuthMode('register')}
+            />
           ) : (
             /* Credentials Form & Security Block */
             <>
@@ -406,10 +415,7 @@ export default function App() {
                 setPdpaAccepted={setPdpaAccepted}
                 onSendOtp={handleSendOtp}
                 onOpenPdpaModal={() => setIsPdpaModalOpen(true)}
-                onOpenRegistrationChoice={() => {
-                  setAuthMode((prev) => (prev === 'register' ? 'login' : 'register'));
-                  setIsRegistrationChoiceOpen(true);
-                }}
+                onOpenRegistrationChoice={() => setAuthMode('login')}
                 authMode={authMode}
                 theme={theme}
               />
