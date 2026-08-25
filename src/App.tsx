@@ -212,7 +212,18 @@ export default function App() {
     const userId = verifyResult.userId;
     setAuthUserId(userId);
 
-    if (authMode === 'register') {
+    // A profile may already exist when a staff or admin user arrives through
+    // the registration-looking OTP screen. Never overwrite that assigned role.
+    const { profile: existingProfile, error: existingProfileError } = await fetchProfile(userId);
+    if (existingProfileError) return { success: false, error: existingProfileError };
+
+    if (existingProfile) {
+      const mapped = mapProfileToFormData(existingProfile);
+      setUserCategory(mapped.userCategory);
+      setUserRole(existingProfile.role || 'patient');
+      if (mapped.localData) setLocalData((prev) => ({ ...prev, ...mapped.localData }));
+      if (mapped.intlData) setIntlData((prev) => ({ ...prev, ...mapped.intlData }));
+    } else if (authMode === 'register') {
       const payload = buildProfilePayload(userId, userCategory, localData, intlData);
       const upsertResult = await upsertProfile(payload);
       if (!upsertResult.success) {
@@ -220,19 +231,7 @@ export default function App() {
       }
       setUserRole('patient');
     } else {
-      const { profile, error } = await fetchProfile(userId);
-      if (error) return { success: false, error };
-      if (profile) {
-        const mapped = mapProfileToFormData(profile);
-        setUserCategory(mapped.userCategory);
-        setUserRole(profile.role || 'patient');
-        if (mapped.localData) {
-          setLocalData((prev) => ({ ...prev, ...mapped.localData }));
-        }
-        if (mapped.intlData) {
-          setIntlData((prev) => ({ ...prev, ...mapped.intlData }));
-        }
-      }
+      return { success: false, error: 'No account profile was found. Register first or ask an administrator to provision your account.' };
     }
 
     setIsOtpOpen(false);
@@ -366,6 +365,7 @@ export default function App() {
                 phone={activePhone}
                 userName={activeName}
                 userCategory={userCategory}
+                authMode={authMode}
                 onVerify={handleVerifyOtp}
                 onBackToCredentials={() => setIsHomeOtpActive(false)}
                 onResendOtp={(newChan) => {

@@ -19,6 +19,7 @@ interface HomeOtpVerificationProps {
   phone?: string;
   userName?: string;
   userCategory: UserCategory;
+  authMode?: 'register' | 'login';
   onVerify: (code: string) => Promise<{ success: boolean; error?: string }>;
   onBackToCredentials: () => void;
   onResendOtp?: (channel: OtpDeliveryChannel) => void;
@@ -33,6 +34,7 @@ export const HomeOtpVerification: React.FC<HomeOtpVerificationProps> = ({
   phone,
   userName,
   userCategory,
+  authMode = 'register',
   onVerify,
   onBackToCredentials,
   onResendOtp,
@@ -55,6 +57,7 @@ export const HomeOtpVerification: React.FC<HomeOtpVerificationProps> = ({
   const isDark = theme === 'dark';
 
   const isEmail = currentChannel === 'email';
+  const isLogin = authMode === 'login';
   const displayTarget = target || phone || (isEmail ? 'user@example.com' : '+255 754 829 140');
 
   // Handle incoming autoFillCode from notification banner - instantly fills without manual writing
@@ -223,7 +226,7 @@ export const HomeOtpVerification: React.FC<HomeOtpVerificationProps> = ({
           }`}
         >
           <ShieldCheck className="w-3 h-3 text-emerald-500" />
-          <span>{t.firstTimeBadge[language]}</span>
+          <span>{isLogin ? (language === 'sw' ? 'Ingia salama' : 'Secure sign in') : t.firstTimeBadge[language]}</span>
         </span>
       </div>
 
@@ -242,7 +245,7 @@ export const HomeOtpVerification: React.FC<HomeOtpVerificationProps> = ({
             isDark ? 'text-white' : 'text-slate-900'
           }`}
         >
-          {t.title[language]}
+          {isEmail ? (language === 'sw' ? 'Uthibitishaji wa barua pepe' : 'Email verification') : t.title[language]}
         </h2>
 
         {userName && (
@@ -252,7 +255,9 @@ export const HomeOtpVerification: React.FC<HomeOtpVerificationProps> = ({
         )}
 
         <p className={`text-xs sm:text-sm font-medium mt-1 max-w-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-          {t.enterCode[language]}
+          {isLogin
+            ? (language === 'sw' ? 'Weka msimbo wa tarakimu 6 uliotumwa ili kuingia.' : 'Enter the 6-digit verification code to sign in.')
+            : t.enterCode[language]}
         </p>
 
         {/* Recipient Channel Info Pill */}
@@ -397,7 +402,7 @@ export const HomeOtpVerification: React.FC<HomeOtpVerificationProps> = ({
             <ShieldCheck className="w-5 h-5" />
           )}
           <span className="text-sm font-extrabold tracking-wide">
-            {t.verifyBtn[language]}
+            {isLogin ? (language === 'sw' ? 'THIBITISHA NA UINGIE' : 'VERIFY & SIGN IN') : t.verifyBtn[language]}
           </span>
         </button>
       </div>
