@@ -189,12 +189,25 @@ create policy "Staff can view own record"
   on public.provider_staff for select
   using (auth.uid() = user_id);
 
+-- SECURITY DEFINER bypasses RLS so this lookup doesn't re-trigger the policy
+-- below (a raw self-join on provider_staff from within its own policy causes
+-- 42P17 infinite recursion).
+create or replace function public.my_provider_id()
+returns uuid
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select provider_id from public.provider_staff where user_id = auth.uid() limit 1;
+$$;
+revoke all on function public.my_provider_id() from public;
+grant execute on function public.my_provider_id() to authenticated;
+
 drop policy if exists "Staff can view colleagues at same provider" on public.provider_staff;
 create policy "Staff can view colleagues at same provider"
   on public.provider_staff for select
-  using (exists (
-    select 1 from public.provider_staff s where s.user_id = auth.uid() and s.provider_id = provider_staff.provider_id
-  ));
+  using (provider_id = public.my_provider_id());
 
 drop policy if exists "Admins can manage provider staff" on public.provider_staff;
 create policy "Admins can manage provider staff"
