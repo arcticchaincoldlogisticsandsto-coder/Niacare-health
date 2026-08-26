@@ -310,6 +310,20 @@ export default function App() {
     );
   }
 
+  // Admins get a full desktop console, not the patient-facing mobile shell
+  // (hero, tagline, emergency-dispatch banner) used by every other role.
+  if (isAuthenticated && userRole === 'admin') {
+    return (
+      <AdminDashboard
+        language={language}
+        authUserId={authUserId}
+        onLogout={handleLogout}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-start antialiased transition-colors duration-300 nc-bg nc-text app-canvas">
       {/* A focused patient workspace on mobile, with a more natural clinical layout on larger screens. */}
@@ -339,8 +353,6 @@ export default function App() {
                 <DoctorDashboard language={language} authUserId={authUserId} onLogout={handleLogout} />
               ) : userRole === 'provider_staff' ? (
                 <ProviderDashboard language={language} authUserId={authUserId} onLogout={handleLogout} />
-              ) : userRole === 'admin' ? (
-                <AdminDashboard language={language} authUserId={authUserId} onLogout={handleLogout} />
               ) : (
                 <PatientHomeDashboard
                   userCategory={userCategory}
