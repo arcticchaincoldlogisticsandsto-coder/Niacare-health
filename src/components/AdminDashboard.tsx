@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Users, Building2, CalendarDays, Activity, LogOut, RefreshCw, Search, Moon, Sun, ShieldCheck } from 'lucide-react';
+import { Users, Building2, CalendarDays, Activity, LogOut, RefreshCw, Search, Moon, Sun, ShieldCheck, UserPlus } from 'lucide-react';
 import type { Language, Theme, UserRole, UserStatus } from '../types';
 import { supabase } from '../lib/supabaseClient';
+import { InviteStaffModal } from './InviteStaffModal';
 
 interface AdminDashboardProps {
   language: Language;
@@ -46,6 +47,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ language, authUs
   const [query, setQuery] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
 
   const load = async () => {
     setLoading(true); setError('');
@@ -105,6 +107,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ language, authUs
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsInviteOpen(true)}
+              className="flex items-center gap-1.5 rounded-lg bg-[#0A4275] px-3 py-2 text-xs font-bold text-white hover:opacity-90 dark:bg-cyan-500 dark:text-[#041D34]"
+            >
+              <UserPlus className="h-3.5 w-3.5" /> {isSw ? 'Alika Mfanyakazi' : 'Invite staff'}
+            </button>
             <button type="button" onClick={onToggleTheme} className="rounded-lg border nc-border p-2 hover:bg-slate-100 dark:hover:bg-slate-800" title="Toggle theme">
               {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
@@ -203,6 +212,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ language, authUs
 
         {authUserId && <p className="mt-4 text-center font-mono text-[10px] nc-text-muted">Admin session: {authUserId.slice(0, 12)}…</p>}
       </main>
+
+      <InviteStaffModal
+        isOpen={isInviteOpen}
+        onClose={() => setIsInviteOpen(false)}
+        onInvited={load}
+      />
     </div>
   );
 };
