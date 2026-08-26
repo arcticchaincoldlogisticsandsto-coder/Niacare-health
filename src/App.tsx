@@ -514,7 +514,13 @@ export default function App() {
 
       <SuccessPassportModal
         isOpen={isSuccessPassportOpen}
-        onClose={() => setIsSuccessPassportOpen(false)}
+        onClose={() => {
+          setIsSuccessPassportOpen(false);
+          // Offer passkey setup right after a fresh registration completes —
+          // matches the reference flow (Verify OTP -> Passkey Setup -> App)
+          // instead of leaving it buried in Settings where nobody finds it.
+          if (authMode === 'register') handleTriggerBiometric('fingerprint');
+        }}
         onReset={handleResetForm}
         userCategory={userCategory}
         localData={localData}
