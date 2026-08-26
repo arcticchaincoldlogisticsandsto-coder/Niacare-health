@@ -41,6 +41,7 @@ import { formatDob } from '../utils/dateUtils';
 import { generateMedicalRecordPdf, generateCompiledMedicalPassportPdf } from '../utils/pdfGenerator';
 import { fetchMedicalRecords } from '../lib/records';
 import { fetchPrescriptions, updatePrescriptionTaken, Prescription } from '../lib/prescriptions';
+import { logAuditEvent } from '../lib/audit';
 
 interface PatientHomeDashboardProps {
   userCategory: UserCategory;
@@ -93,6 +94,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
         docNumber: primaryDocNumber,
       };
       generateMedicalRecordPdf(record, patientMeta, language);
+      if (authUserId) logAuditEvent('DOCUMENT_DOWNLOADED', 'medical_records', record.id, authUserId, { title: record.title });
       setPdfToast(
         language === 'sw'
           ? `Ripoti ya "${record.title}" imepakuliwa kama PDF!`
@@ -118,6 +120,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
         docNumber: primaryDocNumber,
       };
       generateCompiledMedicalPassportPdf(medicalRecords, patientMeta, language);
+      if (authUserId) logAuditEvent('DOCUMENT_DOWNLOADED', 'health_passport', undefined, authUserId);
       setPdfToast(
         language === 'sw'
           ? 'Pasipoti Kamili ya Afya (NiaCare Health Passport) imepakuliwa kama PDF!'

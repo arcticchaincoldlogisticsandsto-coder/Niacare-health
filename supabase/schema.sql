@@ -409,12 +409,147 @@ create policy "Medical records are updatable by clinical staff"
   );
 
 -- ============================================================================
+-- CLINICAL ENCOUNTERS — the structured record of a single doctor visit:
+-- chief complaint, vitals, diagnosis, notes. Prescriptions below link to an
+-- encounter once one exists, instead of only floating off an appointment.
+-- ============================================================================
+create table if not exists public.encounters (
+  id uuid primary key default gen_random_uuid(),
+  patient_id uuid not null references auth.users(id) on delete cascade,
+  doctor_profile_id uuid references public.doctor_profiles(id) on delete set null,
+  provider_id uuid references public.providers(id) on delete set null,
+  appointment_id uuid references public.appointments(id) on delete set null,
+  encounter_type text not null default 'consultation',
+  status text not null default 'in_progress' check (status in ('draft', 'in_progress', 'completed', 'cancelled')),
+  chief_complaint text,
+  history_note text,
+  examination_note text,
+  clinical_notes text,
+  follow_up_note text,
+  started_at timestamptz not null default now(),
+  ended_at timestamptz,
+  created_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.encounters enable row level security;
+
+drop policy if exists "Encounters are viewable by patient and clinical staff" on public.encounters;
+create policy "Encounters are viewable by patient and clinical staff"
+  on public.encounters for select
+  using (
+    auth.uid() = patient_id
+    or exists (select 1 from public.doctor_profiles dp where dp.id = encounters.doctor_profile_id and dp.user_id = auth.uid())
+    or exists (select 1 from public.provider_staff ps where ps.provider_id = encounters.provider_id and ps.user_id = auth.uid())
+    or public.is_admin()
+  );
+
+drop policy if exists "Encounters are manageable by the treating doctor" on public.encounters;
+create policy "Encounters are manageable by the treating doctor"
+  on public.encounters for all
+  using (
+    exists (select 1 from public.doctor_profiles dp where dp.id = encounters.doctor_profile_id and dp.user_id = auth.uid() and dp.is_active = true)
+    or public.is_admin()
+  )
+  with check (
+    exists (select 1 from public.doctor_profiles dp where dp.id = encounters.doctor_profile_id and dp.user_id = auth.uid() and dp.is_active = true)
+    or public.is_admin()
+  );
+
+drop trigger if exists set_encounters_updated_at on public.encounters;
+create trigger set_encounters_updated_at
+  before update on public.encounters
+  for each row execute function public.set_updated_at();
+
+create table if not exists public.vitals (
+  id uuid primary key default gen_random_uuid(),
+  encounter_id uuid not null references public.encounters(id) on delete cascade,
+  temperature_c numeric(4, 1),
+  heart_rate integer,
+  respiratory_rate integer,
+  spo2 integer,
+  systolic_bp integer,
+  diastolic_bp integer,
+  weight_kg numeric(5, 1),
+  height_cm numeric(5, 1),
+  recorded_by uuid references auth.users(id) on delete set null,
+  recorded_at timestamptz not null default now()
+);
+
+alter table public.vitals enable row level security;
+
+drop policy if exists "Vitals are viewable by patient and clinical staff" on public.vitals;
+create policy "Vitals are viewable by patient and clinical staff"
+  on public.vitals for select
+  using (
+    exists (
+      select 1 from public.encounters e where e.id = vitals.encounter_id and (
+        e.patient_id = auth.uid()
+        or exists (select 1 from public.doctor_profiles dp where dp.id = e.doctor_profile_id and dp.user_id = auth.uid())
+        or exists (select 1 from public.provider_staff ps where ps.provider_id = e.provider_id and ps.user_id = auth.uid())
+      )
+    )
+    or public.is_admin()
+  );
+
+-- Vitals are recorded by whoever is at the bedside — the treating doctor OR
+-- provider staff (e.g. a nurse) at that encounter's facility, not doctors
+-- exclusively (unlike diagnoses, which require clinical diagnostic authority).
+drop policy if exists "Vitals are insertable by clinical staff" on public.vitals;
+create policy "Vitals are insertable by clinical staff"
+  on public.vitals for insert
+  with check (
+    exists (
+      select 1 from public.encounters e where e.id = vitals.encounter_id and (
+        exists (select 1 from public.doctor_profiles dp where dp.id = e.doctor_profile_id and dp.user_id = auth.uid() and dp.is_active = true)
+        or exists (select 1 from public.provider_staff ps where ps.provider_id = e.provider_id and ps.user_id = auth.uid() and ps.is_active = true)
+      )
+    )
+    or public.is_admin()
+  );
+
+create table if not exists public.diagnoses (
+  id uuid primary key default gen_random_uuid(),
+  encounter_id uuid not null references public.encounters(id) on delete cascade,
+  patient_id uuid not null references auth.users(id) on delete cascade,
+  doctor_profile_id uuid references public.doctor_profiles(id) on delete set null,
+  diagnosis text not null,
+  code text,
+  diagnosis_type text not null default 'primary' check (diagnosis_type in ('primary', 'secondary', 'differential')),
+  notes text,
+  created_at timestamptz not null default now()
+);
+
+alter table public.diagnoses enable row level security;
+
+drop policy if exists "Diagnoses are viewable by patient and clinical staff" on public.diagnoses;
+create policy "Diagnoses are viewable by patient and clinical staff"
+  on public.diagnoses for select
+  using (
+    auth.uid() = patient_id
+    or exists (select 1 from public.doctor_profiles dp where dp.id = diagnoses.doctor_profile_id and dp.user_id = auth.uid())
+    or public.is_admin()
+  );
+
+-- Only an authorized, active doctor may record a clinical diagnosis — this
+-- is the one clinical action this schema does not extend to provider staff.
+drop policy if exists "Diagnoses are insertable by the treating doctor" on public.diagnoses;
+create policy "Diagnoses are insertable by the treating doctor"
+  on public.diagnoses for insert
+  with check (
+    exists (select 1 from public.doctor_profiles dp where dp.id = diagnoses.doctor_profile_id and dp.user_id = auth.uid() and dp.is_active = true)
+    or public.is_admin()
+  );
+
+-- ============================================================================
 -- PRESCRIPTIONS
 -- ============================================================================
 create table if not exists public.prescriptions (
   id uuid primary key default gen_random_uuid(),
   patient_id uuid not null references auth.users(id) on delete cascade,
   appointment_id uuid references public.appointments(id) on delete set null,
+  encounter_id uuid references public.encounters(id) on delete set null,
   created_by uuid references auth.users(id) on delete set null,
   medication_name text not null,
   dosage_instructions text,
@@ -428,6 +563,7 @@ create table if not exists public.prescriptions (
 
 alter table public.prescriptions
   add column if not exists appointment_id uuid references public.appointments(id) on delete set null,
+  add column if not exists encounter_id uuid references public.encounters(id) on delete set null,
   add column if not exists created_by uuid references auth.users(id) on delete set null;
 
 alter table public.prescriptions enable row level security;
@@ -801,6 +937,159 @@ create policy "Owners can view their dispatches"
   on public.emergency_dispatches for select
   using (auth.uid() = patient_id or public.is_admin());
 
+-- Widen the lifecycle beyond dispatched/cancelled so the admin operations
+-- console can reflect real dispatch progress (a status this schema didn't
+-- previously have anywhere to go, since there was no UPDATE policy at all).
+alter table public.emergency_dispatches drop constraint if exists emergency_dispatches_status_check;
+alter table public.emergency_dispatches add constraint emergency_dispatches_status_check
+  check (status in ('dispatched', 'requested', 'accepted', 'assigned', 'en_route', 'arrived', 'transporting', 'completed', 'cancelled'));
+
+-- Status changes must be server-authorized, not left to whoever created the
+-- dispatch (an unauthenticated caller in the emergency case) — admin-only
+-- for now, since there is no real per-facility dispatcher account model yet.
+drop policy if exists "Admins can update dispatch status" on public.emergency_dispatches;
+create policy "Admins can update dispatch status"
+  on public.emergency_dispatches for update
+  using (public.is_admin())
+  with check (public.is_admin());
+
+-- ============================================================================
+-- AUDIT LOGS — append-only. Writable ONLY via public.log_audit_event() (which
+-- always stamps actor_id from auth.uid(), never a client-supplied value) or
+-- the trigger below — never a raw client insert, and never updatable/
+-- deletable by anyone, including admins, once written. RLS has no insert/
+-- update/delete policy at all, which combined with RLS being enabled means
+-- those operations are denied outright for ordinary callers; the two writers
+-- are SECURITY DEFINER and bypass RLS deliberately.
+-- ============================================================================
+create table if not exists public.audit_logs (
+  id uuid primary key default gen_random_uuid(),
+  actor_id uuid references auth.users(id) on delete set null,
+  action text not null,
+  resource_type text not null,
+  resource_id uuid,
+  patient_id uuid references auth.users(id) on delete set null,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+alter table public.audit_logs enable row level security;
+
+drop policy if exists "Audit logs are viewable by admins only" on public.audit_logs;
+create policy "Audit logs are viewable by admins only"
+  on public.audit_logs for select
+  using (public.is_admin());
+
+create or replace function public.log_audit_event(
+  p_action text,
+  p_resource_type text,
+  p_resource_id uuid default null,
+  p_patient_id uuid default null,
+  p_metadata jsonb default '{}'::jsonb
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.audit_logs (actor_id, action, resource_type, resource_id, patient_id, metadata)
+  values (auth.uid(), p_action, p_resource_type, p_resource_id, p_patient_id, p_metadata);
+end;
+$$;
+
+revoke all on function public.log_audit_event(text, text, uuid, uuid, jsonb) from public;
+grant execute on function public.log_audit_event(text, text, uuid, uuid, jsonb) to authenticated;
+
+-- Role/status changes are security-critical, so they're logged from inside
+-- the same trigger that guards them — this can't be forgotten by whichever
+-- code path performs the change, unlike a call the app remembers to make.
+create or replace function public.audit_role_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.role is distinct from old.role then
+    insert into public.audit_logs (actor_id, action, resource_type, resource_id, patient_id, metadata)
+    values (auth.uid(), 'ROLE_CHANGED', 'profiles', new.id, new.id, jsonb_build_object('from', old.role, 'to', new.role));
+  end if;
+  if new.status is distinct from old.status then
+    insert into public.audit_logs (actor_id, action, resource_type, resource_id, patient_id, metadata)
+    values (
+      auth.uid(),
+      case when new.status = 'suspended' then 'USER_DISABLED' else 'STATUS_CHANGED' end,
+      'profiles', new.id, new.id, jsonb_build_object('from', old.status, 'to', new.status)
+    );
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists audit_profile_role_change on public.profiles;
+create trigger audit_profile_role_change
+  after update on public.profiles
+  for each row execute function public.audit_role_change();
+
+-- Generic append-only audit trigger for clinical/financial/emergency tables:
+-- one row per insert/update, tagged with the acting user and a best-effort
+-- patient_id (present as a real column on every table it's attached to).
+create or replace function public.audit_row_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.audit_logs (actor_id, action, resource_type, resource_id, patient_id, metadata)
+  values (
+    auth.uid(),
+    upper(TG_TABLE_NAME) || '_' || TG_OP,
+    TG_TABLE_NAME,
+    new.id,
+    new.patient_id,
+    '{}'::jsonb
+  );
+  return new;
+end;
+$$;
+
+drop trigger if exists audit_encounters_insert on public.encounters;
+create trigger audit_encounters_insert
+  after insert on public.encounters
+  for each row execute function public.audit_row_change();
+
+drop trigger if exists audit_medical_records_change on public.medical_records;
+create trigger audit_medical_records_change
+  after insert on public.medical_records
+  for each row execute function public.audit_row_change();
+
+drop trigger if exists audit_prescriptions_change on public.prescriptions;
+create trigger audit_prescriptions_change
+  after insert on public.prescriptions
+  for each row execute function public.audit_row_change();
+
+drop trigger if exists audit_diagnoses_change on public.diagnoses;
+create trigger audit_diagnoses_change
+  after insert on public.diagnoses
+  for each row execute function public.audit_row_change();
+
+drop trigger if exists audit_emergency_dispatches_insert on public.emergency_dispatches;
+create trigger audit_emergency_dispatches_insert
+  after insert on public.emergency_dispatches
+  for each row execute function public.audit_row_change();
+
+drop trigger if exists audit_emergency_dispatches_update on public.emergency_dispatches;
+create trigger audit_emergency_dispatches_update
+  after update on public.emergency_dispatches
+  for each row execute function public.audit_row_change();
+
+drop trigger if exists audit_payments_change on public.payments;
+create trigger audit_payments_change
+  after update on public.payments
+  for each row execute function public.audit_row_change();
+
 -- ============================================================================
 -- WEBAUTHN CREDENTIALS — real FIDO2/WebAuthn public-key credentials
 -- (fingerprint / Face ID / Windows Hello via the device's platform
@@ -972,7 +1261,7 @@ begin
     'profiles', 'providers', 'doctor_profiles', 'provider_staff',
     'appointments', 'medical_records', 'prescriptions', 'personal_files',
     'bills', 'bill_items', 'payments', 'doctor_schedule',
-    'emergency_dispatches'
+    'emergency_dispatches', 'encounters', 'vitals', 'diagnoses'
   ]
   loop
     execute format('drop policy if exists "Admins have full access" on public.%I', target_table);

@@ -356,7 +356,7 @@ export default function App() {
             /* Authenticated role-based dashboard */
             <div className="pt-2">
               {userRole === 'doctor' ? (
-                <DoctorDashboard language={language} authUserId={authUserId} onLogout={handleLogout} />
+                <DoctorDashboard language={language} theme={theme} authUserId={authUserId} onLogout={handleLogout} />
               ) : userRole === 'provider_staff' ? (
                 <ProviderDashboard language={language} authUserId={authUserId} onLogout={handleLogout} />
               ) : (

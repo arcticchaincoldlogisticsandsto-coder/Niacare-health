@@ -58,6 +58,30 @@ export const updatePrescriptionTaken = async (
   return { success: true };
 };
 
+export const insertPrescription = async (
+  patientId: string,
+  encounterId: string | null,
+  medicationName: string,
+  dosageInstructions: string,
+  prescribedBy: string
+): Promise<{ prescription?: Prescription; error?: string }> => {
+  const { data, error } = await supabase
+    .from('prescriptions')
+    .insert({
+      patient_id: patientId,
+      encounter_id: encounterId,
+      medication_name: medicationName,
+      dosage_instructions: dosageInstructions,
+      prescribed_by: prescribedBy,
+      created_by: (await supabase.auth.getUser()).data.user?.id,
+    })
+    .select('*')
+    .single();
+
+  if (error) return { error: error.message };
+  return { prescription: mapRowToPrescription(data as PrescriptionRow) };
+};
+
 export const updatePrescriptionRefillRequested = async (
   id: string,
   refillRequested: boolean

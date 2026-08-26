@@ -1,16 +1,19 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Calendar, Clock, Users, Star, LogOut, RefreshCw, Video, MapPin, Stethoscope } from 'lucide-react';
-import type { Language } from '../types';
+import { Calendar, Clock, Users, Star, LogOut, RefreshCw, Video, MapPin, Stethoscope, ClipboardPlus } from 'lucide-react';
+import type { Language, Theme } from '../types';
 import { supabase } from '../lib/supabaseClient';
+import { EncounterModal } from './EncounterModal';
 
 interface DoctorDashboardProps {
   language: Language;
+  theme: Theme;
   authUserId: string | null;
   onLogout: () => void;
 }
 
 interface DoctorProfile {
   id: string;
+  provider_id: string | null;
   specialty: string;
   sub_specialty: string | null;
   rating: number;
@@ -20,6 +23,7 @@ interface DoctorProfile {
 
 interface AppointmentRow {
   id: string;
+  patient_id: string;
   patient_name: string | null;
   appointment_date: string;
   time_slot: string;
@@ -37,19 +41,20 @@ const STATUS_STYLES: Record<string, string> = {
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
-export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, authUserId, onLogout }) => {
+export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, theme, authUserId, onLogout }) => {
   const isSw = language === 'sw';
   const [profile, setProfile] = useState<DoctorProfile | null>(null);
   const [appointments, setAppointments] = useState<AppointmentRow[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [encounterTarget, setEncounterTarget] = useState<AppointmentRow | null>(null);
 
   const load = async () => {
     if (!authUserId) return;
     setLoading(true); setError('');
     const { data: doctorProfile, error: profileError } = await supabase
       .from('doctor_profiles')
-      .select('id, specialty, sub_specialty, rating, reviews_count, is_verified')
+      .select('id, provider_id, specialty, sub_specialty, rating, reviews_count, is_verified')
       .eq('user_id', authUserId)
       .maybeSingle();
 
@@ -63,7 +68,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, auth
     if (doctorProfile) {
       const { data: appts, error: apptError } = await supabase
         .from('appointments')
-        .select('id, patient_name, appointment_date, time_slot, status, consultation_type, reason')
+        .select('id, patient_id, patient_name, appointment_date, time_slot, status, consultation_type, reason')
         .eq('doctor_profile_id', doctorProfile.id)
         .order('appointment_date', { ascending: true })
         .order('time_slot', { ascending: true })
@@ -168,9 +173,21 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, auth
                     <p className="text-slate-500 dark:text-slate-400 truncate">{apt.time_slot} {apt.reason ? `• ${apt.reason}` : ''}</p>
                   </div>
                 </div>
-                <span className={`rounded-lg px-2 py-1 font-bold capitalize flex-shrink-0 ${STATUS_STYLES[apt.status] || STATUS_STYLES.confirmed}`}>
-                  {apt.status.replace('_', ' ')}
-                </span>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className={`rounded-lg px-2 py-1 font-bold capitalize ${STATUS_STYLES[apt.status] || STATUS_STYLES.confirmed}`}>
+                    {apt.status.replace('_', ' ')}
+                  </span>
+                  {apt.status !== 'cancelled' && apt.status !== 'completed' && (
+                    <button
+                      type="button"
+                      onClick={() => setEncounterTarget(apt)}
+                      className="rounded-lg bg-[#0A4275] dark:bg-cyan-500 text-white dark:text-[#041D34] px-2 py-1 font-bold flex items-center gap-1"
+                      title={isSw ? 'Anza Mkutano' : 'Start Encounter'}
+                    >
+                      <ClipboardPlus className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -179,6 +196,21 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, auth
 
       {authUserId && (
         <p className="mt-5 text-[10px] text-center text-slate-400 dark:text-slate-600 font-mono">ID: {authUserId.slice(0, 12)}…</p>
+      )}
+
+      {encounterTarget && profile && (
+        <EncounterModal
+          isOpen
+          onClose={() => setEncounterTarget(null)}
+          language={language}
+          theme={theme}
+          patientId={encounterTarget.patient_id}
+          patientName={encounterTarget.patient_name || 'Patient'}
+          doctorProfileId={profile.id}
+          providerId={profile.provider_id}
+          appointmentId={encounterTarget.id}
+          onCompleted={load}
+        />
       )}
     </div>
   );
