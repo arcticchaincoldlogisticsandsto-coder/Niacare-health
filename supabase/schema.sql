@@ -93,6 +93,37 @@ create policy "Admins can manage all profiles"
   using (public.is_admin())
   with check (public.is_admin());
 
+-- SECURITY: "Profiles are updatable by owner" above only restricts WHICH ROW
+-- a user can touch (their own), not WHICH COLUMNS — RLS predicates can't
+-- express "this column may change only for admins" on their own, so without
+-- this trigger any signed-in patient could run
+-- `supabase.from('profiles').update({ role: 'admin' })` from the browser and
+-- self-promote. auth.uid() is null for SQL-editor/migration/service-role
+-- execution (no end-user session), so the bootstrap block below and admin
+-- tooling are unaffected — only a real authenticated non-admin session is
+-- blocked from changing role/status.
+create or replace function public.prevent_self_role_escalation()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() is not null
+     and (new.role is distinct from old.role or new.status is distinct from old.status)
+     and not public.is_admin() then
+    raise exception 'Only an administrator can change role or status.'
+      using errcode = '42501';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists guard_profile_role_escalation on public.profiles;
+create trigger guard_profile_role_escalation
+  before update on public.profiles
+  for each row execute function public.prevent_self_role_escalation();
+
 -- ============================================================================
 -- PROVIDERS — hospitals, clinics, and affiliated facilities
 -- ============================================================================
