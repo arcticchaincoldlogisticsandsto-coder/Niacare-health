@@ -100,8 +100,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // provider_staff insert trigger auto-creates a blank doctor_profiles row
     // when the job title looks like a clinician; fill in the real specialty
     // the admin chose instead of leaving the trigger's generic default.
-    if (role === 'doctor' && specialty) {
-      await adminClient.from('doctor_profiles').update({ specialty }).eq('user_id', newUserId);
+    if (role === 'doctor') {
+      if (specialty) {
+        await adminClient.from('doctor_profiles').update({ specialty }).eq('user_id', newUserId);
+      }
+
+      const { data: doctorProfile } = await adminClient
+        .from('doctor_profiles')
+        .select('id')
+        .eq('user_id', newUserId)
+        .maybeSingle();
+
+      // A brand-new doctor otherwise has zero rows in doctor_schedule and is
+      // literally unbookable (book_appointment() only reserves real slots).
+      // Seed a standard two-week weekday availability window so they're
+      // immediately bookable; the doctor can adjust it later.
+      if (doctorProfile) {
+        const STANDARD_SLOTS = ['09:00 AM', '10:00 AM', '11:00 AM', '01:00 PM', '02:00 PM', '03:00 PM'];
+        const slotRows: { doctor_profile_id: string; schedule_date: string; time_slot: string }[] = [];
+        const cursor = new Date();
+        let daysAdded = 0;
+        while (daysAdded < 10) {
+          cursor.setDate(cursor.getDate() + 1);
+          const day = cursor.getDay();
+          if (day === 0 || day === 6) continue; // weekends
+          const dateIso = cursor.toISOString().slice(0, 10);
+          for (const slot of STANDARD_SLOTS) {
+            slotRows.push({ doctor_profile_id: doctorProfile.id, schedule_date: dateIso, time_slot: slot });
+          }
+          daysAdded += 1;
+        }
+        await adminClient.from('doctor_schedule').upsert(slotRows, {
+          onConflict: 'doctor_profile_id,schedule_date,time_slot',
+          ignoreDuplicates: true,
+        });
+      }
     }
   }
 

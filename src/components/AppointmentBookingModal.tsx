@@ -28,13 +28,21 @@ import {
   CreditCard,
   Radio,
 } from 'lucide-react';
-import { Doctor, Appointment, TANZANIA_DOCTORS, TANZANIA_HOSPITALS, SPECIALTIES } from '../data/doctors';
+import { Doctor, Appointment, TANZANIA_HOSPITALS, SPECIALTIES } from '../data/doctors';
 import { Language, Theme, UserCategory, LocalFormData, InternationalFormData } from '../types';
 import { getUpcomingDateISO, getTodayISO } from '../utils/dateUtils';
 import { insertAppointment, updateAppointmentStatus } from '../lib/appointments';
+import { fetchBookableDoctors, fetchAvailableSlots } from '../lib/realDoctors';
 import { insertBill } from '../lib/bills';
 import { requestVideoRoom } from '../lib/video';
 import DailyIframe, { DailyCall } from '@daily-co/daily-js';
+
+// Real doctor names don't reliably follow the static directory's "Dr. X"
+// prefix convention, so charAt(4) can't be assumed to land on a real initial.
+const doctorInitial = (name: string): string => {
+  const stripped = name.replace(/^dr\.?\s+/i, '').trim();
+  return (stripped.charAt(0) || 'D').toUpperCase();
+};
 
 interface AppointmentBookingModalProps {
   isOpen: boolean;
@@ -83,10 +91,33 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
   // Navigation sub-views: 'browse' | 'wizard' | 'confirmed' | 'my_appointments' | 'video_room'
   const [activeTab, setActiveTab] = useState<'browse' | 'my_appointments'>('browse');
   const [wizardStep, setWizardStep] = useState<number>(1); // 1: Type/Doctor, 2: Slot/Date, 3: Clinical Reason, 4: Insurance & Confirm
-  const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(
-    TANZANIA_DOCTORS.find((d) => d.id === initialDoctorId) || TANZANIA_DOCTORS[0]
-  );
+  const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
   const [consultationType, setConsultationType] = useState<'in_person' | 'telehealth' | 'home_visit'>('in_person');
+
+  // Real, platform-registered doctors (invited via the admin console) —
+  // never the static fictional directory. Loaded once when the modal opens.
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [doctorsLoading, setDoctorsLoading] = useState(true);
+  const [doctorsError, setDoctorsError] = useState('');
+
+  useEffect(() => {
+    if (!isOpen) return;
+    let active = true;
+    setDoctorsLoading(true);
+    fetchBookableDoctors().then(({ doctors: fetched, error }) => {
+      if (!active) return;
+      if (error) setDoctorsError(error);
+      else {
+        setDoctors(fetched);
+        const preselect = fetched.find((d) => d.id === initialDoctorId);
+        if (preselect) setSelectedDoctor(preselect);
+      }
+      setDoctorsLoading(false);
+    });
+    return () => {
+      active = false;
+    };
+  }, [isOpen, initialDoctorId]);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -104,6 +135,35 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
   const [confirmedAppointment, setConfirmedAppointment] = useState<Appointment | null>(null);
   const [isBooking, setIsBooking] = useState(false);
   const [bookingError, setBookingError] = useState('');
+
+  // Real open slots for the selected doctor + date, from public.doctor_schedule
+  // — not a static per-doctor template.
+  const [liveSlots, setLiveSlots] = useState<{ morning: string[]; afternoon: string[]; evening: string[] }>({
+    morning: [],
+    afternoon: [],
+    evening: [],
+  });
+  const [slotsLoading, setSlotsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!selectedDoctor) {
+      setLiveSlots({ morning: [], afternoon: [], evening: [] });
+      return;
+    }
+    let active = true;
+    setSlotsLoading(true);
+    fetchAvailableSlots(selectedDoctor.id, selectedDate).then((buckets) => {
+      if (!active) return;
+      setLiveSlots(buckets);
+      const firstAvailable = buckets.morning[0] || buckets.afternoon[0] || buckets.evening[0] || '';
+      setSelectedSlot(firstAvailable);
+      setSlotsLoading(false);
+    });
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDoctor?.id, selectedDate]);
 
   // Telehealth Video Call — real Daily.co WebRTC room, embedded via prebuilt UI
   const [activeVideoCall, setActiveVideoCall] = useState<Appointment | null>(null);
@@ -189,7 +249,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
 
   // Filter doctors
   const filteredDoctors = useMemo(() => {
-    return TANZANIA_DOCTORS.filter((doc) => {
+    return doctors.filter((doc) => {
       // Search
       const matchSearch =
         searchQuery === '' ||
@@ -223,19 +283,19 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
 
       return matchSearch && matchSpecialty && matchHospital && matchNhif && matchTelehealth;
     });
-  }, [searchQuery, selectedSpecialtyId, selectedHospitalFilter, onlyNhif, onlyTelehealth]);
+  }, [doctors, searchQuery, selectedSpecialtyId, selectedHospitalFilter, onlyNhif, onlyTelehealth]);
 
   if (!isOpen) return null;
 
   const startBookingWithDoctor = (doc: Doctor) => {
     setSelectedDoctor(doc);
-    setSelectedSlot(doc.availableSlots.morning[0] || '09:00 AM');
+    setSelectedSlot('');
     setWizardStep(1);
     setActiveTab('browse');
   };
 
   const handleCompleteBooking = async () => {
-    if (!selectedDoctor || !authUserId) return;
+    if (!selectedDoctor || !authUserId || !selectedSlot) return;
 
     const randomTicketSuffix = Math.floor(1000 + Math.random() * 9000);
     const hospitalPrefix = selectedDoctor.hospital.includes('Muhimbili')
@@ -271,7 +331,12 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
 
     setIsBooking(true);
     setBookingError('');
-    const { appointment, error } = await insertAppointment(authUserId, newAppointmentData);
+    const { appointment, error } = await insertAppointment(
+      authUserId,
+      newAppointmentData,
+      selectedDoctor.providerId,
+      selectedDoctor.id
+    );
     setIsBooking(false);
 
     if (error || !appointment) {
@@ -875,7 +940,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                       <div
                         className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${selectedDoctor.avatarColor} text-white flex items-center justify-center font-black text-lg shadow-md flex-shrink-0`}
                       >
-                        {selectedDoctor.name.charAt(4) || 'D'}
+                        {doctorInitial(selectedDoctor.name)}
                       </div>
                       <div>
                         <div className="flex items-center gap-1.5">
@@ -923,24 +988,39 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                         <label className="text-xs font-bold block mb-1.5">
                           {isSwahili ? 'Chagua Muda (Available Slots):' : 'Select Time Slot:'}
                         </label>
-                        <div className="grid grid-cols-3 gap-1.5">
-                          {selectedDoctor.availableSlots.morning.slice(0, 3).map((slot) => (
-                            <button
-                              key={slot}
-                              type="button"
-                              onClick={() => setSelectedSlot(slot)}
-                              className={`py-1.5 px-2 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
-                                selectedSlot === slot
-                                  ? 'bg-cyan-500 text-slate-950 shadow-md font-black'
-                                  : isDark
-                                  ? 'bg-slate-900/90 text-slate-300 border border-slate-700 hover:border-cyan-400'
-                                  : 'bg-white text-slate-800 border border-slate-200 hover:bg-slate-100'
-                              }`}
-                            >
-                              {slot}
-                            </button>
-                          ))}
-                        </div>
+                        {(() => {
+                          const allSlots = [...liveSlots.morning, ...liveSlots.afternoon, ...liveSlots.evening];
+                          if (slotsLoading) {
+                            return <p className="text-[11px] text-slate-400 py-1.5">{isSwahili ? 'Inapakia nafasi...' : 'Loading available times…'}</p>;
+                          }
+                          if (allSlots.length === 0) {
+                            return (
+                              <p className="text-[11px] text-amber-500 font-semibold py-1.5">
+                                {isSwahili ? 'Hakuna nafasi tarehe hii. Jaribu tarehe nyingine.' : 'No open slots on this date. Try another date.'}
+                              </p>
+                            );
+                          }
+                          return (
+                            <div className="grid grid-cols-3 gap-1.5">
+                              {allSlots.slice(0, 9).map((slot) => (
+                                <button
+                                  key={slot}
+                                  type="button"
+                                  onClick={() => setSelectedSlot(slot)}
+                                  className={`py-1.5 px-2 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
+                                    selectedSlot === slot
+                                      ? 'bg-cyan-500 text-slate-950 shadow-md font-black'
+                                      : isDark
+                                      ? 'bg-slate-900/90 text-slate-300 border border-slate-700 hover:border-cyan-400'
+                                      : 'bg-white text-slate-800 border border-slate-200 hover:bg-slate-100'
+                                  }`}
+                                >
+                                  {slot}
+                                </button>
+                              ))}
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
 
@@ -1100,9 +1180,9 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                       <button
                         type="button"
                         onClick={handleCompleteBooking}
-                        disabled={isBooking}
+                        disabled={isBooking || !selectedSlot}
                         className={`w-full py-3.5 px-4 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20 transition-all active:scale-98 ${
-                          isBooking ? 'opacity-70 cursor-wait' : 'cursor-pointer'
+                          isBooking || !selectedSlot ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'
                         }`}
                       >
                         <CalendarCheck className="w-4 h-4" />
@@ -1132,6 +1212,33 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                   </span>
                 </div>
 
+                {doctorsError && (
+                  <p className="text-xs font-semibold text-rose-500 bg-rose-500/10 border border-rose-500/30 rounded-xl p-3">
+                    {doctorsError}
+                  </p>
+                )}
+
+                {!doctorsError && doctorsLoading && (
+                  <p className="text-xs text-slate-400 py-6 text-center">
+                    {isSwahili ? 'Inapakia madaktari...' : 'Loading doctors…'}
+                  </p>
+                )}
+
+                {!doctorsError && !doctorsLoading && filteredDoctors.length === 0 && (
+                  <div className="text-center py-10 space-y-2">
+                    <Stethoscope className="w-8 h-8 text-slate-400 mx-auto opacity-50" />
+                    <p className="text-xs font-semibold text-slate-400">
+                      {doctors.length === 0
+                        ? isSwahili
+                          ? 'Hakuna madaktari waliosajiliwa bado kwenye jukwaa.'
+                          : 'No doctors are onboarded on the platform yet.'
+                        : isSwahili
+                        ? 'Hakuna daktari anayelingana na vichujio ulivyochagua.'
+                        : 'No doctors match your current filters.'}
+                    </p>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {filteredDoctors.map((doc) => {
                     const isSelected = selectedDoctor?.id === doc.id;
@@ -1154,7 +1261,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                               <div
                                 className={`w-10 h-10 rounded-xl bg-gradient-to-br ${doc.avatarColor} text-white flex items-center justify-center font-black text-sm flex-shrink-0`}
                               >
-                                {doc.name.charAt(4) || 'D'}
+                                {doctorInitial(doc.name)}
                               </div>
                               <div>
                                 <h5 className="font-bold text-xs text-slate-900 dark:text-white leading-tight">
@@ -1178,11 +1285,15 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                               <span className="truncate">{doc.hospital}</span>
                             </div>
                             <div className="flex items-center justify-between">
-                              <span className="text-emerald-400 font-bold flex items-center gap-1">
-                                <CheckCircle2 className="w-3 h-3" /> NHIF Accepted
-                              </span>
+                              {doc.nhifAccepted ? (
+                                <span className="text-emerald-400 font-bold flex items-center gap-1">
+                                  <CheckCircle2 className="w-3 h-3" /> NHIF Accepted
+                                </span>
+                              ) : (
+                                <span className="text-slate-400">{isSwahili ? 'Malipo ya Moja kwa Moja' : 'Direct Pay'}</span>
+                              )}
                               <span className="font-mono text-slate-300">
-                                {doc.availableSlots.morning[0]}
+                                {doc.consultationFeeTzs.toLocaleString()} TZS
                               </span>
                             </div>
                           </div>

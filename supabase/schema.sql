@@ -87,6 +87,14 @@ create policy "Provider staff can read patient profiles they serve"
     or public.is_admin()
   );
 
+-- Doctor/staff names are legitimately directory-public (a patient must be
+-- able to see who they're booking before any appointment exists between
+-- them), unlike patient or admin profiles which stay private.
+drop policy if exists "Clinical staff profiles are publicly viewable" on public.profiles;
+create policy "Clinical staff profiles are publicly viewable"
+  on public.profiles for select
+  using (auth.role() = 'authenticated' and role in ('doctor', 'provider_staff'));
+
 drop policy if exists "Admins can manage all profiles" on public.profiles;
 create policy "Admins can manage all profiles"
   on public.profiles for all to authenticated

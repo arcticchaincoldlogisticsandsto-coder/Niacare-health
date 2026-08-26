@@ -25,6 +25,8 @@ export interface Doctor {
   avatarColor: string;
   bio: string;
   bioSw: string;
+  /** Present only for real, platform-registered doctors (see src/lib/realDoctors.ts) — the facility to book/bill against via public.book_appointment(). */
+  providerId?: string;
 }
 
 export interface Appointment {
