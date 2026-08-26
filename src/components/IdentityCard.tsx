@@ -131,12 +131,11 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
             <Shield className="w-5 h-5 fill-current opacity-80" />
           </div>
           <h2
-            className={`text-xl sm:text-2xl font-black tracking-tight flex items-center gap-1.5 ${
+            className={`text-xl sm:text-2xl font-black tracking-tight ${
               isDark ? 'text-white' : 'text-slate-900'
             }`}
           >
-            <span>{t.welcome[language]}</span>
-            <span className="text-xl">👋</span>
+            {t.welcome[language]}
           </h2>
         </div>
         <p className={`text-xs sm:text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
@@ -161,98 +160,81 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
         )}
       </div>
 
-      {/* Mode Switcher: First Time Registration vs Quick Login */}
+      {/* Mode Switcher: First Time Registration vs Quick Login — same flat
+          tab style as the role/status tabs on every dashboard, not an
+          oversized decorative segment picker. */}
       {onAuthModeChange && (
-        <div className="mb-4">
-          <div
-            className={`grid grid-cols-2 p-1 rounded-2xl border ${
-              isDark ? 'bg-[#09131F] border-slate-800' : 'bg-[#EBF2F8] border-slate-200'
+        <div className="mb-3 flex gap-1.5">
+          <button
+            id="tab-mode-register"
+            type="button"
+            onClick={() => onAuthModeChange('register')}
+            className={`flex-1 rounded-lg py-2 px-3 text-xs font-bold transition-colors ${
+              authMode === 'register'
+                ? isDark
+                  ? 'bg-cyan-500 text-[#041D34]'
+                  : 'bg-[#0A4275] text-white'
+                : isDark
+                ? 'text-slate-400 hover:bg-slate-800'
+                : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
-            <button
-              id="tab-mode-register"
-              type="button"
-              onClick={() => onAuthModeChange('register')}
-              className={`py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                authMode === 'register'
-                  ? isDark
-                    ? 'bg-cyan-500 text-slate-950 shadow-md'
-                    : 'bg-[#0A4275] text-white shadow-md'
-                  : isDark
-                  ? 'text-slate-400 hover:text-white'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <span>✨</span>
-              <span>{t.modeRegister[language]}</span>
-            </button>
-
-            <button
-              id="tab-mode-login"
-              type="button"
-              onClick={() => onAuthModeChange('login')}
-              className={`py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                authMode === 'login'
-                  ? isDark
-                    ? 'bg-cyan-500 text-slate-950 shadow-md'
-                    : 'bg-[#0A4275] text-white shadow-md'
-                  : isDark
-                  ? 'text-slate-400 hover:text-white'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <span>🔐</span>
-              <span>{t.modeLogin[language]}</span>
-            </button>
-          </div>
+            {t.modeRegister[language]}
+          </button>
+          <button
+            id="tab-mode-login"
+            type="button"
+            onClick={() => onAuthModeChange('login')}
+            className={`flex-1 rounded-lg py-2 px-3 text-xs font-bold transition-colors ${
+              authMode === 'login'
+                ? isDark
+                  ? 'bg-cyan-500 text-[#041D34]'
+                  : 'bg-[#0A4275] text-white'
+                : isDark
+                ? 'text-slate-400 hover:bg-slate-800'
+                : 'text-slate-600 hover:bg-slate-100'
+            }`}
+          >
+            {t.modeLogin[language]}
+          </button>
         </div>
       )}
 
       {/* Segment Switch / Tabs: Locals (Tanzanians) vs Internationals */}
-      <div className="mb-4">
-        <div
-          className={`grid grid-cols-2 gap-1.5 p-1 rounded-2xl border ${
-            isDark ? 'bg-[#0A1522] border-slate-800' : 'bg-[#F0F5FA] border-slate-200'
+      <div className="mb-4 flex gap-1.5">
+        <button
+          id="tab-segment-locals"
+          type="button"
+          onClick={() => onCategoryChange('locals')}
+          className={`flex-1 rounded-lg py-2 px-3 text-xs sm:text-sm font-bold transition-colors ${
+            userCategory === 'locals'
+              ? isDark
+                ? 'bg-cyan-500 text-[#041D34]'
+                : 'bg-[#0A4275] text-white'
+              : isDark
+              ? 'text-slate-400 hover:bg-slate-800'
+              : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
-          {/* Locals Option */}
-          <button
-            id="tab-segment-locals"
-            type="button"
-            onClick={() => onCategoryChange('locals')}
-            className={`py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-              userCategory === 'locals'
-                ? isDark
-                  ? 'bg-cyan-500 text-slate-950 shadow-md font-extrabold'
-                  : 'bg-[#0A4275] text-white shadow-md'
-                : isDark
-                ? 'text-slate-400 hover:text-white bg-transparent'
-                : 'text-slate-700 hover:text-slate-900 bg-transparent'
-            }`}
-          >
-            <span className="text-base">🇹🇿</span>
-            <span>{t.tabLocals[language]}</span>
-          </button>
-
-          {/* Internationals Option */}
-          <button
-            id="tab-segment-internationals"
-            type="button"
-            onClick={() => onCategoryChange('internationals')}
-            className={`py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-              userCategory === 'internationals'
-                ? isDark
-                  ? 'bg-cyan-500 text-slate-950 shadow-md font-extrabold'
-                  : 'bg-[#0A4275] text-white shadow-md'
-                : isDark
-                ? 'text-slate-400 hover:text-white bg-transparent'
-                : 'text-slate-700 hover:text-slate-900 bg-transparent'
-            }`}
-          >
-            <Globe className="w-4 h-4 text-cyan-400" />
-            <span>{t.tabInternationals[language]}</span>
-          </button>
-        </div>
+          {t.tabLocals[language]}
+        </button>
+        <button
+          id="tab-segment-internationals"
+          type="button"
+          onClick={() => onCategoryChange('internationals')}
+          className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 px-3 text-xs sm:text-sm font-bold transition-colors ${
+            userCategory === 'internationals'
+              ? isDark
+                ? 'bg-cyan-500 text-[#041D34]'
+                : 'bg-[#0A4275] text-white'
+              : isDark
+              ? 'text-slate-400 hover:bg-slate-800'
+              : 'text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          <Globe className="w-3.5 h-3.5" />
+          {t.tabInternationals[language]}
+        </button>
       </div>
 
       {/* Info Notice Box */}
@@ -381,8 +363,8 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
                   className={`py-2 px-1.5 rounded-xl text-center flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer ${
                     selectedDocType === 'nida'
                       ? isDark
-                        ? 'bg-cyan-500 text-slate-950 shadow-md font-extrabold'
-                        : 'bg-[#0A4275] text-white shadow-md font-bold'
+                        ? 'bg-cyan-500 text-[#041D34] font-bold'
+                        : 'bg-[#0A4275] text-white font-bold'
                       : isDark
                       ? 'text-slate-400 hover:text-white bg-transparent'
                       : 'text-slate-600 hover:text-slate-900 bg-transparent'
@@ -403,8 +385,8 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
                   className={`py-2 px-1.5 rounded-xl text-center flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer ${
                     selectedDocType === 'insurance'
                       ? isDark
-                        ? 'bg-cyan-500 text-slate-950 shadow-md font-extrabold'
-                        : 'bg-[#0A4275] text-white shadow-md font-bold'
+                        ? 'bg-cyan-500 text-[#041D34] font-bold'
+                        : 'bg-[#0A4275] text-white font-bold'
                       : isDark
                       ? 'text-slate-400 hover:text-white bg-transparent'
                       : 'text-slate-600 hover:text-slate-900 bg-transparent'
@@ -425,8 +407,8 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
                   className={`py-2 px-1.5 rounded-xl text-center flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer ${
                     selectedDocType === 'birth_cert'
                       ? isDark
-                        ? 'bg-cyan-500 text-slate-950 shadow-md font-extrabold'
-                        : 'bg-[#0A4275] text-white shadow-md font-bold'
+                        ? 'bg-cyan-500 text-[#041D34] font-bold'
+                        : 'bg-[#0A4275] text-white font-bold'
                       : isDark
                       ? 'text-slate-400 hover:text-white bg-transparent'
                       : 'text-slate-600 hover:text-slate-900 bg-transparent'

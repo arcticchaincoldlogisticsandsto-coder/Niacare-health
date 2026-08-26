@@ -32,11 +32,16 @@ import { DoctorDashboard } from './components/DoctorDashboard';
 import { ProviderDashboard } from './components/ProviderDashboard';
 import { AdminDashboard } from './components/AdminDashboard';
 import { QuickLogin } from './components/QuickLogin';
+import { LandingScreen } from './components/LandingScreen';
 
 export default function App() {
   const { theme, isDark, toggleTheme } = useTheme();
   const [language, setLanguageState] = useState<Language>(() => getStoredLanguage());
   const [authMode, setAuthMode] = useState<'register' | 'login'>('register');
+  // Gates the Landing/Welcome screen before the login/register forms, matching
+  // the reference design's flow (Landing -> Login/Register -> Verify -> App)
+  // instead of dropping a first-time visitor straight into a form.
+  const [hasEnteredAuthFlow, setHasEnteredAuthFlow] = useState(false);
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
@@ -290,6 +295,7 @@ export default function App() {
     });
     setPdpaAccepted(false);
     setUserRole('patient');
+    setHasEnteredAuthFlow(false);
   };
 
   const handleLogout = async () => {
@@ -297,6 +303,7 @@ export default function App() {
     setAuthUserId(null);
     setIsAuthenticated(false);
     setIsSuccessPassportOpen(false);
+    setHasEnteredAuthFlow(false);
   };
 
   if (isSessionLoading) {
@@ -393,6 +400,13 @@ export default function App() {
                 theme={theme}
               />
             </div>
+          ) : !hasEnteredAuthFlow ? (
+            <LandingScreen
+              language={language}
+              theme={theme}
+              onGetStarted={() => { setAuthMode('register'); setHasEnteredAuthFlow(true); }}
+              onSignIn={() => { setAuthMode('login'); setHasEnteredAuthFlow(true); }}
+            />
           ) : authMode === 'login' ? (
             <QuickLogin
               language={language}

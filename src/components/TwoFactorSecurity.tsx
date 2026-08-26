@@ -161,8 +161,8 @@ export const TwoFactorSecurity: React.FC<TwoFactorSecurityProps> = ({
               className={`py-2 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                 otpChannel === 'phone'
                   ? isDark
-                    ? 'bg-cyan-500 text-slate-950 shadow-md font-extrabold'
-                    : 'bg-[#0A4275] text-white shadow-md'
+                    ? 'bg-cyan-500 text-[#041D34]'
+                    : 'bg-[#0A4275] text-white'
                   : isDark
                   ? 'text-slate-400 hover:text-white bg-transparent'
                   : 'text-slate-600 hover:text-slate-900 bg-transparent'
@@ -183,8 +183,8 @@ export const TwoFactorSecurity: React.FC<TwoFactorSecurityProps> = ({
               className={`py-2 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                 otpChannel === 'email'
                   ? isDark
-                    ? 'bg-cyan-500 text-slate-950 shadow-md font-extrabold'
-                    : 'bg-[#0A4275] text-white shadow-md'
+                    ? 'bg-cyan-500 text-[#041D34]'
+                    : 'bg-[#0A4275] text-white'
                   : isDark
                   ? 'text-slate-400 hover:text-white bg-transparent'
                   : 'text-slate-600 hover:text-slate-900 bg-transparent'
