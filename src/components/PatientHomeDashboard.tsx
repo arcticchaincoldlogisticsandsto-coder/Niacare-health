@@ -42,6 +42,7 @@ import { generateMedicalRecordPdf, generateCompiledMedicalPassportPdf } from '..
 import { fetchMedicalRecords } from '../lib/records';
 import { fetchPrescriptions, updatePrescriptionTaken, Prescription } from '../lib/prescriptions';
 import { logAuditEvent } from '../lib/audit';
+import { Avatar } from './Avatar';
 
 interface PatientHomeDashboardProps {
   userCategory: UserCategory;
@@ -219,17 +220,11 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
       >
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            {/* Avatar with Online Pulse & Country Flag Overlay */}
+            {/* Avatar — same colored-initials circle used on every role's
+                dashboard (Admin/Doctor/Provider), plus patient-specific
+                country flag and online-status overlays. */}
             <div className="relative flex-shrink-0">
-              <div
-                className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-lg border-2 ${
-                  isDark
-                    ? 'bg-gradient-to-br from-cyan-500 to-blue-600 text-slate-950 border-cyan-400'
-                    : 'bg-gradient-to-br from-[#0A4275] to-[#041D34] text-white border-blue-200'
-                }`}
-              >
-                {patientName ? patientName.charAt(0).toUpperCase() : '?'}
-              </div>
+              <Avatar name={patientName || '?'} size="lg" />
               <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-white dark:bg-slate-900 shadow-md border border-slate-200 dark:border-slate-700 flex items-center justify-center text-xs leading-none" title={`Country: ${patientCountry.name}`}>
                 {patientCountry.flag}
               </span>

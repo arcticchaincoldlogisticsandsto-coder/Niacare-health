@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Calendar, Clock, Users, Star, LogOut, RefreshCw, Video, MapPin, Stethoscope, ClipboardPlus } from 'lucide-react';
+import { Calendar, Clock, Users, Star, LogOut, RefreshCw, Video, Stethoscope, ClipboardPlus } from 'lucide-react';
 import type { Language, Theme } from '../types';
 import { supabase } from '../lib/supabaseClient';
 import { EncounterModal } from './EncounterModal';
+import { Avatar } from './Avatar';
 
 interface DoctorDashboardProps {
   language: Language;
@@ -48,6 +49,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [encounterTarget, setEncounterTarget] = useState<AppointmentRow | null>(null);
+  const [queueTab, setQueueTab] = useState<'waiting' | 'completed'>('waiting');
 
   const load = async () => {
     if (!authUserId) return;
@@ -150,48 +152,79 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
       </div>
 
       <div className="nc-card p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Stethoscope className="w-4 h-4 text-rose-500" />
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white">{isSw ? "Ratiba ya Leo" : "Today's Schedule"}</h3>
-        </div>
-        {todaysPatients.length === 0 ? (
-          <p className="text-xs text-slate-500 dark:text-slate-400 py-2">
-            {isSw
-              ? 'Hakuna miadi iliyopangwa leo. Miadi mpya itaonekana hapa.'
-              : 'No appointments scheduled for today. New bookings will appear here.'}
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {todaysPatients.map((apt) => (
-              <div key={apt.id} className="flex items-center justify-between rounded-xl border border-slate-100 dark:border-slate-800 p-3 text-xs">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-8 h-8 rounded-lg bg-blue-500/15 text-blue-600 dark:text-cyan-400 flex items-center justify-center flex-shrink-0">
-                    {apt.consultation_type === 'telehealth' ? <Video className="w-4 h-4" /> : <MapPin className="w-4 h-4" />}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-bold text-slate-900 dark:text-white truncate">{apt.patient_name || 'Patient'}</p>
-                    <p className="text-slate-500 dark:text-slate-400 truncate">{apt.time_slot} {apt.reason ? `• ${apt.reason}` : ''}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className={`rounded-lg px-2 py-1 font-bold capitalize ${STATUS_STYLES[apt.status] || STATUS_STYLES.confirmed}`}>
-                    {apt.status.replace('_', ' ')}
-                  </span>
-                  {apt.status !== 'cancelled' && apt.status !== 'completed' && (
-                    <button
-                      type="button"
-                      onClick={() => setEncounterTarget(apt)}
-                      className="rounded-lg bg-[#0A4275] dark:bg-cyan-500 text-white dark:text-[#041D34] px-2 py-1 font-bold flex items-center gap-1"
-                      title={isSw ? 'Anza Mkutano' : 'Start Encounter'}
-                    >
-                      <ClipboardPlus className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-              </div>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Stethoscope className="w-4 h-4 text-rose-500" />
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">{isSw ? 'Foleni ya Leo' : "Today's Queue"}</h3>
+          </div>
+          <div className="flex gap-1">
+            {(['waiting', 'completed'] as const).map((key) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setQueueTab(key)}
+                className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition-colors ${
+                  queueTab === key
+                    ? 'bg-[#0A4275] text-white dark:bg-cyan-500 dark:text-[#041D34]'
+                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                {key === 'waiting'
+                  ? `${isSw ? 'Wanaosubiri' : 'Waiting'} (${todaysPatients.filter((a) => a.status !== 'completed').length})`
+                  : `${isSw ? 'Wamemaliza' : 'Completed'} (${todaysPatients.filter((a) => a.status === 'completed').length})`}
+              </button>
             ))}
           </div>
-        )}
+        </div>
+        {(() => {
+          const list = todaysPatients.filter((a) => (queueTab === 'waiting' ? a.status !== 'completed' : a.status === 'completed'));
+          if (list.length === 0) {
+            return (
+              <p className="text-xs text-slate-500 dark:text-slate-400 py-2">
+                {queueTab === 'waiting'
+                  ? isSw
+                    ? 'Hakuna miadi iliyopangwa leo. Miadi mpya itaonekana hapa.'
+                    : 'No appointments scheduled for today. New bookings will appear here.'
+                  : isSw
+                  ? 'Hakuna waliomaliza leo bado.'
+                  : 'No completed visits yet today.'}
+              </p>
+            );
+          }
+          return (
+            <div className="space-y-2">
+              {list.map((apt) => (
+                <div key={apt.id} className="flex items-center justify-between rounded-xl border border-slate-100 dark:border-slate-800 p-3 text-xs">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <Avatar name={apt.patient_name || 'Patient'} size="md" />
+                    <div className="min-w-0">
+                      <p className="font-bold text-slate-900 dark:text-white truncate flex items-center gap-1">
+                        {apt.patient_name || 'Patient'}
+                        {apt.consultation_type === 'telehealth' && <Video className="w-3 h-3 text-cyan-500 flex-shrink-0" />}
+                      </p>
+                      <p className="text-slate-500 dark:text-slate-400 truncate">{apt.time_slot} {apt.reason ? `• ${apt.reason}` : ''}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span className={`rounded-lg px-2 py-1 font-bold capitalize ${STATUS_STYLES[apt.status] || STATUS_STYLES.confirmed}`}>
+                      {apt.status.replace('_', ' ')}
+                    </span>
+                    {apt.status !== 'cancelled' && apt.status !== 'completed' && (
+                      <button
+                        type="button"
+                        onClick={() => setEncounterTarget(apt)}
+                        className="rounded-lg bg-[#0A4275] dark:bg-cyan-500 text-white dark:text-[#041D34] px-2 py-1 font-bold flex items-center gap-1"
+                        title={isSw ? 'Anza Mkutano' : 'Start Encounter'}
+                      >
+                        <ClipboardPlus className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
       </div>
 
       {authUserId && (

@@ -6,6 +6,7 @@ import {
 import type { Language, Theme, UserRole, UserStatus } from '../types';
 import { supabase } from '../lib/supabaseClient';
 import { InviteStaffModal } from './InviteStaffModal';
+import { Avatar } from './Avatar';
 import {
   fetchProviders, setProviderActive, ProviderRow,
   fetchBills, BillRow,
@@ -59,21 +60,6 @@ type SectionKey = (typeof SECTIONS)[number]['key'];
 // Matches the .nc-card radius used by Doctor/Provider/Patient dashboards —
 // one consistent card language across every role, not a per-screen value.
 const cardCls = 'rounded-2xl border nc-border';
-
-const AVATAR_COLORS = ['bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-purple-500', 'bg-cyan-500'];
-const avatarColor = (seed: string) => {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
-  return AVATAR_COLORS[hash % AVATAR_COLORS.length];
-};
-const initials = (name: string) =>
-  name.trim().split(/\s+/).slice(0, 2).map((w) => w.charAt(0).toUpperCase()).join('') || '?';
-
-const Avatar: React.FC<{ name: string }> = ({ name }) => (
-  <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-black text-white ${avatarColor(name)}`}>
-    {initials(name)}
-  </div>
-);
 
 const MiniBarChart: React.FC<{ data: { label: string; value: number }[]; color: string }> = ({ data, color }) => {
   const max = Math.max(1, ...data.map((d) => d.value));

@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Building2, Users, CalendarDays, CreditCard, LogOut, RefreshCw, ShieldCheck, MapPin } from 'lucide-react';
+import { Building2, Users, CalendarDays, CreditCard, LogOut, RefreshCw, ShieldCheck, MapPin, Video } from 'lucide-react';
 import type { Language } from '../types';
 import { supabase } from '../lib/supabaseClient';
+import { Avatar } from './Avatar';
 
 interface ProviderDashboardProps {
   language: Language;
@@ -22,6 +23,21 @@ interface ProviderRecord {
   address: string | null;
 }
 
+interface TodayAppointment {
+  id: string;
+  patient_name: string | null;
+  time_slot: string;
+  status: string;
+  consultation_type: string;
+}
+
+const STATUS_STYLES: Record<string, string> = {
+  confirmed: 'bg-blue-50 text-[#0A4275] dark:bg-cyan-950 dark:text-cyan-300',
+  in_queue: 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
+  completed: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
+  cancelled: 'bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300',
+};
+
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
 export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({ language, authUserId, onLogout }) => {
@@ -29,6 +45,7 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({ language, 
   const [staff, setStaff] = useState<StaffRecord | null>(null);
   const [provider, setProvider] = useState<ProviderRecord | null>(null);
   const [counts, setCounts] = useState({ appointmentsToday: 0, queued: 0, pendingBills: 0, activeStaff: 0 });
+  const [todayAppointments, setTodayAppointments] = useState<TodayAppointment[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -51,15 +68,21 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({ language, 
 
     if (staffRow) {
       const today = todayIso();
-      const [providerRow, appointmentsToday, queued, pendingBills, activeStaff] = await Promise.all([
+      const [providerRow, appointmentsToday, queued, pendingBills, activeStaff, todayList] = await Promise.all([
         supabase.from('providers').select('name, region, type, address').eq('id', staffRow.provider_id).maybeSingle(),
         supabase.from('appointments').select('*', { count: 'exact', head: true }).eq('provider_id', staffRow.provider_id).eq('appointment_date', today),
         supabase.from('appointments').select('*', { count: 'exact', head: true }).eq('provider_id', staffRow.provider_id).eq('status', 'in_queue'),
         supabase.from('bills').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('provider_staff').select('*', { count: 'exact', head: true }).eq('provider_id', staffRow.provider_id).eq('is_active', true),
+        supabase
+          .from('appointments')
+          .select('id, patient_name, time_slot, status, consultation_type')
+          .eq('provider_id', staffRow.provider_id)
+          .eq('appointment_date', today)
+          .order('time_slot', { ascending: true }),
       ]);
 
-      const failure = [providerRow, appointmentsToday, queued, pendingBills, activeStaff].find((r) => r.error)?.error;
+      const failure = [providerRow, appointmentsToday, queued, pendingBills, activeStaff, todayList].find((r) => r.error)?.error;
       if (failure) setError(failure.message);
       else {
         setProvider((providerRow.data || null) as ProviderRecord | null);
@@ -69,6 +92,7 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({ language, 
           pendingBills: pendingBills.count || 0,
           activeStaff: activeStaff.count || 0,
         });
+        setTodayAppointments((todayList.data || []) as TodayAppointment[]);
       }
     }
     setLoading(false);
@@ -131,6 +155,40 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({ language, 
           </div>
         ))}
       </div>
+
+      {staff && (
+        <div className="nc-card p-4 mb-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Users className="w-4 h-4 text-cyan-500" />
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">{isSw ? 'Wagonjwa wa Leo' : "Today's Patients"}</h3>
+          </div>
+          {todayAppointments.length === 0 ? (
+            <p className="text-xs text-slate-500 dark:text-slate-400 py-2">
+              {isSw ? 'Hakuna miadi leo.' : 'No appointments today.'}
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {todayAppointments.map((apt) => (
+                <div key={apt.id} className="flex items-center justify-between rounded-xl border border-slate-100 dark:border-slate-800 p-3 text-xs">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <Avatar name={apt.patient_name || 'Patient'} size="md" />
+                    <div className="min-w-0">
+                      <p className="font-bold text-slate-900 dark:text-white truncate flex items-center gap-1">
+                        {apt.patient_name || 'Patient'}
+                        {apt.consultation_type === 'telehealth' && <Video className="w-3 h-3 text-cyan-500 flex-shrink-0" />}
+                      </p>
+                      <p className="text-slate-500 dark:text-slate-400">{apt.time_slot}</p>
+                    </div>
+                  </div>
+                  <span className={`rounded-lg px-2 py-1 font-bold capitalize flex-shrink-0 ${STATUS_STYLES[apt.status] || STATUS_STYLES.confirmed}`}>
+                    {apt.status.replace('_', ' ')}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="nc-card p-4 mb-4">
         <div className="flex items-center gap-2 mb-3">
