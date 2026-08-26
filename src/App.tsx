@@ -341,14 +341,16 @@ export default function App() {
             : 'bg-white border-slate-200/80 shadow-xl'
         }`}
       >
-        {/* Top Header Section — compact once signed in; each dashboard has
-            its own heading, so the full marketing hero only belongs on the
-            pre-auth screens. */}
+        {/* Top Header Section — the full marketing hero (logo, tagline,
+            shield badge) belongs on the Landing screen only. Every screen
+            after that (Login, Register, Verify OTP, Passkey Setup, and every
+            authenticated dashboard) uses the compact single-row bar instead
+            of repeating the hero on every step. */}
         <Header
           language={language}
           theme={theme}
           onOpenSettingsModal={() => setIsSettingsOpen(true)}
-          compact={isAuthenticated}
+          compact={isAuthenticated || hasEnteredAuthFlow}
         />
 
         {/* Emergency Action: Red Bar for 1-Tap Ambulance Dispatch — a patient
