@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Users, Building2, CalendarDays, Activity, LogOut, RefreshCw, Search, Moon, Sun, ShieldCheck, UserPlus,
-  CreditCard, Siren, ClipboardList,
+  Users, Building2, CalendarDays, LogOut, RefreshCw, Search, Moon, Sun, ShieldCheck, UserPlus,
+  CreditCard, Siren, ClipboardList, LayoutDashboard, DollarSign, Stethoscope,
 } from 'lucide-react';
 import type { Language, Theme, UserRole, UserStatus } from '../types';
 import { supabase } from '../lib/supabaseClient';
@@ -48,11 +48,11 @@ const STATUS_STYLES: Record<UserStatus, string> = {
 };
 
 const SECTIONS = [
-  { key: 'users', label: 'Users', labelSw: 'Watumiaji', Icon: Users },
-  { key: 'providers', label: 'Providers', labelSw: 'Vituo', Icon: Building2 },
-  { key: 'billing', label: 'Billing', labelSw: 'Malipo', Icon: CreditCard },
-  { key: 'emergency', label: 'Emergency', labelSw: 'Dharura', Icon: Siren },
-  { key: 'audit', label: 'Audit Logs', labelSw: 'Kumbukumbu', Icon: ClipboardList },
+  { key: 'dashboard', label: 'Dashboard', labelSw: 'Dashibodi', Icon: LayoutDashboard },
+  { key: 'users', label: 'Users Management', labelSw: 'Watumiaji', Icon: Users },
+  { key: 'providers', label: 'Providers & Facilities', labelSw: 'Vituo', Icon: Building2 },
+  { key: 'operations', label: 'Operations', labelSw: 'Uendeshaji', Icon: CreditCard },
+  { key: 'audit', label: 'Audit / Reports', labelSw: 'Kumbukumbu', Icon: ClipboardList },
 ] as const;
 type SectionKey = (typeof SECTIONS)[number]['key'];
 
@@ -60,10 +60,43 @@ type SectionKey = (typeof SECTIONS)[number]['key'];
 // one consistent card language across every role, not a per-screen value.
 const cardCls = 'rounded-2xl border nc-border';
 
+const AVATAR_COLORS = ['bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-purple-500', 'bg-cyan-500'];
+const avatarColor = (seed: string) => {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+  return AVATAR_COLORS[hash % AVATAR_COLORS.length];
+};
+const initials = (name: string) =>
+  name.trim().split(/\s+/).slice(0, 2).map((w) => w.charAt(0).toUpperCase()).join('') || '?';
+
+const Avatar: React.FC<{ name: string }> = ({ name }) => (
+  <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-black text-white ${avatarColor(name)}`}>
+    {initials(name)}
+  </div>
+);
+
+const MiniBarChart: React.FC<{ data: { label: string; value: number }[]; color: string }> = ({ data, color }) => {
+  const max = Math.max(1, ...data.map((d) => d.value));
+  return (
+    <div className="flex h-28 items-end gap-2">
+      {data.map((d) => (
+        <div key={d.label} className="flex flex-1 flex-col items-center gap-1.5">
+          <span className="text-[9px] font-bold nc-text-muted">{d.value || ''}</span>
+          <div
+            className="w-full rounded-t-md transition-all"
+            style={{ height: `${Math.max(4, (d.value / max) * 100)}%`, backgroundColor: color }}
+          />
+          <span className="text-[9px] nc-text-muted">{d.label}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ language, authUserId, onLogout, theme, onToggleTheme }) => {
   const isSw = language === 'sw';
   const isDark = theme === 'dark';
-  const [section, setSection] = useState<SectionKey>('users');
+  const [section, setSection] = useState<SectionKey>('dashboard');
   const [metrics, setMetrics] = useState<Metrics>({ providers: 0, appointments: 0, dispatches: 0 });
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [roleFilter, setRoleFilter] = useState<UserRole | 'all'>('all');
@@ -109,13 +142,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ language, authUs
       );
     });
   }, [profiles, roleFilter, query]);
-
-  const statCards = [
-    { label: isSw ? 'Watumiaji' : 'Total users', value: profiles.length, Icon: Users, accent: 'bg-cyan-500' },
-    { label: isSw ? 'Vituo' : 'Providers', value: metrics.providers, Icon: Building2, accent: 'bg-emerald-500' },
-    { label: isSw ? 'Miadi' : 'Appointments', value: metrics.appointments, Icon: CalendarDays, accent: 'bg-amber-500' },
-    { label: isSw ? 'Dharura' : 'Dispatches', value: metrics.dispatches, Icon: Activity, accent: 'bg-rose-500' },
-  ];
 
   const changeRole = async (id: string, role: UserRole) => {
     setSavingId(id);
@@ -188,19 +214,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ language, authUs
       <main className="mx-auto max-w-[1400px] px-6 py-6">
         {error && <p className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-700">{error}</p>}
 
-        <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {statCards.map(({ label, value, Icon, accent }) => (
-            <div key={label} className={`flex items-center gap-3 p-4 ${cardCls}`} style={{ backgroundColor: 'var(--nc-surface)' }}>
-              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${accent}`}>
-                <Icon className="h-5 w-5 text-white" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-2xl font-black leading-none">{loading ? '—' : value}</p>
-                <p className="mt-1 text-[11px] font-semibold nc-text-muted">{label}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+        {section === 'dashboard' && <DashboardPanel isSw={isSw} profiles={profiles} metrics={metrics} loading={loading} />}
 
         {section === 'users' && (
           <div className={`overflow-hidden ${cardCls}`} style={{ backgroundColor: 'var(--nc-surface)' }}>
@@ -247,7 +261,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ language, authUs
                 <tbody>
                   {visible.map((p) => (
                     <tr key={p.id} className="border-b nc-border last:border-0 hover:bg-slate-50 dark:hover:bg-slate-900/40">
-                      <td className="px-4 py-3 font-bold">{p.full_name}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2.5">
+                          <Avatar name={p.full_name} />
+                          <span className="font-bold">{p.full_name}</span>
+                        </div>
+                      </td>
                       <td className="px-4 py-3 nc-text-secondary">{p.email || p.phone || '—'}</td>
                       <td className="px-4 py-3">
                         <select
@@ -295,14 +314,132 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ language, authUs
         )}
 
         {section === 'providers' && <ProvidersPanel isSw={isSw} />}
-        {section === 'billing' && <BillingPanel isSw={isSw} />}
-        {section === 'emergency' && <EmergencyPanel isSw={isSw} />}
+        {section === 'operations' && <OperationsPanel isSw={isSw} />}
         {section === 'audit' && <AuditPanel isSw={isSw} />}
 
         {authUserId && <p className="mt-4 text-center font-mono text-[10px] nc-text-muted">Admin session: {authUserId.slice(0, 12)}…</p>}
       </main>
 
       <InviteStaffModal isOpen={isInviteOpen} onClose={() => setIsInviteOpen(false)} onInvited={load} />
+    </div>
+  );
+};
+
+const last6Months = () => {
+  const arr: { key: string; label: string }[] = [];
+  const now = new Date();
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    arr.push({ key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`, label: d.toLocaleDateString(undefined, { month: 'short' }) });
+  }
+  return arr;
+};
+
+const last7Days = () => {
+  const arr: { key: string; label: string }[] = [];
+  const now = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    arr.push({ key: d.toISOString().slice(0, 10), label: d.toLocaleDateString(undefined, { weekday: 'short' }) });
+  }
+  return arr;
+};
+
+const DashboardPanel: React.FC<{ isSw: boolean; profiles: Profile[]; metrics: Metrics; loading: boolean }> = ({ isSw, profiles, metrics, loading }) => {
+  const [apptDates, setApptDates] = useState<string[]>([]);
+  const [billTotals, setBillTotals] = useState({ revenue: 0, pending: 0 });
+
+  useEffect(() => {
+    supabase.from('appointments').select('appointment_date').limit(1000).then(({ data }) => {
+      setApptDates((data || []).map((r) => r.appointment_date as string));
+    });
+    supabase.from('bills').select('status, total_tzs').then(({ data }) => {
+      let revenue = 0, pending = 0;
+      for (const b of data || []) {
+        if (b.status === 'settled') revenue += b.total_tzs;
+        if (b.status === 'pending') pending += b.total_tzs;
+      }
+      setBillTotals({ revenue, pending });
+    });
+  }, []);
+
+  const patients = profiles.filter((p) => p.role === 'patient').length;
+  const doctors = profiles.filter((p) => p.role === 'doctor').length;
+
+  const overviewStats = [
+    { label: isSw ? 'Watumiaji' : 'Users', value: profiles.length, Icon: Users, accent: 'bg-cyan-500' },
+    { label: isSw ? 'Wagonjwa' : 'Patients', value: patients, Icon: Users, accent: 'bg-blue-500' },
+    { label: isSw ? 'Madaktari' : 'Doctors', value: doctors, Icon: Stethoscope, accent: 'bg-purple-500' },
+    { label: isSw ? 'Vituo' : 'Facilities', value: metrics.providers, Icon: Building2, accent: 'bg-emerald-500' },
+    { label: isSw ? 'Miadi' : 'Appointments', value: metrics.appointments, Icon: CalendarDays, accent: 'bg-amber-500' },
+    { label: isSw ? 'Mapato' : 'Revenue', value: `${billTotals.revenue.toLocaleString()} TZS`, Icon: DollarSign, accent: 'bg-emerald-600' },
+    { label: isSw ? 'Inasubiri' : 'Pending Payments', value: `${billTotals.pending.toLocaleString()} TZS`, Icon: CreditCard, accent: 'bg-amber-600' },
+    { label: isSw ? 'Simu za Dharura' : 'Emergency Calls', value: metrics.dispatches, Icon: Siren, accent: 'bg-rose-500' },
+  ];
+
+  const patientGrowth = last6Months().map((m) => ({
+    label: m.label,
+    value: profiles.filter((p) => p.role === 'patient' && p.created_at.startsWith(m.key)).length,
+  }));
+
+  const appointmentsTrend = last7Days().map((d) => ({
+    label: d.label,
+    value: apptDates.filter((x) => x === d.key).length,
+  }));
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {overviewStats.map(({ label, value, Icon, accent }) => (
+          <div key={label} className={`flex items-center gap-3 p-4 ${cardCls}`} style={{ backgroundColor: 'var(--nc-surface)' }}>
+            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${accent}`}>
+              <Icon className="h-5 w-5 text-white" />
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-xl font-black leading-none">{loading ? '—' : value}</p>
+              <p className="mt-1 text-[11px] font-semibold nc-text-muted">{label}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <div className={`p-4 ${cardCls}`} style={{ backgroundColor: 'var(--nc-surface)' }}>
+          <h3 className="mb-3 text-xs font-black uppercase tracking-wide nc-text-muted">{isSw ? 'Ukuaji wa Wagonjwa' : 'Patient Growth'}</h3>
+          <MiniBarChart data={patientGrowth} color="#0A4275" />
+        </div>
+        <div className={`p-4 ${cardCls}`} style={{ backgroundColor: 'var(--nc-surface)' }}>
+          <h3 className="mb-3 text-xs font-black uppercase tracking-wide nc-text-muted">{isSw ? 'Miadi (Siku 7)' : 'Appointments (Last 7 Days)'}</h3>
+          <MiniBarChart data={appointmentsTrend} color="#06B6D4" />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const OperationsPanel: React.FC<{ isSw: boolean }> = ({ isSw }) => {
+  const [tab, setTab] = useState<'billing' | 'emergency'>('billing');
+  return (
+    <div className="space-y-3">
+      <div className="flex gap-1.5">
+        {(['billing', 'emergency'] as const).map((key) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setTab(key)}
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
+              tab === key
+                ? 'bg-[#0A4275] text-white dark:bg-cyan-500 dark:text-[#041D34]'
+                : 'nc-text-secondary hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
+          >
+            {key === 'billing' ? <CreditCard className="h-3.5 w-3.5" /> : <Siren className="h-3.5 w-3.5" />}
+            {key === 'billing' ? (isSw ? 'Malipo' : 'Billing') : (isSw ? 'Dharura' : 'Emergency')}
+          </button>
+        ))}
+      </div>
+      {tab === 'billing' ? <BillingPanel isSw={isSw} /> : <EmergencyPanel isSw={isSw} />}
     </div>
   );
 };
