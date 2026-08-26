@@ -33,11 +33,11 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({ language, theme, o
 
   return (
     <div className="pt-2 pb-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+      {/* The tagline itself ("Healthcare For Everyone") is already the
+          Header's slogan right above — this is the supporting line under
+          it, not a second competing headline. */}
       <div className="text-center px-2 mb-6">
-        <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white leading-tight">
-          {isSw ? 'Huduma ya Afya kwa Kila Mtu' : 'Healthcare For Everyone'}
-        </h1>
-        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           {isSw
             ? 'Madaktari halisi, miadi halisi, na rekodi zako za afya — mahali pamoja.'
             : 'Real doctors, real appointments, and your health records — all in one place.'}

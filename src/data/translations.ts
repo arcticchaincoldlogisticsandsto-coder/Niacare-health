@@ -3,9 +3,9 @@ import { Language } from '../types';
 const RAW_TRANSLATIONS = {
   header: {
     slogan: {
-      sw: 'Kubadilisha Sekta ya Afya Kidijitali, Kuokoa Maisha Ndani ya Milisekunde',
-      en: 'Digitalizing Healthcare, Saving Lives in Milliseconds',
-      fr: 'Digitaliser la santé, sauver des vies en quelques millisecondes',
+      sw: 'Huduma ya Afya kwa Kila Mtu',
+      en: 'Healthcare For Everyone',
+      fr: 'Des soins de santé pour tous',
     },
   },
   emergency: {

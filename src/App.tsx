@@ -354,8 +354,14 @@ export default function App() {
         />
 
         {/* Emergency Action: Red Bar for 1-Tap Ambulance Dispatch — a patient
-            safety feature, not relevant to clinical/facility staff screens. */}
-        {(!isAuthenticated || userRole === 'patient') && (
+            safety feature, not relevant to clinical/facility staff screens.
+            Held back on the bare Landing screen itself: a first-time,
+            anonymous visitor shouldn't be greeted by a full-bleed red alert
+            bar before they've even chosen to sign up or sign in (the
+            reference design treats emergency as one equal-weight button,
+            not a dominant urgent banner) -- it reappears the moment they
+            commit to Login/Register, and throughout the patient dashboard. */}
+        {(hasEnteredAuthFlow || isAuthenticated) && (!isAuthenticated || userRole === 'patient') && (
           <EmergencyBar language={language} authUserId={authUserId} />
         )}
 
