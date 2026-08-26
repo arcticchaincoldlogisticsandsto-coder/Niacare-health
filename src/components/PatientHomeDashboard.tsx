@@ -43,6 +43,7 @@ import { fetchMedicalRecords } from '../lib/records';
 import { fetchPrescriptions, updatePrescriptionTaken, Prescription } from '../lib/prescriptions';
 import { logAuditEvent } from '../lib/audit';
 import { Avatar } from './Avatar';
+import { LaboratoryModal } from './LaboratoryModal';
 
 interface PatientHomeDashboardProps {
   userCategory: UserCategory;
@@ -74,7 +75,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
 
   // Active sub-modals for dashboard actions
   const [activeModal, setActiveModal] = useState<
-    'qr' | 'appointment' | 'prescriptions' | 'records' | 'personal_files' | 'insurance' | 'facilities' | 'ai' | 'checkout' | null
+    'qr' | 'appointment' | 'prescriptions' | 'records' | 'personal_files' | 'insurance' | 'facilities' | 'ai' | 'checkout' | 'laboratory' | null
   >(null);
 
   // Quick PDF download toast notice
@@ -736,11 +737,12 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
             </div>
           </button>
 
-          {/* Action 4: Lab Results & Records */}
+          {/* Action 4: Lab Results (real lab_orders/lab_results, not the
+              generic medical records vault) */}
           <button
             id="hub-btn-lab-records"
             type="button"
-            onClick={() => setActiveModal('records')}
+            onClick={() => setActiveModal('laboratory')}
             className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group active:scale-98 ${
               isDark
                 ? 'bg-[#091422] border-slate-800 hover:border-cyan-500 hover:bg-[#0c1a2d]'
@@ -1053,6 +1055,15 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
         onClose={() => setActiveModal(null)}
         theme={theme}
         language={language}
+      />
+
+      {/* MODAL 10: LABORATORY — real lab_orders/lab_results, pending vs
+          completed, with normal/abnormal/critical clearly flagged. */}
+      <LaboratoryModal
+        isOpen={activeModal === 'laboratory'}
+        onClose={() => setActiveModal(null)}
+        theme={theme}
+        patientId={authUserId}
       />
 
       {/* MODAL 9: COMPREHENSIVE HOSPITAL CHECKOUT & BILLING PROCEDURES */}
