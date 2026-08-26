@@ -56,7 +56,9 @@ const SECTIONS = [
 ] as const;
 type SectionKey = (typeof SECTIONS)[number]['key'];
 
-const cardCls = 'rounded-xl border nc-border';
+// Matches the .nc-card radius used by Doctor/Provider/Patient dashboards —
+// one consistent card language across every role, not a per-screen value.
+const cardCls = 'rounded-2xl border nc-border';
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ language, authUserId, onLogout, theme, onToggleTheme }) => {
   const isSw = language === 'sw';
