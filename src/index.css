@@ -109,7 +109,7 @@
   }
 
   .nc-card {
-    @apply rounded-3xl border transition-all;
+    @apply rounded-2xl border transition-all;
     background-color: var(--nc-surface);
     border-color: var(--nc-border);
   }

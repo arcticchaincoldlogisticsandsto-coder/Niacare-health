@@ -1,6 +1,7 @@
-import React from 'react';
-import { Building2, Users, CalendarDays, CreditCard, LogOut, Bell, ShieldCheck } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Building2, Users, CalendarDays, CreditCard, LogOut, RefreshCw, ShieldCheck, MapPin } from 'lucide-react';
 import type { Language } from '../types';
+import { supabase } from '../lib/supabaseClient';
 
 interface ProviderDashboardProps {
   language: Language;
@@ -8,55 +9,127 @@ interface ProviderDashboardProps {
   onLogout: () => void;
 }
 
+interface StaffRecord {
+  provider_id: string;
+  job_title: string;
+  department: string | null;
+}
+
+interface ProviderRecord {
+  name: string;
+  region: string;
+  type: string;
+  address: string | null;
+}
+
+const todayIso = () => new Date().toISOString().slice(0, 10);
+
 export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({ language, authUserId, onLogout }) => {
   const isSw = language === 'sw';
+  const [staff, setStaff] = useState<StaffRecord | null>(null);
+  const [provider, setProvider] = useState<ProviderRecord | null>(null);
+  const [counts, setCounts] = useState({ appointmentsToday: 0, queued: 0, pendingBills: 0, activeStaff: 0 });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  const load = async () => {
+    if (!authUserId) return;
+    setLoading(true); setError('');
+
+    const { data: staffRow, error: staffError } = await supabase
+      .from('provider_staff')
+      .select('provider_id, job_title, department')
+      .eq('user_id', authUserId)
+      .maybeSingle();
+
+    if (staffError) {
+      setError(staffError.message);
+      setLoading(false);
+      return;
+    }
+    setStaff(staffRow as StaffRecord | null);
+
+    if (staffRow) {
+      const today = todayIso();
+      const [providerRow, appointmentsToday, queued, pendingBills, activeStaff] = await Promise.all([
+        supabase.from('providers').select('name, region, type, address').eq('id', staffRow.provider_id).maybeSingle(),
+        supabase.from('appointments').select('*', { count: 'exact', head: true }).eq('provider_id', staffRow.provider_id).eq('appointment_date', today),
+        supabase.from('appointments').select('*', { count: 'exact', head: true }).eq('provider_id', staffRow.provider_id).eq('status', 'in_queue'),
+        supabase.from('bills').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+        supabase.from('provider_staff').select('*', { count: 'exact', head: true }).eq('provider_id', staffRow.provider_id).eq('is_active', true),
+      ]);
+
+      const failure = [providerRow, appointmentsToday, queued, pendingBills, activeStaff].find((r) => r.error)?.error;
+      if (failure) setError(failure.message);
+      else {
+        setProvider((providerRow.data || null) as ProviderRecord | null);
+        setCounts({
+          appointmentsToday: appointmentsToday.count || 0,
+          queued: queued.count || 0,
+          pendingBills: pendingBills.count || 0,
+          activeStaff: activeStaff.count || 0,
+        });
+      }
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, [authUserId]);
+
+  const statCards = useMemo(() => [
+    { label: isSw ? 'Ziara za Leo' : "Today's Appointments", value: counts.appointmentsToday, Icon: CalendarDays, colour: 'text-cyan-600 dark:text-cyan-400' },
+    { label: isSw ? 'Wagonjwa Waliosubiri' : 'Queued Patients', value: counts.queued, Icon: Users, colour: 'text-emerald-600 dark:text-emerald-400' },
+    { label: isSw ? 'Malipo Yaliyobaki' : 'Pending Bills', value: counts.pendingBills, Icon: CreditCard, colour: 'text-amber-600 dark:text-amber-400' },
+    { label: isSw ? 'Wafanyakazi Hai' : 'Active Staff', value: counts.activeStaff, Icon: ShieldCheck, colour: 'text-rose-500' },
+  ], [counts, isSw]);
 
   return (
     <div className="pt-2 pb-6">
       <div className="flex items-center justify-between mb-5">
         <div>
-          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">{isSw ? 'Mtumishi wa Kituo' : 'Facility Staff'}</p>
-          <h2 className="text-lg font-black text-slate-900 dark:text-white">{isSw ? 'Jukwaa la Kituo' : 'Provider Dashboard'}</h2>
+          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">{staff?.job_title || (isSw ? 'Mtumishi wa Kituo' : 'Facility Staff')}</p>
+          <h2 className="text-lg font-black text-slate-900 dark:text-white">
+            {provider ? provider.name : isSw ? 'Jukwaa la Kituo' : 'Provider Dashboard'}
+          </h2>
+          {staff?.department && <p className="text-[11px] text-slate-500 dark:text-slate-400">{staff.department}</p>}
         </div>
-        <button
-          type="button"
-          onClick={onLogout}
-          className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-          title={isSw ? 'Toka' : 'Logout'}
-        >
-          <LogOut className="w-4 h-4" />
-        </button>
+        <div className="flex gap-2">
+          <button type="button" onClick={load} className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" title="Refresh">
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+          <button
+            type="button"
+            onClick={onLogout}
+            className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+            title={isSw ? 'Toka' : 'Logout'}
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
+      {error && <p className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-700">{error}</p>}
+
+      {!loading && !staff && !error && (
+        <div className="nc-card p-4 mb-4">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            {isSw
+              ? 'Akaunti hii bado haijaunganishwa na kituo chochote. Wasiliana na msimamizi.'
+              : 'This account is not linked to a facility yet. Contact an administrator to complete your setup.'}
+          </p>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-3 mb-5">
-        <div className="nc-card p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <CalendarDays className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{isSw ? 'Ziara za Leo' : "Today's Appointments"}</span>
+        {statCards.map(({ label, value, Icon, colour }) => (
+          <div key={label} className="nc-card p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Icon className={`w-4 h-4 ${colour}`} />
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{label}</span>
+            </div>
+            <p className="text-2xl font-black text-slate-900 dark:text-white">{loading ? '—' : value}</p>
           </div>
-          <p className="text-2xl font-black text-slate-900 dark:text-white">0</p>
-        </div>
-        <div className="nc-card p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Users className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{isSw ? 'Wagonjwa Waliosubiri' : 'Queued Patients'}</span>
-          </div>
-          <p className="text-2xl font-black text-slate-900 dark:text-white">0</p>
-        </div>
-        <div className="nc-card p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <CreditCard className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{isSw ? 'Malipo Yaliyobaki' : 'Pending Bills'}</span>
-          </div>
-          <p className="text-2xl font-black text-slate-900 dark:text-white">0</p>
-        </div>
-        <div className="nc-card p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Bell className="w-4 h-4 text-rose-500" />
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{isSw ? 'Dharura' : 'Emergencies'}</span>
-          </div>
-          <p className="text-2xl font-black text-slate-900 dark:text-white">0</p>
-        </div>
+        ))}
       </div>
 
       <div className="nc-card p-4 mb-4">
@@ -64,11 +137,23 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({ language, 
           <Building2 className="w-4 h-4 text-blue-500" />
           <h3 className="text-sm font-bold text-slate-900 dark:text-white">{isSw ? 'Kituo' : 'Facility'}</h3>
         </div>
-        <p className="text-xs text-slate-500 dark:text-slate-400">
-          {isSw
-            ? 'Dodoso la kituo litaonekana hapa baada ya msimamizi kuunganisha akaunti yako na kituo.'
-            : 'Facility details will appear here once an admin links your account to a hospital or clinic.'}
-        </p>
+        {provider ? (
+          <div className="space-y-1.5 text-xs">
+            <p className="font-bold text-slate-900 dark:text-white">{provider.name}</p>
+            <p className="text-slate-500 dark:text-slate-400 capitalize">{provider.type} • {provider.region}</p>
+            {provider.address && (
+              <p className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+                <MapPin className="w-3.5 h-3.5" /> {provider.address}
+              </p>
+            )}
+          </div>
+        ) : (
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            {isSw
+              ? 'Dodoso la kituo litaonekana hapa baada ya msimamizi kuunganisha akaunti yako na kituo.'
+              : 'Facility details will appear here once an admin links your account to a hospital or clinic.'}
+          </p>
+        )}
       </div>
 
       <div className="nc-card p-4">

@@ -665,7 +665,7 @@ create policy "Anyone can create a dispatch"
 drop policy if exists "Owners can view their dispatches" on public.emergency_dispatches;
 create policy "Owners can view their dispatches"
   on public.emergency_dispatches for select
-  using (auth.uid() = patient_id);
+  using (auth.uid() = patient_id or public.is_admin());
 
 -- ============================================================================
 -- WEBAUTHN CREDENTIALS — real FIDO2/WebAuthn public-key credentials

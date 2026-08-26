@@ -334,15 +334,21 @@ export default function App() {
             : 'bg-white border-slate-200/80 shadow-xl'
         }`}
       >
-        {/* Top Header Section */}
+        {/* Top Header Section — compact once signed in; each dashboard has
+            its own heading, so the full marketing hero only belongs on the
+            pre-auth screens. */}
         <Header
           language={language}
           theme={theme}
           onOpenSettingsModal={() => setIsSettingsOpen(true)}
+          compact={isAuthenticated}
         />
 
-        {/* Emergency Action: Red Bar for 1-Tap Ambulance Dispatch */}
-        <EmergencyBar language={language} authUserId={authUserId} />
+        {/* Emergency Action: Red Bar for 1-Tap Ambulance Dispatch — a patient
+            safety feature, not relevant to clinical/facility staff screens. */}
+        {(!isAuthenticated || userRole === 'patient') && (
+          <EmergencyBar language={language} authUserId={authUserId} />
+        )}
 
         {/* Main Content: Authenticated Patient Dashboard OR Credentials Form & OTP */}
         <div className="px-4 sm:px-5 pb-6 flex-1 flex flex-col">

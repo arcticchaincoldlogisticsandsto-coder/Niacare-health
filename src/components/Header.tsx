@@ -7,14 +7,54 @@ interface HeaderProps {
   language: Language;
   theme: Theme;
   onOpenSettingsModal?: () => void;
+  /** Compact single-row app bar for authenticated screens — the full
+   * logo/tagline hero is marketing chrome that belongs on the pre-auth
+   * screens only, not repeated above every dashboard. */
+  compact?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   language,
   theme,
   onOpenSettingsModal,
+  compact = false,
 }) => {
   const isDark = theme === 'dark';
+
+  if (compact) {
+    return (
+      <header className="w-full px-4 sm:px-6 pt-4 pb-2 flex items-center justify-between bg-transparent transition-colors duration-300">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 relative flex items-center justify-center rounded-lg overflow-hidden border border-slate-200/80 dark:border-slate-700 shadow-xs">
+            <img
+              src="/src/assets/images/niacare_app_logo_1787113371659.jpg"
+              alt="NiaCare Logo"
+              referrerPolicy="no-referrer"
+              className="w-full h-full object-contain"
+            />
+          </div>
+          <h1 className={`text-base font-extrabold tracking-tight leading-none ${isDark ? 'text-white' : 'text-[#0A3663]'}`}>
+            Nia<span className="text-[#0284C7]">Care</span>
+          </h1>
+        </div>
+        {onOpenSettingsModal && (
+          <button
+            id="btn-open-settings"
+            type="button"
+            onClick={onOpenSettingsModal}
+            className={`flex items-center justify-center w-8 h-8 rounded-full border transition-all cursor-pointer shadow-xs ${
+              isDark
+                ? 'bg-[#16273C] border-slate-700 text-cyan-300 hover:bg-[#1E3550]'
+                : 'bg-white border-slate-200 text-[#0A4275] hover:bg-slate-50'
+            }`}
+            title="Settings & Profile"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
+        )}
+      </header>
+    );
+  }
 
   return (
     <header className="w-full pt-4 pb-3 px-4 sm:px-6 relative bg-transparent transition-colors duration-300">
