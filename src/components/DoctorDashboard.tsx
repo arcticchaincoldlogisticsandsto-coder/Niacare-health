@@ -3,6 +3,7 @@ import { Calendar, Clock, Users, Star, LogOut, RefreshCw, Video, Stethoscope, Cl
 import type { Language, Theme } from '../types';
 import { supabase } from '../lib/supabaseClient';
 import { EncounterModal } from './EncounterModal';
+import { PatientDetailModal } from './PatientDetailModal';
 import { Avatar } from './Avatar';
 
 interface DoctorDashboardProps {
@@ -49,6 +50,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [encounterTarget, setEncounterTarget] = useState<AppointmentRow | null>(null);
+  const [detailTarget, setDetailTarget] = useState<AppointmentRow | null>(null);
   const [queueTab, setQueueTab] = useState<'waiting' | 'completed'>('waiting');
 
   const load = async () => {
@@ -194,7 +196,12 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
           return (
             <div className="space-y-2">
               {list.map((apt) => (
-                <div key={apt.id} className="flex items-center justify-between rounded-xl border border-slate-100 dark:border-slate-800 p-3 text-xs">
+                <button
+                  type="button"
+                  key={apt.id}
+                  onClick={() => setDetailTarget(apt)}
+                  className="w-full flex items-center justify-between rounded-xl border border-slate-100 dark:border-slate-800 p-3 text-xs text-left hover:border-[#0A4275] dark:hover:border-cyan-500 transition-colors"
+                >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <Avatar name={apt.patient_name || 'Patient'} size="md" />
                     <div className="min-w-0">
@@ -210,17 +217,19 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
                       {apt.status.replace('_', ' ')}
                     </span>
                     {apt.status !== 'cancelled' && apt.status !== 'completed' && (
-                      <button
-                        type="button"
-                        onClick={() => setEncounterTarget(apt)}
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        onClick={(e) => { e.stopPropagation(); setEncounterTarget(apt); }}
+                        onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); setEncounterTarget(apt); } }}
                         className="rounded-lg bg-[#0A4275] dark:bg-cyan-500 text-white dark:text-[#041D34] px-2 py-1 font-bold flex items-center gap-1"
                         title={isSw ? 'Anza Mkutano' : 'Start Encounter'}
                       >
                         <ClipboardPlus className="w-3.5 h-3.5" />
-                      </button>
+                      </span>
                     )}
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           );
@@ -229,6 +238,22 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
 
       {authUserId && (
         <p className="mt-5 text-[10px] text-center text-slate-400 dark:text-slate-600 font-mono">ID: {authUserId.slice(0, 12)}…</p>
+      )}
+
+      {detailTarget && profile && (
+        <PatientDetailModal
+          isOpen
+          onClose={() => setDetailTarget(null)}
+          theme={theme}
+          patientId={detailTarget.patient_id}
+          patientName={detailTarget.patient_name || 'Patient'}
+          reason={detailTarget.reason}
+          doctorProfileId={profile.id}
+          onStartEncounter={() => {
+            setEncounterTarget(detailTarget);
+            setDetailTarget(null);
+          }}
+        />
       )}
 
       {encounterTarget && profile && (

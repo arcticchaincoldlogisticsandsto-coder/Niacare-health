@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Building2, Users, CalendarDays, CreditCard, LogOut, RefreshCw, ShieldCheck, MapPin, Video } from 'lucide-react';
+import { Building2, Users, CalendarDays, CreditCard, LogOut, RefreshCw, ShieldCheck, MapPin, Video, Search, UserCheck } from 'lucide-react';
 import type { Language } from '../types';
 import { supabase } from '../lib/supabaseClient';
 import { Avatar } from './Avatar';
@@ -48,6 +48,8 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({ language, 
   const [todayAppointments, setTodayAppointments] = useState<TodayAppointment[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [checkInQuery, setCheckInQuery] = useState('');
+  const [checkingInId, setCheckingInId] = useState<string | null>(null);
 
   const load = async () => {
     if (!authUserId) return;
@@ -99,6 +101,17 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({ language, 
   };
 
   useEffect(() => { load(); }, [authUserId]);
+
+  const checkIn = async (id: string) => {
+    setCheckingInId(id);
+    const { error: err } = await supabase.from('appointments').update({ status: 'in_queue' }).eq('id', id);
+    if (err) setError(err.message);
+    else {
+      setTodayAppointments((prev) => prev.map((a) => (a.id === id ? { ...a, status: 'in_queue' } : a)));
+      setCounts((prev) => ({ ...prev, queued: prev.queued + 1 }));
+    }
+    setCheckingInId(null);
+  };
 
   const statCards = useMemo(() => [
     { label: isSw ? 'Ziara za Leo' : "Today's Appointments", value: counts.appointmentsToday, Icon: CalendarDays, colour: 'text-cyan-600 dark:text-cyan-400' },
@@ -158,9 +171,20 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({ language, 
 
       {staff && (
         <div className="nc-card p-4 mb-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Users className="w-4 h-4 text-cyan-500" />
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white">{isSw ? 'Wagonjwa wa Leo' : "Today's Patients"}</h3>
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-cyan-500" />
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">{isSw ? 'Wagonjwa wa Leo' : "Today's Patients"}</h3>
+            </div>
+            <div className="relative w-40 sm:w-56">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+              <input
+                value={checkInQuery}
+                onChange={(e) => setCheckInQuery(e.target.value)}
+                placeholder={isSw ? 'Tafuta mgonjwa...' : 'Search patient…'}
+                className="nc-input w-full py-1.5 pl-8 pr-2 text-xs"
+              />
+            </div>
           </div>
           {todayAppointments.length === 0 ? (
             <p className="text-xs text-slate-500 dark:text-slate-400 py-2">
@@ -168,7 +192,9 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({ language, 
             </p>
           ) : (
             <div className="space-y-2">
-              {todayAppointments.map((apt) => (
+              {todayAppointments
+                .filter((apt) => !checkInQuery.trim() || (apt.patient_name || '').toLowerCase().includes(checkInQuery.trim().toLowerCase()))
+                .map((apt) => (
                 <div key={apt.id} className="flex items-center justify-between rounded-xl border border-slate-100 dark:border-slate-800 p-3 text-xs">
                   <div className="flex items-center gap-2.5 min-w-0">
                     <Avatar name={apt.patient_name || 'Patient'} size="md" />
@@ -180,9 +206,22 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({ language, 
                       <p className="text-slate-500 dark:text-slate-400">{apt.time_slot}</p>
                     </div>
                   </div>
-                  <span className={`rounded-lg px-2 py-1 font-bold capitalize flex-shrink-0 ${STATUS_STYLES[apt.status] || STATUS_STYLES.confirmed}`}>
-                    {apt.status.replace('_', ' ')}
-                  </span>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span className={`rounded-lg px-2 py-1 font-bold capitalize ${STATUS_STYLES[apt.status] || STATUS_STYLES.confirmed}`}>
+                      {apt.status.replace('_', ' ')}
+                    </span>
+                    {apt.status === 'confirmed' && (
+                      <button
+                        type="button"
+                        disabled={checkingInId === apt.id}
+                        onClick={() => checkIn(apt.id)}
+                        className="rounded-lg bg-[#0A4275] dark:bg-cyan-500 text-white dark:text-[#041D34] px-2 py-1 font-bold flex items-center gap-1 disabled:opacity-50"
+                        title={isSw ? 'Ingiza Mgonjwa' : 'Check In'}
+                      >
+                        <UserCheck className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
