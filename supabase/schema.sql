@@ -123,9 +123,7 @@ create policy "Providers are viewable by authenticated users"
 drop policy if exists "Providers are manageable by admins" on public.providers;
 create policy "Providers are manageable by admins"
   on public.providers for all
-  using (exists (
-    select 1 from public.profiles where id = auth.uid() and role = 'admin'
-  ));
+  using (public.is_admin());
 
 -- ============================================================================
 -- DOCTOR PROFILES — extends profiles for medical practitioners
@@ -166,9 +164,7 @@ create policy "Doctors can update own profile"
 drop policy if exists "Admins can manage doctor profiles" on public.doctor_profiles;
 create policy "Admins can manage doctor profiles"
   on public.doctor_profiles for all
-  using (exists (
-    select 1 from public.profiles where id = auth.uid() and role = 'admin'
-  ));
+  using (public.is_admin());
 
 -- ============================================================================
 -- PROVIDER STAFF — links users to a facility with permissions
@@ -203,9 +199,7 @@ create policy "Staff can view colleagues at same provider"
 drop policy if exists "Admins can manage provider staff" on public.provider_staff;
 create policy "Admins can manage provider staff"
   on public.provider_staff for all
-  using (exists (
-    select 1 from public.profiles where id = auth.uid() and role = 'admin'
-  ));
+  using (public.is_admin());
 
 -- ============================================================================
 -- APPOINTMENTS
@@ -255,9 +249,7 @@ create policy "Appointments are manageable by owner"
     or exists (
       select 1 from public.provider_staff ps where ps.provider_id = appointments.provider_id and ps.user_id = auth.uid()
     )
-    or exists (
-      select 1 from public.profiles where id = auth.uid() and role = 'admin'
-    )
+    or public.is_admin()
   )
   with check (
     auth.uid() = patient_id
@@ -267,9 +259,7 @@ create policy "Appointments are manageable by owner"
     or exists (
       select 1 from public.provider_staff ps where ps.provider_id = appointments.provider_id and ps.user_id = auth.uid()
     )
-    or exists (
-      select 1 from public.profiles where id = auth.uid() and role = 'admin'
-    )
+    or public.is_admin()
   );
 
 -- This policy is defined only after appointments, doctor_profiles, and
@@ -335,9 +325,7 @@ create policy "Medical records are viewable by owner"
       join public.provider_staff ps on ps.provider_id = a.provider_id
       where a.id = medical_records.appointment_id and ps.user_id = auth.uid()
     )
-    or exists (
-      select 1 from public.profiles where id = auth.uid() and role = 'admin'
-    )
+    or public.is_admin()
   );
 
 drop policy if exists "Medical records are insertable by clinical staff" on public.medical_records;
@@ -351,9 +339,7 @@ create policy "Medical records are insertable by clinical staff"
     or exists (
       select 1 from public.provider_staff ps where ps.user_id = auth.uid() and ps.is_active = true
     )
-    or exists (
-      select 1 from public.profiles where id = auth.uid() and role = 'admin'
-    )
+    or public.is_admin()
   );
 
 drop policy if exists "Medical records are updatable by clinical staff" on public.medical_records;
@@ -367,9 +353,7 @@ create policy "Medical records are updatable by clinical staff"
     or exists (
       select 1 from public.provider_staff ps where ps.user_id = auth.uid() and ps.is_active = true
     )
-    or exists (
-      select 1 from public.profiles where id = auth.uid() and role = 'admin'
-    )
+    or public.is_admin()
   );
 
 -- ============================================================================
@@ -408,9 +392,7 @@ create policy "Prescriptions are manageable by patient and clinical staff"
     or exists (
       select 1 from public.provider_staff ps where ps.user_id = auth.uid() and ps.is_active = true
     )
-    or exists (
-      select 1 from public.profiles where id = auth.uid() and role = 'admin'
-    )
+    or public.is_admin()
   )
   with check (
     auth.uid() = patient_id
@@ -421,9 +403,7 @@ create policy "Prescriptions are manageable by patient and clinical staff"
     or exists (
       select 1 from public.provider_staff ps where ps.user_id = auth.uid() and ps.is_active = true
     )
-    or exists (
-      select 1 from public.profiles where id = auth.uid() and role = 'admin'
-    )
+    or public.is_admin()
   );
 
 -- ============================================================================
@@ -490,9 +470,7 @@ create policy "Bills are viewable by patient and staff"
       join public.provider_staff ps on ps.provider_id = a.provider_id
       where a.id = bills.appointment_id and ps.user_id = auth.uid()
     )
-    or exists (
-      select 1 from public.profiles where id = auth.uid() and role = 'admin'
-    )
+    or public.is_admin()
   );
 
 drop policy if exists "Bills are updatable by staff" on public.bills;
@@ -505,9 +483,7 @@ create policy "Bills are updatable by staff"
       join public.provider_staff ps on ps.provider_id = a.provider_id
       where a.id = bills.appointment_id and ps.user_id = auth.uid()
     )
-    or exists (
-      select 1 from public.profiles where id = auth.uid() and role = 'admin'
-    )
+    or public.is_admin()
   );
 
 -- ============================================================================
@@ -539,9 +515,7 @@ create policy "Bill items are viewable by patient and staff"
           join public.provider_staff ps on ps.provider_id = a.provider_id
           where a.id = b.appointment_id and ps.user_id = auth.uid()
         )
-        or exists (
-          select 1 from public.profiles where id = auth.uid() and role = 'admin'
-        )
+        or public.is_admin()
       )
     )
   );
@@ -576,9 +550,7 @@ create policy "Payments are viewable by patient and staff"
       join public.provider_staff ps on ps.provider_id = a.provider_id
       where b.id = payments.bill_id and ps.user_id = auth.uid()
     )
-    or exists (
-      select 1 from public.profiles where id = auth.uid() and role = 'admin'
-    )
+    or public.is_admin()
   );
 
 drop policy if exists "Payments are insertable by patient and staff" on public.payments;
@@ -592,9 +564,7 @@ create policy "Payments are insertable by patient and staff"
       join public.provider_staff ps on ps.provider_id = a.provider_id
       where b.id = payments.bill_id and ps.user_id = auth.uid()
     )
-    or exists (
-      select 1 from public.profiles where id = auth.uid() and role = 'admin'
-    )
+    or public.is_admin()
   );
 
 -- ============================================================================
@@ -630,9 +600,7 @@ create policy "Doctors and staff can manage own schedule"
       join public.doctor_profiles dp on dp.provider_id = ps.provider_id
       where dp.id = doctor_schedule.doctor_profile_id and ps.user_id = auth.uid()
     )
-    or exists (
-      select 1 from public.profiles where id = auth.uid() and role = 'admin'
-    )
+    or public.is_admin()
   )
   with check (
     exists (
@@ -643,9 +611,7 @@ create policy "Doctors and staff can manage own schedule"
       join public.doctor_profiles dp on dp.provider_id = ps.provider_id
       where dp.id = doctor_schedule.doctor_profile_id and ps.user_id = auth.uid()
     )
-    or exists (
-      select 1 from public.profiles where id = auth.uid() and role = 'admin'
-    )
+    or public.is_admin()
   );
 
 -- ============================================================================
