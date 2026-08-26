@@ -65,34 +65,37 @@ export const fetchAppointments = async (
 
 export const insertAppointment = async (
   patientId: string,
-  appointment: Omit<Appointment, 'id'>
+  appointment: Omit<Appointment, 'id'>,
+  providerId?: string | null,
+  doctorProfileId?: string | null
 ): Promise<{ appointment?: Appointment; error?: string }> => {
-  const { data, error } = await supabase
-    .from('appointments')
-    .insert({
-      patient_id: patientId,
-      ticket_number: appointment.ticketNumber,
-      doctor_id: appointment.doctorId,
-      doctor_name: appointment.doctorName,
-      doctor_specialty: appointment.doctorSpecialty,
-      hospital_name: appointment.hospitalName,
-      hospital_location: appointment.hospitalLocation,
-      room_number: appointment.roomNumber,
-      consultation_type: appointment.consultationType,
-      appointment_date: appointment.date,
-      time_slot: appointment.timeSlot,
-      status: appointment.status,
-      queue_number: appointment.queueNumber,
-      reason: appointment.reason,
-      symptoms_note: appointment.symptomsNote,
-      insurance_provider: appointment.insuranceProvider,
-      insurance_covered: appointment.insuranceCovered,
-      co_pay_amount_tzs: appointment.coPayAmountTzs,
-      patient_name: appointment.patientName,
-      patient_phone: appointment.patientPhone,
-    })
-    .select('*')
-    .single();
+  // Booking goes through a single-transaction RPC (not a raw table insert)
+  // so a real doctor's schedule slot is reserved atomically — two patients
+  // racing for the same slot can't both win it. See public.book_appointment
+  // in supabase/schema.sql.
+  const { data, error } = await supabase.rpc('book_appointment', {
+    p_patient_id: patientId,
+    p_ticket_number: appointment.ticketNumber,
+    p_doctor_id: appointment.doctorId,
+    p_doctor_name: appointment.doctorName,
+    p_doctor_specialty: appointment.doctorSpecialty,
+    p_hospital_name: appointment.hospitalName,
+    p_hospital_location: appointment.hospitalLocation,
+    p_room_number: appointment.roomNumber,
+    p_consultation_type: appointment.consultationType,
+    p_appointment_date: appointment.date,
+    p_time_slot: appointment.timeSlot,
+    p_queue_number: appointment.queueNumber,
+    p_reason: appointment.reason,
+    p_symptoms_note: appointment.symptomsNote,
+    p_insurance_provider: appointment.insuranceProvider,
+    p_insurance_covered: appointment.insuranceCovered,
+    p_co_pay_amount_tzs: appointment.coPayAmountTzs,
+    p_patient_name: appointment.patientName,
+    p_patient_phone: appointment.patientPhone,
+    p_provider_id: providerId || null,
+    p_doctor_profile_id: doctorProfileId || null,
+  });
 
   if (error) return { error: error.message };
   return { appointment: mapRowToAppointment(data as AppointmentRow) };

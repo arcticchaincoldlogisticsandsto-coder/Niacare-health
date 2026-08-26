@@ -659,6 +659,101 @@ create policy "Doctors and staff can manage own schedule"
   );
 
 -- ============================================================================
+-- book_appointment() — atomic, race-safe booking.
+--
+-- The client previously did a plain INSERT into appointments with no slot
+-- reservation at all: two patients booking the same doctor/date/time_slot
+-- simultaneously could both succeed. This function makes booking a single
+-- transaction: reserve the doctor_schedule slot (when the appointment is
+-- against a real, platform-registered doctor via doctor_profile_id) via
+-- INSERT ... ON CONFLICT, which takes a row lock so concurrent callers can't
+-- both win the same slot, then insert the appointment. If doctor_profile_id
+-- is null (booking is against the static/legacy doctor directory, not a
+-- real registered doctor), there is no real schedule resource to contend
+-- for, so this only guarantees the same atomicity RLS already gave it.
+-- ============================================================================
+create or replace function public.book_appointment(
+  p_patient_id uuid,
+  p_ticket_number text,
+  p_doctor_id text,
+  p_doctor_name text,
+  p_doctor_specialty text,
+  p_hospital_name text,
+  p_hospital_location text,
+  p_room_number text,
+  p_consultation_type text,
+  p_appointment_date date,
+  p_time_slot text,
+  p_queue_number text,
+  p_reason text,
+  p_symptoms_note text,
+  p_insurance_provider text,
+  p_insurance_covered boolean,
+  p_co_pay_amount_tzs integer,
+  p_patient_name text,
+  p_patient_phone text,
+  p_provider_id uuid default null,
+  p_doctor_profile_id uuid default null
+)
+returns public.appointments
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_appointment public.appointments;
+begin
+  if auth.uid() is null or auth.uid() <> p_patient_id then
+    raise exception 'Not authorized to book this appointment.' using errcode = '42501';
+  end if;
+
+  if p_doctor_profile_id is not null then
+    insert into public.doctor_schedule (doctor_profile_id, schedule_date, time_slot, is_booked)
+    values (p_doctor_profile_id, p_appointment_date, p_time_slot, true)
+    on conflict (doctor_profile_id, schedule_date, time_slot)
+    do update set is_booked = true
+    where doctor_schedule.is_booked = false;
+
+    if not found then
+      raise exception 'This time slot is no longer available.' using errcode = '23505';
+    end if;
+  end if;
+
+  insert into public.appointments (
+    patient_id, provider_id, doctor_profile_id, ticket_number, doctor_id, doctor_name,
+    doctor_specialty, hospital_name, hospital_location, room_number, consultation_type,
+    appointment_date, time_slot, status, queue_number, reason, symptoms_note,
+    insurance_provider, insurance_covered, co_pay_amount_tzs, patient_name, patient_phone
+  ) values (
+    p_patient_id, p_provider_id, p_doctor_profile_id, p_ticket_number, p_doctor_id, p_doctor_name,
+    p_doctor_specialty, p_hospital_name, p_hospital_location, p_room_number, p_consultation_type,
+    p_appointment_date, p_time_slot, 'confirmed', p_queue_number, p_reason, p_symptoms_note,
+    p_insurance_provider, p_insurance_covered, p_co_pay_amount_tzs, p_patient_name, p_patient_phone
+  )
+  returning * into v_appointment;
+
+  if p_doctor_profile_id is not null then
+    update public.doctor_schedule
+    set appointment_id = v_appointment.id
+    where doctor_profile_id = p_doctor_profile_id
+      and schedule_date = p_appointment_date
+      and time_slot = p_time_slot;
+  end if;
+
+  return v_appointment;
+end;
+$$;
+
+revoke all on function public.book_appointment(
+  uuid, text, text, text, text, text, text, text, text, date, text, text, text, text, text,
+  boolean, integer, text, text, uuid, uuid
+) from public;
+grant execute on function public.book_appointment(
+  uuid, text, text, text, text, text, text, text, text, date, text, text, text, text, text,
+  boolean, integer, text, text, uuid, uuid
+) to authenticated;
+
+-- ============================================================================
 -- EMERGENCY DISPATCHES — deliberately insertable without auth ("bypass login"
 -- emergency dispatch is a real product requirement: you don't gate an
 -- ambulance call behind a login screen). patient_id is filled in when the
