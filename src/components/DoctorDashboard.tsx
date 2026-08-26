@@ -6,6 +6,105 @@ import { EncounterModal } from './EncounterModal';
 import { PatientDetailModal } from './PatientDetailModal';
 import { Avatar } from './Avatar';
 import { createLabOrder, fetchDoctorLabOrders, LabOrderRow } from '../lib/laboratory';
+import { fetchDoctorScheduleForDate, addScheduleSlot, removeScheduleSlot, ScheduleSlotRow } from '../lib/schedule';
+
+const STANDARD_SLOT_OPTIONS = ['09:00 AM', '10:00 AM', '11:00 AM', '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM'];
+
+const DoctorCalendarPanel: React.FC<{ isSw: boolean; doctorProfileId: string }> = ({ isSw, doctorProfileId }) => {
+  const [date, setDate] = useState(todayIso());
+  const [slots, setSlots] = useState<ScheduleSlotRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const load = async () => {
+    setLoading(true);
+    const { slots: fetched, error: err } = await fetchDoctorScheduleForDate(doctorProfileId, date);
+    if (err) setError(err); else setSlots(fetched);
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, [doctorProfileId, date]);
+
+  const existingTimes = new Set(slots.map((s) => s.time_slot));
+  const available = STANDARD_SLOT_OPTIONS.filter((t) => !existingTimes.has(t));
+
+  const handleAddSlot = async (timeSlot: string) => {
+    setBusyId(timeSlot);
+    const { error: err } = await addScheduleSlot(doctorProfileId, date, timeSlot);
+    setBusyId(null);
+    if (err) setError(err); else load();
+  };
+
+  const handleBlock = async (slot: ScheduleSlotRow) => {
+    setBusyId(slot.id);
+    const { error: err } = await removeScheduleSlot(slot.id);
+    setBusyId(null);
+    if (err) setError(err); else load();
+  };
+
+  return (
+    <div className="nc-card p-4">
+      <div className="flex items-center justify-between mb-3 gap-2">
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-blue-500" />
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white">{isSw ? 'Ratiba Yangu' : 'My Calendar'}</h3>
+        </div>
+        <input type="date" value={date} min={todayIso()} onChange={(e) => setDate(e.target.value)} className="nc-input px-2.5 py-1.5 text-xs" />
+      </div>
+      {error && <p className="text-xs text-rose-600 mb-2">{error}</p>}
+
+      <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-1.5">{isSw ? 'Nafasi Zilizopo' : 'Available Slots'}</p>
+      {!loading && slots.filter((s) => !s.is_booked).length === 0 && (
+        <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">{isSw ? 'Hakuna nafasi tarehe hii.' : 'No open slots on this date yet.'}</p>
+      )}
+      <div className="flex flex-wrap gap-1.5 mb-4">
+        {slots.map((s) => (
+          <span
+            key={s.id}
+            className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold ${
+              s.is_booked
+                ? 'bg-blue-50 text-[#0A4275] dark:bg-cyan-950 dark:text-cyan-300'
+                : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+            }`}
+          >
+            {s.time_slot}
+            {!s.is_booked && (
+              <button
+                type="button"
+                disabled={busyId === s.id}
+                onClick={() => handleBlock(s)}
+                className="hover:text-rose-600 disabled:opacity-40"
+                title={isSw ? 'Zuia (ondoa nafasi)' : 'Block (remove this slot)'}
+              >
+                ×
+              </button>
+            )}
+            {s.is_booked && <span className="text-[9px] opacity-70">{isSw ? '(imechukuliwa)' : '(booked)'}</span>}
+          </span>
+        ))}
+      </div>
+
+      <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-1.5">{isSw ? 'Ongeza Nafasi' : 'Create Availability'}</p>
+      <div className="flex flex-wrap gap-1.5">
+        {available.length === 0 ? (
+          <p className="text-xs text-slate-400">{isSw ? 'Nafasi zote za kawaida zimeongezwa.' : 'All standard slots are already open for this date.'}</p>
+        ) : (
+          available.map((t) => (
+            <button
+              key={t}
+              type="button"
+              disabled={busyId === t}
+              onClick={() => handleAddSlot(t)}
+              className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:border-[#0A4275] dark:hover:border-cyan-500 disabled:opacity-40 flex items-center gap-1"
+            >
+              <Plus className="w-3 h-3" /> {t}
+            </button>
+          ))
+        )}
+      </div>
+    </div>
+  );
+};
 
 const LAB_STATUS_STYLES: Record<string, string> = {
   ordered: 'bg-blue-50 text-[#0A4275] dark:bg-cyan-950 dark:text-cyan-300',
@@ -205,7 +304,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
   const [encounterTarget, setEncounterTarget] = useState<AppointmentRow | null>(null);
   const [detailTarget, setDetailTarget] = useState<AppointmentRow | null>(null);
   const [queueTab, setQueueTab] = useState<'waiting' | 'completed'>('waiting');
-  const [section, setSection] = useState<'queue' | 'prescriptions' | 'labs'>('queue');
+  const [section, setSection] = useState<'queue' | 'prescriptions' | 'labs' | 'calendar'>('queue');
 
   const load = async () => {
     if (!authUserId) return;
@@ -317,6 +416,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
           { key: 'queue', label: isSw ? 'Foleni' : 'Queue', Icon: Stethoscope },
           { key: 'prescriptions', label: isSw ? 'Dawa' : 'Prescriptions', Icon: Pill },
           { key: 'labs', label: isSw ? 'Maabara' : 'Labs', Icon: FlaskConical },
+          { key: 'calendar', label: isSw ? 'Ratiba' : 'Calendar', Icon: Calendar },
         ] as const).map(({ key, label, Icon }) => (
           <button
             key={key}
@@ -339,6 +439,10 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
 
       {section === 'labs' && profile && (
         <DoctorLabsPanel isSw={isSw} doctorProfileId={profile.id} providerId={profile.provider_id} patientOptions={patientOptions} />
+      )}
+
+      {section === 'calendar' && profile && (
+        <DoctorCalendarPanel isSw={isSw} doctorProfileId={profile.id} />
       )}
 
       {section === 'queue' && (
