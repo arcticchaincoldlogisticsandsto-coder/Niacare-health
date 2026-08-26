@@ -1,8 +1,211 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Building2, Users, CalendarDays, CreditCard, LogOut, RefreshCw, ShieldCheck, MapPin, Video, Search, UserCheck } from 'lucide-react';
+import { Building2, Users, CalendarDays, CreditCard, LogOut, RefreshCw, ShieldCheck, MapPin, Video, Search, UserCheck, ClipboardList, Package, MessageSquare, Plus, Send } from 'lucide-react';
 import type { Language } from '../types';
 import { supabase } from '../lib/supabaseClient';
 import { Avatar } from './Avatar';
+import {
+  fetchTasks, createTask, updateTaskStatus, TaskRow,
+  fetchInventory, updateInventoryQuantity, addInventoryItem, InventoryRow,
+  fetchFacilityMessages, postFacilityMessage, FacilityMessageRow,
+} from '../lib/providerOps';
+
+const TasksPanel: React.FC<{ isSw: boolean; providerId: string }> = ({ isSw, providerId }) => {
+  const [tasks, setTasks] = useState<TaskRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [newTitle, setNewTitle] = useState('');
+  const [adding, setAdding] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    const { tasks: fetched, error: err } = await fetchTasks(providerId);
+    if (err) setError(err); else setTasks(fetched);
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, [providerId]);
+
+  const handleAdd = async () => {
+    if (!newTitle.trim()) return;
+    setAdding(true);
+    const { error: err } = await createTask(providerId, newTitle.trim(), null);
+    setAdding(false);
+    if (err) { setError(err); return; }
+    setNewTitle('');
+    load();
+  };
+
+  const cycleStatus = async (t: TaskRow) => {
+    const next = t.status === 'pending' ? 'in_progress' : t.status === 'in_progress' ? 'completed' : 'pending';
+    const { error: err } = await updateTaskStatus(t.id, next);
+    if (err) setError(err);
+    else setTasks((prev) => prev.map((x) => (x.id === t.id ? { ...x, status: next } : x)));
+  };
+
+  const TASK_STYLES: Record<string, string> = {
+    pending: 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
+    in_progress: 'bg-blue-50 text-[#0A4275] dark:bg-cyan-950 dark:text-cyan-300',
+    completed: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
+  };
+
+  return (
+    <div className="nc-card p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <ClipboardList className="w-4 h-4 text-cyan-500" />
+        <h3 className="text-sm font-bold text-slate-900 dark:text-white">{isSw ? 'Majukumu' : 'Tasks'}</h3>
+      </div>
+      {error && <p className="text-xs text-rose-600 mb-2">{error}</p>}
+      <div className="flex gap-2 mb-3">
+        <input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder={isSw ? 'Ongeza jukumu jipya...' : 'Add a new task...'} className="nc-input flex-1 px-3 py-2 text-xs" />
+        <button type="button" onClick={handleAdd} disabled={adding || !newTitle.trim()} className="rounded-lg bg-[#0A4275] dark:bg-cyan-500 text-white dark:text-[#041D34] px-3 py-2 text-xs font-bold disabled:opacity-50 flex items-center gap-1">
+          <Plus className="w-3.5 h-3.5" />
+        </button>
+      </div>
+      {!loading && tasks.length === 0 ? (
+        <p className="text-xs text-slate-500 dark:text-slate-400 py-2">{isSw ? 'Hakuna majukumu.' : 'No tasks yet.'}</p>
+      ) : (
+        <div className="space-y-2">
+          {tasks.map((t) => (
+            <button key={t.id} type="button" onClick={() => cycleStatus(t)} className="w-full flex items-center justify-between rounded-xl border border-slate-100 dark:border-slate-800 p-3 text-xs text-left hover:border-[#0A4275] dark:hover:border-cyan-500 transition-colors">
+              <div className="min-w-0">
+                <p className="font-bold text-slate-900 dark:text-white truncate">{t.title}</p>
+                {t.patientName && <p className="text-slate-500 dark:text-slate-400 truncate">{t.patientName}</p>}
+              </div>
+              <span className={`rounded-lg px-2 py-1 font-bold capitalize flex-shrink-0 ${TASK_STYLES[t.status]}`}>{t.status.replace('_', ' ')}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const InventoryPanel: React.FC<{ isSw: boolean; providerId: string }> = ({ isSw, providerId }) => {
+  const [items, setItems] = useState<InventoryRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [newItem, setNewItem] = useState({ name: '', quantity: '', minimum: '', unit: 'units' });
+  const [adding, setAdding] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    const { items: fetched, error: err } = await fetchInventory(providerId);
+    if (err) setError(err); else setItems(fetched);
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, [providerId]);
+
+  const adjust = async (item: InventoryRow, delta: number) => {
+    const next = Math.max(0, item.quantity + delta);
+    const { error: err } = await updateInventoryQuantity(item.id, next);
+    if (err) setError(err);
+    else setItems((prev) => prev.map((x) => (x.id === item.id ? { ...x, quantity: next } : x)));
+  };
+
+  const handleAdd = async () => {
+    if (!newItem.name.trim()) return;
+    setAdding(true);
+    const { error: err } = await addInventoryItem(providerId, newItem.name.trim(), Number(newItem.quantity) || 0, Number(newItem.minimum) || 0, newItem.unit);
+    setAdding(false);
+    if (err) { setError(err); return; }
+    setNewItem({ name: '', quantity: '', minimum: '', unit: 'units' });
+    load();
+  };
+
+  return (
+    <div className="nc-card p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <Package className="w-4 h-4 text-amber-500" />
+        <h3 className="text-sm font-bold text-slate-900 dark:text-white">{isSw ? 'Bohari' : 'Inventory'}</h3>
+      </div>
+      {error && <p className="text-xs text-rose-600 mb-2">{error}</p>}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 text-xs">
+        <input value={newItem.name} onChange={(e) => setNewItem((p) => ({ ...p, name: e.target.value }))} placeholder={isSw ? 'Jina la kifaa' : 'Item name'} className="nc-input px-2.5 py-2 col-span-2 sm:col-span-1" />
+        <input value={newItem.quantity} onChange={(e) => setNewItem((p) => ({ ...p, quantity: e.target.value }))} placeholder={isSw ? 'Kiasi' : 'Qty'} type="number" className="nc-input px-2.5 py-2" />
+        <input value={newItem.minimum} onChange={(e) => setNewItem((p) => ({ ...p, minimum: e.target.value }))} placeholder={isSw ? 'Kiwango cha chini' : 'Minimum'} type="number" className="nc-input px-2.5 py-2" />
+        <button type="button" onClick={handleAdd} disabled={adding || !newItem.name.trim()} className="rounded-lg bg-[#0A4275] dark:bg-cyan-500 text-white dark:text-[#041D34] px-2.5 py-2 font-bold disabled:opacity-50 flex items-center justify-center gap-1">
+          <Plus className="w-3.5 h-3.5" /> {isSw ? 'Ongeza' : 'Add'}
+        </button>
+      </div>
+      {!loading && items.length === 0 ? (
+        <p className="text-xs text-slate-500 dark:text-slate-400 py-2">{isSw ? 'Hakuna bidhaa bado.' : 'No inventory items yet.'}</p>
+      ) : (
+        <div className="space-y-2">
+          {items.map((item) => (
+            <div key={item.id} className="flex items-center justify-between rounded-xl border border-slate-100 dark:border-slate-800 p-3 text-xs">
+              <div className="min-w-0">
+                <p className="font-bold text-slate-900 dark:text-white truncate">{item.name}</p>
+                <p className={`truncate ${item.quantity <= item.minimum_quantity ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-500 dark:text-slate-400'}`}>
+                  {item.quantity} {item.unit} {item.quantity <= item.minimum_quantity ? `• ${isSw ? 'Kiwango cha chini!' : 'Low stock!'}` : ''}
+                </p>
+              </div>
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <button type="button" onClick={() => adjust(item, -1)} className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 font-bold">−</button>
+                <button type="button" onClick={() => adjust(item, 1)} className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 font-bold">+</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const MessagesPanel: React.FC<{ isSw: boolean; providerId: string }> = ({ isSw, providerId }) => {
+  const [messages, setMessages] = useState<FacilityMessageRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [draft, setDraft] = useState('');
+  const [sending, setSending] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    const { messages: fetched, error: err } = await fetchFacilityMessages(providerId);
+    if (err) setError(err); else setMessages(fetched);
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, [providerId]);
+
+  const send = async () => {
+    if (!draft.trim()) return;
+    setSending(true);
+    const { error: err } = await postFacilityMessage(providerId, draft.trim());
+    setSending(false);
+    if (err) { setError(err); return; }
+    setDraft('');
+    load();
+  };
+
+  return (
+    <div className="nc-card p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <MessageSquare className="w-4 h-4 text-purple-500" />
+        <h3 className="text-sm font-bold text-slate-900 dark:text-white">{isSw ? 'Ujumbe wa Kituo' : 'Facility Messages'}</h3>
+      </div>
+      {error && <p className="text-xs text-rose-600 mb-2">{error}</p>}
+      <div className="flex gap-2 mb-3">
+        <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={isSw ? 'Andika ujumbe...' : 'Post an update to your team...'} className="nc-input flex-1 px-3 py-2 text-xs" />
+        <button type="button" onClick={send} disabled={sending || !draft.trim()} className="rounded-lg bg-[#0A4275] dark:bg-cyan-500 text-white dark:text-[#041D34] px-3 py-2 text-xs font-bold disabled:opacity-50">
+          <Send className="w-3.5 h-3.5" />
+        </button>
+      </div>
+      {!loading && messages.length === 0 ? (
+        <p className="text-xs text-slate-500 dark:text-slate-400 py-2">{isSw ? 'Hakuna ujumbe bado.' : 'No messages yet.'}</p>
+      ) : (
+        <div className="space-y-2">
+          {messages.map((m) => (
+            <div key={m.id} className="rounded-xl border border-slate-100 dark:border-slate-800 p-3 text-xs">
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-bold text-slate-900 dark:text-white">{m.senderName}</span>
+                <span className="text-slate-400">{new Date(m.created_at).toLocaleString()}</span>
+              </div>
+              <p className="text-slate-600 dark:text-slate-300">{m.body}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface ProviderDashboardProps {
   language: Language;
@@ -50,6 +253,7 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({ language, 
   const [loading, setLoading] = useState(true);
   const [checkInQuery, setCheckInQuery] = useState('');
   const [checkingInId, setCheckingInId] = useState<string | null>(null);
+  const [section, setSection] = useState<'patients' | 'tasks' | 'inventory' | 'messages'>('patients');
 
   const load = async () => {
     if (!authUserId) return;
@@ -170,6 +374,34 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({ language, 
       </div>
 
       {staff && (
+        <div className="mb-4 flex gap-1.5 overflow-x-auto">
+          {([
+            { key: 'patients', label: isSw ? 'Wagonjwa' : 'Patients', Icon: Users },
+            { key: 'tasks', label: isSw ? 'Majukumu' : 'Tasks', Icon: ClipboardList },
+            { key: 'inventory', label: isSw ? 'Bohari' : 'Inventory', Icon: Package },
+            { key: 'messages', label: isSw ? 'Ujumbe' : 'Messages', Icon: MessageSquare },
+          ] as const).map(({ key, label, Icon }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setSection(key)}
+              className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
+                section === key
+                  ? 'bg-[#0A4275] text-white dark:bg-cyan-500 dark:text-[#041D34]'
+                  : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" /> {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {staff && section === 'tasks' && <div className="mb-4"><TasksPanel isSw={isSw} providerId={staff.provider_id} /></div>}
+      {staff && section === 'inventory' && <div className="mb-4"><InventoryPanel isSw={isSw} providerId={staff.provider_id} /></div>}
+      {staff && section === 'messages' && <div className="mb-4"><MessagesPanel isSw={isSw} providerId={staff.provider_id} /></div>}
+
+      {staff && section === 'patients' && (
         <div className="nc-card p-4 mb-4">
           <div className="mb-3 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">

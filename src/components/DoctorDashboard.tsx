@@ -1,10 +1,163 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Calendar, Clock, Users, Star, LogOut, RefreshCw, Video, Stethoscope, ClipboardPlus } from 'lucide-react';
+import { Calendar, Clock, Users, Star, LogOut, RefreshCw, Video, Stethoscope, ClipboardPlus, Pill, FlaskConical, Plus } from 'lucide-react';
 import type { Language, Theme } from '../types';
 import { supabase } from '../lib/supabaseClient';
 import { EncounterModal } from './EncounterModal';
 import { PatientDetailModal } from './PatientDetailModal';
 import { Avatar } from './Avatar';
+import { createLabOrder, fetchDoctorLabOrders, LabOrderRow } from '../lib/laboratory';
+
+const LAB_STATUS_STYLES: Record<string, string> = {
+  ordered: 'bg-blue-50 text-[#0A4275] dark:bg-cyan-950 dark:text-cyan-300',
+  collected: 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
+  processing: 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
+  completed: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
+  cancelled: 'bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300',
+};
+
+interface DoctorPrescriptionRow {
+  id: string;
+  patient_id: string;
+  medication_name: string;
+  dosage_instructions: string | null;
+  created_at: string;
+  patientName?: string;
+}
+
+const DoctorPrescriptionsPanel: React.FC<{ isSw: boolean; doctorAuthUserId: string }> = ({ isSw, doctorAuthUserId }) => {
+  const [rows, setRows] = useState<DoctorPrescriptionRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    setLoading(true);
+    supabase
+      .from('prescriptions')
+      .select('id, patient_id, medication_name, dosage_instructions, created_at')
+      .eq('created_by', doctorAuthUserId)
+      .order('created_at', { ascending: false })
+      .then(async ({ data, error: err }) => {
+        if (err) { setError(err.message); setLoading(false); return; }
+        const rowsData = data || [];
+        const ids = Array.from(new Set(rowsData.map((r) => r.patient_id)));
+        const names = new Map<string, string>();
+        if (ids.length > 0) {
+          const { data: profiles } = await supabase.from('profiles').select('id, full_name').in('id', ids);
+          for (const p of profiles || []) names.set(p.id, p.full_name);
+        }
+        setRows(rowsData.map((r) => ({ ...r, patientName: names.get(r.patient_id) || 'Patient' })));
+        setLoading(false);
+      });
+  }, [doctorAuthUserId]);
+
+  return (
+    <div className="nc-card p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <Pill className="w-4 h-4 text-emerald-500" />
+        <h3 className="text-sm font-bold text-slate-900 dark:text-white">{isSw ? 'Dawa Ulizoandika' : 'Prescriptions Issued'}</h3>
+      </div>
+      {error && <p className="text-xs text-rose-600 mb-2">{error}</p>}
+      {!loading && rows.length === 0 ? (
+        <p className="text-xs text-slate-500 dark:text-slate-400 py-2">{isSw ? 'Bado hujaandika dawa yoyote.' : "You haven't issued any prescriptions yet."}</p>
+      ) : (
+        <div className="space-y-2">
+          {rows.map((r) => (
+            <div key={r.id} className="flex items-center justify-between rounded-xl border border-slate-100 dark:border-slate-800 p-3 text-xs">
+              <div className="min-w-0">
+                <p className="font-bold text-slate-900 dark:text-white truncate">{r.medication_name}</p>
+                <p className="text-slate-500 dark:text-slate-400 truncate">{r.patientName} • {r.dosage_instructions || '—'}</p>
+              </div>
+              <span className="text-slate-400 flex-shrink-0">{new Date(r.created_at).toLocaleDateString()}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const DoctorLabsPanel: React.FC<{
+  isSw: boolean;
+  doctorProfileId: string;
+  providerId: string | null;
+  patientOptions: { id: string; name: string }[];
+}> = ({ isSw, doctorProfileId, providerId, patientOptions }) => {
+  const [orders, setOrders] = useState<LabOrderRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [testName, setTestName] = useState('');
+  const [patientId, setPatientId] = useState('');
+  const [notes, setNotes] = useState('');
+  const [ordering, setOrdering] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    const { orders: fetched, error: err } = await fetchDoctorLabOrders(doctorProfileId);
+    if (err) setError(err); else setOrders(fetched);
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, [doctorProfileId]);
+
+  const handleOrder = async () => {
+    if (!testName.trim() || !patientId) return;
+    setOrdering(true);
+    const { error: err } = await createLabOrder(patientId, doctorProfileId, providerId, null, testName.trim(), notes);
+    setOrdering(false);
+    if (err) { setError(err); return; }
+    setTestName(''); setNotes(''); setPatientId('');
+    load();
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="nc-card p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <FlaskConical className="w-4 h-4 text-purple-500" />
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white">{isSw ? 'Agiza Kipimo' : 'Order a Lab Test'}</h3>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+          <select value={patientId} onChange={(e) => setPatientId(e.target.value)} className="nc-input px-2.5 py-2">
+            <option value="">{isSw ? 'Chagua mgonjwa' : 'Select patient'}</option>
+            {patientOptions.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+          <input value={testName} onChange={(e) => setTestName(e.target.value)} placeholder={isSw ? 'Jina la kipimo' : 'Test name'} className="nc-input px-2.5 py-2" />
+          <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={isSw ? 'Maelezo (hiari)' : 'Notes (optional)'} className="nc-input px-2.5 py-2" />
+        </div>
+        <button
+          type="button"
+          onClick={handleOrder}
+          disabled={ordering || !testName.trim() || !patientId}
+          className="mt-2 flex items-center gap-1.5 rounded-lg bg-[#0A4275] dark:bg-cyan-500 text-white dark:text-[#041D34] px-3 py-1.5 text-xs font-bold disabled:opacity-50"
+        >
+          <Plus className="w-3.5 h-3.5" /> {isSw ? 'Agiza' : 'Order Test'}
+        </button>
+      </div>
+
+      <div className="nc-card p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <FlaskConical className="w-4 h-4 text-purple-500" />
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white">{isSw ? 'Vipimo Vilivyoagizwa' : 'Ordered Tests'}</h3>
+        </div>
+        {error && <p className="text-xs text-rose-600 mb-2">{error}</p>}
+        {!loading && orders.length === 0 ? (
+          <p className="text-xs text-slate-500 dark:text-slate-400 py-2">{isSw ? 'Hakuna vipimo bado.' : 'No lab tests ordered yet.'}</p>
+        ) : (
+          <div className="space-y-2">
+            {orders.map((o) => (
+              <div key={o.id} className="flex items-center justify-between rounded-xl border border-slate-100 dark:border-slate-800 p-3 text-xs">
+                <div className="min-w-0">
+                  <p className="font-bold text-slate-900 dark:text-white truncate">{o.test_name}</p>
+                  <p className="text-slate-500 dark:text-slate-400 truncate">{o.patientName}</p>
+                </div>
+                <span className={`rounded-lg px-2 py-1 font-bold capitalize flex-shrink-0 ${LAB_STATUS_STYLES[o.status] || ''}`}>{o.status}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 interface DoctorDashboardProps {
   language: Language;
@@ -52,6 +205,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
   const [encounterTarget, setEncounterTarget] = useState<AppointmentRow | null>(null);
   const [detailTarget, setDetailTarget] = useState<AppointmentRow | null>(null);
   const [queueTab, setQueueTab] = useState<'waiting' | 'completed'>('waiting');
+  const [section, setSection] = useState<'queue' | 'prescriptions' | 'labs'>('queue');
 
   const load = async () => {
     if (!authUserId) return;
@@ -89,6 +243,11 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
   const todaysPatients = useMemo(() => appointments.filter((a) => a.appointment_date === today && a.status !== 'cancelled'), [appointments, today]);
   const upcomingVisits = useMemo(() => appointments.filter((a) => a.appointment_date > today && a.status === 'confirmed'), [appointments, today]);
   const inQueue = useMemo(() => appointments.filter((a) => a.status === 'in_queue'), [appointments]);
+  const patientOptions = useMemo(() => {
+    const seen = new Map<string, string>();
+    for (const a of appointments) if (!seen.has(a.patient_id)) seen.set(a.patient_id, a.patient_name || 'Patient');
+    return Array.from(seen, ([id, name]) => ({ id, name }));
+  }, [appointments]);
 
   const statCards = [
     { label: isSw ? 'Wagonjwa wa Leo' : "Today's Patients", value: todaysPatients.length, Icon: Users, colour: 'text-cyan-600 dark:text-cyan-400' },
@@ -153,6 +312,36 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
         ))}
       </div>
 
+      <div className="mb-4 flex gap-1.5">
+        {([
+          { key: 'queue', label: isSw ? 'Foleni' : 'Queue', Icon: Stethoscope },
+          { key: 'prescriptions', label: isSw ? 'Dawa' : 'Prescriptions', Icon: Pill },
+          { key: 'labs', label: isSw ? 'Maabara' : 'Labs', Icon: FlaskConical },
+        ] as const).map(({ key, label, Icon }) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setSection(key)}
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
+              section === key
+                ? 'bg-[#0A4275] text-white dark:bg-cyan-500 dark:text-[#041D34]'
+                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
+          >
+            <Icon className="w-3.5 h-3.5" /> {label}
+          </button>
+        ))}
+      </div>
+
+      {section === 'prescriptions' && authUserId && (
+        <DoctorPrescriptionsPanel isSw={isSw} doctorAuthUserId={authUserId} />
+      )}
+
+      {section === 'labs' && profile && (
+        <DoctorLabsPanel isSw={isSw} doctorProfileId={profile.id} providerId={profile.provider_id} patientOptions={patientOptions} />
+      )}
+
+      {section === 'queue' && (
       <div className="nc-card p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
@@ -235,6 +424,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
           );
         })()}
       </div>
+      )}
 
       {authUserId && (
         <p className="mt-5 text-[10px] text-center text-slate-400 dark:text-slate-600 font-mono">ID: {authUserId.slice(0, 12)}…</p>

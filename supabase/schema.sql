@@ -595,6 +595,209 @@ create policy "Prescriptions are manageable by patient and clinical staff"
   );
 
 -- ============================================================================
+-- LABORATORY — a doctor orders a test, provider staff (lab techs) progress
+-- it through collection/processing, then enter the result. The patient only
+-- ever sees a completed result, never an in-progress one.
+-- ============================================================================
+create table if not exists public.lab_orders (
+  id uuid primary key default gen_random_uuid(),
+  patient_id uuid not null references auth.users(id) on delete cascade,
+  doctor_profile_id uuid references public.doctor_profiles(id) on delete set null,
+  provider_id uuid references public.providers(id) on delete set null,
+  encounter_id uuid references public.encounters(id) on delete set null,
+  test_name text not null,
+  notes text,
+  status text not null default 'ordered' check (status in ('ordered', 'collected', 'processing', 'completed', 'cancelled')),
+  created_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.lab_orders enable row level security;
+
+drop policy if exists "Lab orders are viewable by patient and clinical staff" on public.lab_orders;
+create policy "Lab orders are viewable by patient and clinical staff"
+  on public.lab_orders for select
+  using (
+    auth.uid() = patient_id
+    or exists (select 1 from public.doctor_profiles dp where dp.id = lab_orders.doctor_profile_id and dp.user_id = auth.uid())
+    or exists (select 1 from public.provider_staff ps where ps.provider_id = lab_orders.provider_id and ps.user_id = auth.uid())
+    or public.is_admin()
+  );
+
+drop policy if exists "Lab orders are insertable by the ordering doctor" on public.lab_orders;
+create policy "Lab orders are insertable by the ordering doctor"
+  on public.lab_orders for insert
+  with check (
+    exists (select 1 from public.doctor_profiles dp where dp.id = lab_orders.doctor_profile_id and dp.user_id = auth.uid() and dp.is_active = true)
+    or public.is_admin()
+  );
+
+-- Status progression (collected/processing/completed) is lab-tech work, not
+-- the ordering doctor's -- provider staff at the same facility can update it.
+drop policy if exists "Lab orders are updatable by clinical staff" on public.lab_orders;
+create policy "Lab orders are updatable by clinical staff"
+  on public.lab_orders for update
+  using (
+    exists (select 1 from public.doctor_profiles dp where dp.id = lab_orders.doctor_profile_id and dp.user_id = auth.uid())
+    or exists (select 1 from public.provider_staff ps where ps.provider_id = lab_orders.provider_id and ps.user_id = auth.uid() and ps.is_active = true)
+    or public.is_admin()
+  );
+
+drop trigger if exists set_lab_orders_updated_at on public.lab_orders;
+create trigger set_lab_orders_updated_at
+  before update on public.lab_orders
+  for each row execute function public.set_updated_at();
+
+create table if not exists public.lab_results (
+  id uuid primary key default gen_random_uuid(),
+  lab_order_id uuid not null unique references public.lab_orders(id) on delete cascade,
+  patient_id uuid not null references auth.users(id) on delete cascade,
+  result_value text,
+  reference_range text,
+  interpretation text not null default 'normal' check (interpretation in ('normal', 'abnormal', 'critical')),
+  summary text,
+  entered_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.lab_results enable row level security;
+
+drop policy if exists "Lab results are viewable by patient and clinical staff" on public.lab_results;
+create policy "Lab results are viewable by patient and clinical staff"
+  on public.lab_results for select
+  using (
+    auth.uid() = patient_id
+    or exists (
+      select 1 from public.lab_orders lo
+      where lo.id = lab_results.lab_order_id
+      and (
+        exists (select 1 from public.doctor_profiles dp where dp.id = lo.doctor_profile_id and dp.user_id = auth.uid())
+        or exists (select 1 from public.provider_staff ps where ps.provider_id = lo.provider_id and ps.user_id = auth.uid())
+      )
+    )
+    or public.is_admin()
+  );
+
+drop policy if exists "Lab results are insertable by clinical staff" on public.lab_results;
+create policy "Lab results are insertable by clinical staff"
+  on public.lab_results for insert
+  with check (
+    exists (
+      select 1 from public.lab_orders lo
+      where lo.id = lab_results.lab_order_id
+      and (
+        exists (select 1 from public.doctor_profiles dp where dp.id = lo.doctor_profile_id and dp.user_id = auth.uid())
+        or exists (select 1 from public.provider_staff ps where ps.provider_id = lo.provider_id and ps.user_id = auth.uid() and ps.is_active = true)
+      )
+    )
+    or public.is_admin()
+  );
+
+-- Entering a result marks the order completed in the same transaction, so
+-- the two can never drift out of sync (a result existing with a
+-- non-"completed" parent order, or vice versa).
+create or replace function public.complete_lab_order()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  update public.lab_orders set status = 'completed' where id = new.lab_order_id;
+  return new;
+end;
+$$;
+
+drop trigger if exists mark_lab_order_completed on public.lab_results;
+create trigger mark_lab_order_completed
+  after insert on public.lab_results
+  for each row execute function public.complete_lab_order();
+
+drop trigger if exists audit_lab_orders_change on public.lab_orders;
+create trigger audit_lab_orders_change
+  after insert on public.lab_orders
+  for each row execute function public.audit_row_change();
+
+drop trigger if exists audit_lab_results_change on public.lab_results;
+create trigger audit_lab_results_change
+  after insert on public.lab_results
+  for each row execute function public.audit_row_change();
+
+-- ============================================================================
+-- PROVIDER OPERATIONS — tasks, inventory, and internal facility messages for
+-- provider staff. Messages here are a facility-wide bulletin (one thread per
+-- facility), not 1:1 direct messaging between two specific staff members.
+-- ============================================================================
+create table if not exists public.tasks (
+  id uuid primary key default gen_random_uuid(),
+  provider_id uuid not null references public.providers(id) on delete cascade,
+  patient_id uuid references auth.users(id) on delete set null,
+  title text not null,
+  status text not null default 'pending' check (status in ('pending', 'in_progress', 'completed')),
+  due_at timestamptz,
+  created_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.tasks enable row level security;
+
+drop policy if exists "Tasks are manageable by staff at the same facility" on public.tasks;
+create policy "Tasks are manageable by staff at the same facility"
+  on public.tasks for all
+  using (provider_id = public.my_provider_id() or public.is_admin())
+  with check (provider_id = public.my_provider_id() or public.is_admin());
+
+drop trigger if exists set_tasks_updated_at on public.tasks;
+create trigger set_tasks_updated_at
+  before update on public.tasks
+  for each row execute function public.set_updated_at();
+
+create table if not exists public.inventory_items (
+  id uuid primary key default gen_random_uuid(),
+  provider_id uuid not null references public.providers(id) on delete cascade,
+  name text not null,
+  quantity integer not null default 0,
+  minimum_quantity integer not null default 0,
+  unit text not null default 'units',
+  updated_at timestamptz not null default now()
+);
+
+alter table public.inventory_items enable row level security;
+
+drop policy if exists "Inventory is manageable by staff at the same facility" on public.inventory_items;
+create policy "Inventory is manageable by staff at the same facility"
+  on public.inventory_items for all
+  using (provider_id = public.my_provider_id() or public.is_admin())
+  with check (provider_id = public.my_provider_id() or public.is_admin());
+
+drop trigger if exists set_inventory_items_updated_at on public.inventory_items;
+create trigger set_inventory_items_updated_at
+  before update on public.inventory_items
+  for each row execute function public.set_updated_at();
+
+create table if not exists public.facility_messages (
+  id uuid primary key default gen_random_uuid(),
+  provider_id uuid not null references public.providers(id) on delete cascade,
+  sender_id uuid references auth.users(id) on delete set null,
+  body text not null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.facility_messages enable row level security;
+
+drop policy if exists "Facility messages are viewable by staff at that facility" on public.facility_messages;
+create policy "Facility messages are viewable by staff at that facility"
+  on public.facility_messages for select
+  using (provider_id = public.my_provider_id() or public.is_admin());
+
+drop policy if exists "Facility messages are postable by staff at that facility" on public.facility_messages;
+create policy "Facility messages are postable by staff at that facility"
+  on public.facility_messages for insert
+  with check (provider_id = public.my_provider_id() or public.is_admin());
+
+-- ============================================================================
 -- PERSONAL FILES — patient-uploaded / saved documents vault
 -- ============================================================================
 create table if not exists public.personal_files (
@@ -1261,7 +1464,8 @@ begin
     'profiles', 'providers', 'doctor_profiles', 'provider_staff',
     'appointments', 'medical_records', 'prescriptions', 'personal_files',
     'bills', 'bill_items', 'payments', 'doctor_schedule',
-    'emergency_dispatches', 'encounters', 'vitals', 'diagnoses'
+    'emergency_dispatches', 'encounters', 'vitals', 'diagnoses',
+    'lab_orders', 'lab_results', 'tasks', 'inventory_items', 'facility_messages'
   ]
   loop
     execute format('drop policy if exists "Admins have full access" on public.%I', target_table);
