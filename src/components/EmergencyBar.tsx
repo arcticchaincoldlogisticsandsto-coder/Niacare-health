@@ -184,7 +184,7 @@ export const EmergencyBar: React.FC<EmergencyBarProps> = ({ language, authUserId
           id="modal-emergency"
           className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200"
         >
-          <div className="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden border-2 border-red-500 max-h-[90vh] flex flex-col">
+          <div className="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden border-2 border-red-500 max-h-[90vh] flex flex-col">
             {/* Modal Header */}
             <div className="bg-[#E51E2B] text-white p-4 sm:p-5 flex items-center justify-between">
               <div className="flex items-center gap-2.5">

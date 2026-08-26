@@ -88,7 +88,7 @@ export const BiometricModal: React.FC<BiometricModalProps> = ({
       id="modal-biometric-auth"
       className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
     >
-      <div className="bg-[#0B1A2C] text-white w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-blue-500/30 text-center relative overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="bg-[#0B1A2C] text-white w-full max-w-sm rounded-2xl p-6 shadow-2xl border border-blue-500/30 text-center relative overflow-hidden animate-in zoom-in-95 duration-200">
         {/* Ambient background glow */}
         <div className="absolute -top-16 -left-16 w-32 h-32 bg-blue-500/20 rounded-full blur-3xl"></div>
         <div className="absolute -bottom-16 -right-16 w-32 h-32 bg-emerald-500/20 rounded-full blur-3xl"></div>

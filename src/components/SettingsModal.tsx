@@ -163,7 +163,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200"
     >
       <div
-        className={`w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh] ${
+        className={`w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh] ${
           isDark
             ? 'bg-[#0E1A29] text-white border-slate-700 shadow-[0_20px_60px_rgba(0,0,0,0.6)]'
             : 'bg-white text-slate-800 border-slate-200'

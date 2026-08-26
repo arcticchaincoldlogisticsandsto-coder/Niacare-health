@@ -392,7 +392,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-md animate-in fade-in">
       <div
-        className={`w-full max-w-3xl rounded-3xl border shadow-2xl overflow-hidden flex flex-col max-h-[92vh] ${
+        className={`w-full max-w-3xl rounded-2xl border shadow-2xl overflow-hidden flex flex-col max-h-[92vh] ${
           isDark ? 'bg-[#0B1728] border-slate-700/80 text-white' : 'bg-white border-slate-200 text-slate-900'
         }`}
       >
@@ -489,7 +489,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
         <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4">
           {/* VIEW 1: TELEHEALTH VIDEO ROOM (real Daily.co WebRTC call) */}
           {activeVideoCall && (
-            <div className="rounded-3xl border border-cyan-500/40 p-5 bg-gradient-to-br from-slate-900 via-[#0B1B30] to-slate-950 text-white space-y-4 animate-in zoom-in-95">
+            <div className="rounded-2xl border border-cyan-500/40 p-5 bg-gradient-to-br from-slate-900 via-[#0B1B30] to-slate-950 text-white space-y-4 animate-in zoom-in-95">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span
@@ -553,7 +553,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
 
           {/* VIEW 2: CONFIRMED APPOINTMENT PASS */}
           {confirmedAppointment && (
-            <div className="rounded-3xl border border-emerald-500/40 p-5 bg-gradient-to-br from-emerald-950/40 via-slate-900 to-[#0A2238] space-y-4 animate-in zoom-in-95">
+            <div className="rounded-2xl border border-emerald-500/40 p-5 bg-gradient-to-br from-emerald-950/40 via-slate-900 to-[#0A2238] space-y-4 animate-in zoom-in-95">
               <div className="text-center space-y-2">
                 <div className="w-14 h-14 rounded-2xl bg-emerald-500 text-white mx-auto flex items-center justify-center shadow-lg shadow-emerald-500/30">
                   <Check className="w-8 h-8" />
@@ -931,7 +931,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
               {/* ACTIVE BOOKING WIZARD (IF A DOCTOR IS SELECTED FOR IMMEDIATE BOOKING) */}
               {selectedDoctor && (
                 <div
-                  className={`p-4 sm:p-5 rounded-3xl border ${
+                  className={`p-4 sm:p-5 rounded-2xl border ${
                     isDark ? 'bg-[#0F2238] border-cyan-500/40 shadow-xl' : 'bg-blue-50/70 border-blue-200'
                   }`}
                 >

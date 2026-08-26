@@ -29,7 +29,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
       className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
     >
       <div
-        className={`w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border animate-in zoom-in-95 duration-200 ${
+        className={`w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border animate-in zoom-in-95 duration-200 ${
           isDark ? 'bg-[#0E1A29] text-white border-slate-700' : 'bg-white text-slate-800 border-slate-200'
         }`}
       >

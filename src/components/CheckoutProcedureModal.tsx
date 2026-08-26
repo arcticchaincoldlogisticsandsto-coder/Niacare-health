@@ -235,7 +235,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
     >
       <div
         id="checkout-procedure-modal-container"
-        className={`w-full max-w-4xl max-h-[92vh] flex flex-col rounded-3xl border shadow-2xl overflow-hidden my-auto ${
+        className={`w-full max-w-4xl max-h-[92vh] flex flex-col rounded-2xl border shadow-2xl overflow-hidden my-auto ${
           isDark ? 'bg-[#0B1726] border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
         }`}
       >
@@ -918,7 +918,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
               </div>
 
               {/* Official Electronic Receipt Card */}
-              <div className="p-5 rounded-3xl bg-slate-950 border border-emerald-500/40 text-white space-y-4 shadow-xl">
+              <div className="p-5 rounded-2xl bg-slate-950 border border-emerald-500/40 text-white space-y-4 shadow-xl">
                 <div className="flex items-center justify-between border-b border-white/10 pb-3">
                   <div>
                     <span className="text-[10px] uppercase font-mono tracking-wider text-emerald-400 font-bold block">
@@ -1024,7 +1024,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Guide 1: Insurance Procedure */}
                 <div
-                  className={`p-4 sm:p-5 rounded-3xl border ${
+                  className={`p-4 sm:p-5 rounded-2xl border ${
                     isDark ? 'bg-[#0E1F33] border-cyan-500/30' : 'bg-blue-50/70 border-blue-200'
                   }`}
                 >
@@ -1099,7 +1099,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
 
                 {/* Guide 2: Cash & Mobile Procedure */}
                 <div
-                  className={`p-4 sm:p-5 rounded-3xl border ${
+                  className={`p-4 sm:p-5 rounded-2xl border ${
                     isDark ? 'bg-[#0E1F33] border-emerald-500/30' : 'bg-emerald-50/70 border-emerald-200'
                   }`}
                 >

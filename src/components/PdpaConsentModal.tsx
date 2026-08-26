@@ -25,7 +25,7 @@ export const PdpaConsentModal: React.FC<PdpaConsentModalProps> = ({
       id="modal-pdpa-consent"
       className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
     >
-      <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border border-slate-200 max-h-[85vh] flex flex-col animate-in zoom-in-95 duration-200">
+      <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border border-slate-200 max-h-[85vh] flex flex-col animate-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="bg-[#0F4C81] text-white p-5 flex items-center justify-between">
           <div className="flex items-center gap-3">

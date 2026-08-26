@@ -58,7 +58,7 @@ export const LanguageSelectorModal: React.FC<LanguageSelectorModalProps> = ({
       className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200"
     >
       <div
-        className={`w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border flex flex-col max-h-[85vh] transition-all animate-in zoom-in-95 duration-200 ${
+        className={`w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border flex flex-col max-h-[85vh] transition-all animate-in zoom-in-95 duration-200 ${
           isDark
             ? 'bg-[#0E1A29] text-white border-slate-700/60 shadow-[0_15px_40px_rgba(0,0,0,0.6)]'
             : 'bg-white text-slate-900 border-slate-200'

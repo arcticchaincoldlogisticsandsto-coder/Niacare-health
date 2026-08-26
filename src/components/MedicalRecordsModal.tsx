@@ -481,7 +481,7 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-xs animate-in fade-in">
       <div
-        className={`w-full max-w-3xl rounded-3xl p-4 sm:p-6 border relative max-h-[94vh] flex flex-col shadow-2xl ${
+        className={`w-full max-w-3xl rounded-2xl p-4 sm:p-6 border relative max-h-[94vh] flex flex-col shadow-2xl ${
           isDark ? 'bg-[#0E1B2C] border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
         }`}
       >
@@ -1064,9 +1064,9 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
         {/* MODAL / DRAWER: ADD / UPLOAD PERSONAL MEDICAL DOCUMENT */}
         {/* ========================================================================= */}
         {isUploadOpen && (
-          <div className="absolute inset-0 z-20 bg-black/80 backdrop-blur-xs rounded-3xl p-4 sm:p-6 flex flex-col justify-center animate-in fade-in">
+          <div className="absolute inset-0 z-20 bg-black/80 backdrop-blur-xs rounded-2xl p-4 sm:p-6 flex flex-col justify-center animate-in fade-in">
             <div
-              className={`w-full max-w-lg mx-auto rounded-3xl p-5 sm:p-6 border space-y-4 shadow-2xl ${
+              className={`w-full max-w-lg mx-auto rounded-2xl p-5 sm:p-6 border space-y-4 shadow-2xl ${
                 isDark ? 'bg-[#0F2238] border-cyan-500/40 text-white' : 'bg-white border-slate-200 text-slate-900'
               }`}
             >

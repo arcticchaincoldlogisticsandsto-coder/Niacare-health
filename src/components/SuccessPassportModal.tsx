@@ -70,7 +70,7 @@ export const SuccessPassportModal: React.FC<SuccessPassportModalProps> = ({
       id="modal-success-passport"
       className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200"
     >
-      <div className="bg-[#0B1A2C] text-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-blue-500/40 relative overflow-hidden animate-in zoom-in-95 duration-200 my-auto">
+      <div className="bg-[#0B1A2C] text-white w-full max-w-md rounded-2xl p-6 shadow-2xl border border-blue-500/40 relative overflow-hidden animate-in zoom-in-95 duration-200 my-auto">
         {/* Glow effects */}
         <div className="absolute top-0 right-0 w-48 h-48 bg-[#0F4C81]/40 rounded-full blur-3xl -z-10"></div>
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-500/20 rounded-full blur-3xl -z-10"></div>

@@ -212,7 +212,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
     <div id="patient-home-dashboard" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
       {/* 1. Patient Profile Welcome Header */}
       <div
-        className={`p-4 rounded-3xl border transition-all ${
+        className={`p-4 rounded-2xl border transition-all ${
           isDark
             ? 'bg-[#101F31] border-slate-700/90 text-white shadow-lg'
             : 'bg-white border-slate-200/90 text-slate-900 shadow-xs'
@@ -294,7 +294,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
       {/* 2. Interactive Digital Health Passport Card (NiaCare Pasipoti ya Afya) */}
       <div
         id="card-digital-health-passport"
-        className="relative rounded-3xl overflow-hidden shadow-xl p-5 text-white bg-gradient-to-br from-[#062444] via-[#0A4275] to-[#041D34] border border-cyan-500/30"
+        className="relative rounded-2xl overflow-hidden shadow-xl p-5 text-white bg-gradient-to-br from-[#062444] via-[#0A4275] to-[#041D34] border border-cyan-500/30"
       >
         {/* Holographic Watermark Pattern */}
         <div className="absolute -right-8 -bottom-8 w-44 h-44 bg-cyan-400/10 rounded-full blur-2xl pointer-events-none" />
@@ -427,7 +427,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
         const activeAppointment = appointmentsList.find((a) => a.status !== 'cancelled');
         return (
           <div
-            className={`p-4 rounded-3xl border shadow-sm ${
+            className={`p-4 rounded-2xl border shadow-sm ${
               isDark ? 'bg-[#101F31] border-slate-700/80' : 'bg-white border-slate-200/90'
             }`}
           >
@@ -606,7 +606,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
 
       {/* Prominent Quick Doctor Appointment Banner */}
       <div
-        className={`p-4 rounded-3xl border relative overflow-hidden transition-all ${
+        className={`p-4 rounded-2xl border relative overflow-hidden transition-all ${
           isDark
             ? 'bg-gradient-to-r from-[#0C2340] via-[#0E2C52] to-[#123966] border-cyan-500/40 text-white shadow-xl'
             : 'bg-gradient-to-r from-[#0A4275] via-[#0F5A9E] to-[#186EBA] border-blue-300 text-white shadow-md'
@@ -649,7 +649,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
 
       {/* 5. 6-Action Quick Health Services Grid */}
       <div
-        className={`p-4 rounded-3xl border ${
+        className={`p-4 rounded-2xl border ${
           isDark ? 'bg-[#101F31] border-slate-700/80' : 'bg-white border-slate-200/90'
         }`}
       >
@@ -863,7 +863,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
 
       {/* 5. Medical Records & Clinical Encounters Section */}
       <div
-        className={`p-4 rounded-3xl border shadow-sm ${
+        className={`p-4 rounded-2xl border shadow-sm ${
           isDark ? 'bg-[#101F31] border-slate-700/80' : 'bg-white border-slate-200/90'
         }`}
       >

@@ -30,7 +30,7 @@ export const QuickLogin: React.FC<QuickLoginProps> = ({ language, theme, onSendO
   };
 
   return (
-    <section className={`mt-3 rounded-3xl border p-5 sm:p-7 ${isDark ? 'bg-[#101F31] border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}>
+    <section className={`mt-3 rounded-2xl border p-5 sm:p-7 ${isDark ? 'bg-[#101F31] border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}>
       <div className="mx-auto max-w-md text-center">
         <div className={`mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-2xl ${isDark ? 'bg-cyan-500/15 text-cyan-300' : 'bg-blue-50 text-[#0A4275]'}`}><KeyRound className="w-5 h-5" /></div>
         <h2 className="text-xl font-black">{language === 'sw' ? 'Ingia kwenye akaunti yako' : 'Sign in to NiaCare'}</h2>

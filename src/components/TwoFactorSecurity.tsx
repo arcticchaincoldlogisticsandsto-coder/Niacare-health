@@ -112,7 +112,7 @@ export const TwoFactorSecurity: React.FC<TwoFactorSecurityProps> = ({
   return (
     <div
       id="block-2fa-security"
-      className={`rounded-3xl border p-4 sm:p-6 shadow-xs relative transition-all duration-300 mt-3 ${
+      className={`rounded-2xl border p-4 sm:p-6 shadow-xs relative transition-all duration-300 mt-3 ${
         isDark
           ? 'bg-[#101F31] border-slate-700/80 text-white shadow-[0_10px_30px_rgba(0,0,0,0.3)]'
           : 'bg-white border-slate-200/90 text-slate-900'

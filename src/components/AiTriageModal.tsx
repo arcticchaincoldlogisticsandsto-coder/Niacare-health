@@ -93,7 +93,7 @@ export const AiTriageModal: React.FC<AiTriageModalProps> = ({ isOpen, onClose, t
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in">
       <div
-        className={`w-full max-w-md rounded-3xl p-5 sm:p-6 border relative flex flex-col h-[520px] ${
+        className={`w-full max-w-md rounded-2xl p-5 sm:p-6 border relative flex flex-col h-[520px] ${
           isDark ? 'bg-[#0E1B2C] border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
         }`}
       >

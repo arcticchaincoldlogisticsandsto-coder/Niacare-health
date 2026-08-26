@@ -24,7 +24,7 @@ export const QrPassportModal: React.FC<QrPassportModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in">
       <div
-        className={`w-full max-w-sm rounded-3xl p-6 border text-center relative ${
+        className={`w-full max-w-sm rounded-2xl p-6 border text-center relative ${
           isDark ? 'bg-[#0E1B2C] border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
         }`}
       >
