@@ -101,15 +101,19 @@ create policy "Admins can manage all profiles"
   using (public.is_admin())
   with check (public.is_admin());
 
--- SECURITY: "Profiles are updatable by owner" above only restricts WHICH ROW
--- a user can touch (their own), not WHICH COLUMNS — RLS predicates can't
--- express "this column may change only for admins" on their own, so without
--- this trigger any signed-in patient could run
--- `supabase.from('profiles').update({ role: 'admin' })` from the browser and
--- self-promote. auth.uid() is null for SQL-editor/migration/service-role
--- execution (no end-user session), so the bootstrap block below and admin
--- tooling are unaffected — only a real authenticated non-admin session is
--- blocked from changing role/status.
+-- SECURITY: "Profiles are updatable/insertable by owner" above only
+-- restrict WHICH ROW a user can touch (their own), not WHICH VALUES —
+-- RLS predicates can't express "this column may only be this value unless
+-- you're an admin" on their own. Without this trigger, any signed-in user
+-- could run `supabase.from('profiles').update({ role: 'admin' })`, and —
+-- confirmed live, more severely — a BRAND-NEW user could self-INSERT their
+-- own first profile row with role: 'admin' directly, since the original
+-- fix only guarded UPDATE. This single trigger now covers both: on INSERT,
+-- a real end-user session may only create their own row as the safe
+-- defaults (patient/pending); on UPDATE, role/status may only change via
+-- an admin session. auth.uid() is null for SQL-editor/migration/service-
+-- role execution (no end-user JWT), so the bootstrap block below and
+-- api/invite-staff.ts (service-role) are unaffected either way.
 create or replace function public.prevent_self_role_escalation()
 returns trigger
 language plpgsql
@@ -117,6 +121,16 @@ security definer
 set search_path = public
 as $$
 begin
+  if TG_OP = 'INSERT' then
+    if auth.uid() is not null
+       and (new.role is distinct from 'patient' or new.status is distinct from 'pending')
+       and not public.is_admin() then
+      raise exception 'New accounts must start as a pending patient; only an administrator can set role or status.'
+        using errcode = '42501';
+    end if;
+    return new;
+  end if;
+
   if auth.uid() is not null
      and (new.role is distinct from old.role or new.status is distinct from old.status)
      and not public.is_admin() then
@@ -129,7 +143,7 @@ $$;
 
 drop trigger if exists guard_profile_role_escalation on public.profiles;
 create trigger guard_profile_role_escalation
-  before update on public.profiles
+  before insert or update on public.profiles
   for each row execute function public.prevent_self_role_escalation();
 
 -- ============================================================================
