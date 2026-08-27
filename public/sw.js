@@ -1,6 +1,5 @@
-const CACHE_NAME = 'niacare-shell-v1';
+const CACHE_NAME = 'niacare-shell-v2';
 const APP_SHELL = [
-  '/',
   '/manifest.webmanifest',
   '/icons/icon-192.png',
   '/icons/icon-512.png'
@@ -22,6 +21,8 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+// Network-first for everything same-origin: always prefer the latest deploy,
+// only falling back to cache when the network is unavailable (offline).
 self.addEventListener('fetch', (event) => {
   const { request } = event;
 
@@ -30,23 +31,15 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request).catch(() => caches.match('/'))
-    );
-    return;
-  }
-
   event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) return cached;
-
-      return fetch(request).then((response) => {
-        if (!response || response.status !== 200 || response.type !== 'basic') return response;
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+    fetch(request)
+      .then((response) => {
+        if (response && response.status === 200 && response.type === 'basic') {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+        }
         return response;
-      });
-    })
+      })
+      .catch(() => caches.match(request).then((cached) => cached || caches.match('/')))
   );
 });
