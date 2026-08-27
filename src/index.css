@@ -73,11 +73,7 @@
 
 .app-canvas { background: var(--nc-bg); }
 
-.dark .app-canvas {
-  background:
-    radial-gradient(circle at 12% 0%, rgba(6, 182, 212, 0.09), transparent 30rem),
-    var(--nc-bg);
-}
+.dark .app-canvas { background: var(--nc-bg); }
 
 @layer utilities {
   .nc-bg { background-color: var(--nc-bg); }
@@ -107,7 +103,7 @@
   }
 
   .nc-card {
-    @apply rounded-xl border transition-all;
+    @apply rounded-lg border transition-all;
     background-color: var(--nc-surface);
     border-color: var(--nc-border);
     box-shadow: 0 1px 2px rgba(15, 45, 80, 0.025);
@@ -156,33 +152,175 @@ button, input, select, textarea { font: inherit; }
 button { -webkit-tap-highlight-color: transparent; }
 
 /* Reference-board polish: compact clinical UI, not bubbly marketing cards. */
+.rounded-xl,
 .rounded-2xl,
 .rounded-3xl {
-  border-radius: 0.75rem !important;
+  border-radius: 0.5rem !important;
 }
 
 .rounded-t-3xl {
-  border-top-left-radius: 0.75rem !important;
-  border-top-right-radius: 0.75rem !important;
+  border-top-left-radius: 0.5rem !important;
+  border-top-right-radius: 0.5rem !important;
 }
 
+.shadow-md,
+.shadow-lg,
 .shadow-xl,
 .shadow-2xl {
-  box-shadow: 0 8px 24px rgba(15, 45, 80, 0.09) !important;
+  box-shadow: 0 1px 2px rgba(15, 45, 80, 0.04) !important;
 }
 
+.dark .shadow-md,
+.dark .shadow-lg,
 .dark .shadow-xl,
 .dark .shadow-2xl {
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.42) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.32) !important;
 }
 
-.shadow-lg {
-  box-shadow: 0 6px 18px rgba(15, 45, 80, 0.08) !important;
+.app-canvas [class*="shadow-"] {
+  box-shadow: 0 1px 2px rgba(15, 45, 80, 0.04) !important;
+}
+
+.app-canvas [class*="bg-gradient-to-"] {
+  background-image: none !important;
+  background-color: var(--nc-primary) !important;
+}
+
+.app-canvas [class*="from-cyan-"],
+.app-canvas [class*="from-teal-"],
+.app-canvas [class*="from-purple-"],
+.app-canvas [class*="from-indigo-"],
+.app-canvas [class*="from-pink-"],
+.app-canvas [class*="to-cyan-"],
+.app-canvas [class*="to-teal-"],
+.app-canvas [class*="to-purple-"],
+.app-canvas [class*="to-indigo-"],
+.app-canvas [class*="to-pink-"],
+.app-canvas [class*="via-cyan-"],
+.app-canvas [class*="via-teal-"],
+.app-canvas [class*="via-purple-"],
+.app-canvas [class*="via-indigo-"],
+.app-canvas [class*="via-pink-"] {
+  --tw-gradient-from: var(--nc-primary) !important;
+  --tw-gradient-to: var(--nc-primary-dark) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+.app-canvas [class*="bg-cyan-"],
+.app-canvas [class*="bg-teal-"],
+.app-canvas [class*="bg-sky-"],
+.app-canvas [class*="bg-purple-"],
+.app-canvas [class*="bg-indigo-"],
+.app-canvas [class*="bg-pink-"] {
+  background-color: color-mix(in srgb, var(--nc-primary) 12%, var(--nc-surface)) !important;
+}
+
+.app-canvas button[class*="bg-cyan-"],
+.app-canvas button[class*="bg-teal-"],
+.app-canvas button[class*="bg-sky-"],
+.app-canvas button[class*="bg-purple-"],
+.app-canvas button[class*="bg-indigo-"],
+.app-canvas button[class*="bg-pink-"],
+.app-canvas a[class*="bg-cyan-"],
+.app-canvas a[class*="bg-teal-"],
+.app-canvas a[class*="bg-sky-"],
+.app-canvas a[class*="bg-purple-"],
+.app-canvas a[class*="bg-indigo-"],
+.app-canvas a[class*="bg-pink-"] {
+  background-color: var(--nc-primary) !important;
+  color: #fff !important;
+}
+
+.app-canvas [class*="text-cyan-"],
+.app-canvas [class*="text-teal-"],
+.app-canvas [class*="text-sky-"],
+.app-canvas [class*="text-purple-"],
+.app-canvas [class*="text-indigo-"],
+.app-canvas [class*="text-pink-"] {
+  color: var(--nc-primary) !important;
+}
+
+.app-canvas [class*="border-cyan-"],
+.app-canvas [class*="border-teal-"],
+.app-canvas [class*="border-sky-"],
+.app-canvas [class*="border-purple-"],
+.app-canvas [class*="border-indigo-"],
+.app-canvas [class*="border-pink-"],
+.app-canvas [class*="ring-cyan-"],
+.app-canvas [class*="ring-teal-"],
+.app-canvas [class*="ring-sky-"],
+.app-canvas [class*="ring-purple-"],
+.app-canvas [class*="ring-indigo-"],
+.app-canvas [class*="ring-pink-"] {
+  border-color: var(--nc-primary) !important;
+  --tw-ring-color: color-mix(in srgb, var(--nc-primary) 25%, transparent) !important;
+}
+
+.dark .app-canvas [class*="bg-cyan-"],
+.dark .app-canvas [class*="bg-teal-"],
+.dark .app-canvas [class*="bg-sky-"],
+.dark .app-canvas [class*="bg-purple-"],
+.dark .app-canvas [class*="bg-indigo-"],
+.dark .app-canvas [class*="bg-pink-"] {
+  background-color: color-mix(in srgb, var(--nc-accent) 16%, var(--nc-surface-elevated)) !important;
+}
+
+.dark .app-canvas [class*="text-cyan-"],
+.dark .app-canvas [class*="text-teal-"],
+.dark .app-canvas [class*="text-sky-"],
+.dark .app-canvas [class*="text-purple-"],
+.dark .app-canvas [class*="text-indigo-"],
+.dark .app-canvas [class*="text-pink-"] {
+  color: var(--nc-accent-light) !important;
+}
+
+.app-canvas [class*="backdrop-blur"] {
+  backdrop-filter: none !important;
+}
+
+.app-canvas [class*="hover:scale"],
+.app-canvas [class*="hover:-translate"],
+.app-canvas [class*="group-hover:scale"],
+.app-canvas [class*="active:scale"] {
+  transform: none !important;
+}
+
+.app-canvas button,
+.app-canvas input,
+.app-canvas select,
+.app-canvas textarea {
+  border-radius: 0.5rem !important;
+}
+
+.app-canvas [class*="border-2"] {
+  border-width: 1px !important;
+}
+
+.app-canvas [class*="tracking-wider"],
+.app-canvas [class*="tracking-widest"],
+.app-canvas [class*="uppercase"] {
+  letter-spacing: 0 !important;
+}
+
+.app-canvas h1,
+.app-canvas h2,
+.app-canvas h3,
+.app-canvas h4 {
+  letter-spacing: 0 !important;
+}
+
+.fixed.inset-0[class*="bg-black"] {
+  background-color: rgba(15, 35, 60, 0.46) !important;
+}
+
+.fixed.inset-0 [class*="max-w-"] {
+  border-radius: 0.5rem !important;
+  box-shadow: 0 8px 24px rgba(15, 45, 80, 0.12) !important;
 }
 
 .nc-ref-panel {
   border: 1px solid var(--nc-border);
-  border-radius: 0.75rem;
+  border-radius: 0.5rem;
   background: var(--nc-surface);
   box-shadow: 0 1px 2px rgba(15, 45, 80, 0.025);
 }

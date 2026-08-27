@@ -20,6 +20,10 @@ export interface ProviderRow {
   name: string;
   region: string;
   type: string;
+  address: string | null;
+  phone: string | null;
+  emergency_phone: string | null;
+  email: string | null;
   is_active: boolean;
   nhif_enabled: boolean;
 }
@@ -27,15 +31,102 @@ export interface ProviderRow {
 export const fetchProviders = async (): Promise<{ providers: ProviderRow[]; error?: string }> => {
   const { data, error } = await supabase
     .from('providers')
-    .select('id, name, region, type, is_active, nhif_enabled')
+    .select('id, name, region, type, address, phone, emergency_phone, email, is_active, nhif_enabled')
     .order('name');
   if (error) return { providers: [], error: error.message };
   return { providers: (data || []) as ProviderRow[] };
 };
 
+export interface ProviderUpsertInput {
+  name: string;
+  region: string;
+  type: string;
+  address?: string | null;
+  phone?: string | null;
+  emergency_phone?: string | null;
+  email?: string | null;
+  nhif_enabled: boolean;
+  is_active: boolean;
+}
+
+export const createProvider = async (payload: ProviderUpsertInput): Promise<{ error?: string }> => {
+  const { error } = await supabase.from('providers').insert(payload);
+  return { error: error?.message };
+};
+
+export const updateProvider = async (id: string, payload: ProviderUpsertInput): Promise<{ error?: string }> => {
+  const { error } = await supabase.from('providers').update(payload).eq('id', id);
+  return { error: error?.message };
+};
+
 export const setProviderActive = async (id: string, isActive: boolean): Promise<{ error?: string }> => {
   const { error } = await supabase.from('providers').update({ is_active: isActive }).eq('id', id);
   return { error: error?.message };
+};
+
+export interface ProviderDoctorRow {
+  id: string;
+  user_id: string;
+  full_name: string;
+  specialty: string;
+  sub_specialty: string | null;
+  is_verified: boolean;
+  is_active: boolean;
+}
+
+export interface ProviderStaffRow {
+  id: string;
+  user_id: string;
+  full_name: string;
+  job_title: string;
+  department: string | null;
+  is_active: boolean;
+}
+
+export const fetchProviderDirectory = async (
+  providerId: string
+): Promise<{ doctors: ProviderDoctorRow[]; staff: ProviderStaffRow[]; error?: string }> => {
+  const [{ data: doctorsData, error: doctorsError }, { data: staffData, error: staffError }] = await Promise.all([
+    supabase
+      .from('doctor_profiles')
+      .select('id, user_id, specialty, sub_specialty, is_verified, is_active')
+      .eq('provider_id', providerId)
+      .order('specialty'),
+    supabase
+      .from('provider_staff')
+      .select('id, user_id, job_title, department, is_active')
+      .eq('provider_id', providerId)
+      .order('created_at', { ascending: false }),
+  ]);
+
+  if (doctorsError || staffError) {
+    return { doctors: [], staff: [], error: doctorsError?.message || staffError?.message };
+  }
+
+  const profileNames = await namesFor([
+    ...(doctorsData || []).map((row) => row.user_id),
+    ...(staffData || []).map((row) => row.user_id),
+  ]);
+
+  return {
+    doctors: (doctorsData || []).map((row) => ({
+      id: row.id,
+      user_id: row.user_id,
+      full_name: profileNames.get(row.user_id) || 'Doctor',
+      specialty: row.specialty,
+      sub_specialty: row.sub_specialty,
+      is_verified: row.is_verified,
+      is_active: row.is_active,
+    })),
+    staff: (staffData || []).map((row) => ({
+      id: row.id,
+      user_id: row.user_id,
+      full_name: profileNames.get(row.user_id) || 'Staff member',
+      job_title: row.job_title,
+      department: row.department,
+      is_active: row.is_active,
+    })),
+  };
 };
 
 export interface BillRow {

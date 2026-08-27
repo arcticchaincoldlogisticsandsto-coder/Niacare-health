@@ -2,13 +2,15 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   Users, Building2, CalendarDays, LogOut, RefreshCw, Search, Moon, Sun, ShieldCheck, UserPlus,
   CreditCard, Siren, ClipboardList, LayoutDashboard, DollarSign, Stethoscope,
+  Plus, Save, X, Edit3, MapPin, Phone, Mail, UserCog,
 } from 'lucide-react';
 import type { Language, Theme, UserRole, UserStatus } from '../types';
 import { supabase } from '../lib/supabaseClient';
 import { InviteStaffModal } from './InviteStaffModal';
 import { Avatar } from './Avatar';
 import {
-  fetchProviders, setProviderActive, ProviderRow,
+  createProvider, fetchProviderDirectory, fetchProviders, setProviderActive, updateProvider,
+  ProviderDoctorRow, ProviderRow, ProviderStaffRow, ProviderUpsertInput,
   fetchBills, BillRow,
   fetchDispatches, setDispatchStatus, DispatchRow, DISPATCH_STATUSES,
   fetchAuditLogs, AuditLogRow,
@@ -299,7 +301,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ language, authUs
           </div>
         )}
 
-        {section === 'providers' && <ProvidersPanel isSw={isSw} />}
+        {section === 'providers' && <FacilityAdminPanel isSw={isSw} />}
         {section === 'operations' && <OperationsPanel isSw={isSw} />}
         {section === 'audit' && <AuditPanel isSw={isSw} />}
 
@@ -429,6 +431,338 @@ const OperationsPanel: React.FC<{ isSw: boolean }> = ({ isSw }) => {
     </div>
   );
 };
+
+const emptyProviderForm: ProviderUpsertInput = {
+  name: '',
+  region: '',
+  type: '',
+  address: '',
+  phone: '',
+  emergency_phone: '',
+  email: '',
+  nhif_enabled: true,
+  is_active: true,
+};
+
+const providerToForm = (provider: ProviderRow): ProviderUpsertInput => ({
+  name: provider.name,
+  region: provider.region,
+  type: provider.type,
+  address: provider.address || '',
+  phone: provider.phone || '',
+  emergency_phone: provider.emergency_phone || '',
+  email: provider.email || '',
+  nhif_enabled: provider.nhif_enabled,
+  is_active: provider.is_active,
+});
+
+const FacilityAdminPanel: React.FC<{ isSw: boolean }> = ({ isSw }) => {
+  const [providers, setProviders] = useState<ProviderRow[]>([]);
+  const [selectedId, setSelectedId] = useState('');
+  const [doctors, setDoctors] = useState<ProviderDoctorRow[]>([]);
+  const [staff, setStaff] = useState<ProviderStaffRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [directoryLoading, setDirectoryLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<ProviderUpsertInput>(emptyProviderForm);
+  const selected = providers.find((provider) => provider.id === selectedId) || null;
+
+  const load = async () => {
+    setLoading(true);
+    setError('');
+    const { providers: fetched, error: err } = await fetchProviders();
+    if (err) setError(err);
+    else {
+      setProviders(fetched);
+      setSelectedId((current) => current || fetched[0]?.id || '');
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    if (!selectedId) {
+      setDoctors([]);
+      setStaff([]);
+      return;
+    }
+    setDirectoryLoading(true);
+    fetchProviderDirectory(selectedId).then(({ doctors: fetchedDoctors, staff: fetchedStaff, error: err }) => {
+      if (err) setError(err);
+      else {
+        setDoctors(fetchedDoctors);
+        setStaff(fetchedStaff);
+      }
+      setDirectoryLoading(false);
+    });
+  }, [selectedId]);
+
+  const startCreate = () => {
+    setEditingId('new');
+    setForm(emptyProviderForm);
+  };
+
+  const startEdit = (provider: ProviderRow) => {
+    setEditingId(provider.id);
+    setForm(providerToForm(provider));
+  };
+
+  const closeForm = () => {
+    setEditingId(null);
+    setForm(emptyProviderForm);
+  };
+
+  const updateForm = (key: keyof ProviderUpsertInput, value: string | boolean) => {
+    setForm((current) => ({ ...current, [key]: value }));
+  };
+
+  const saveProvider = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!editingId) return;
+    setSaving(true);
+    setError('');
+    const payload: ProviderUpsertInput = {
+      ...form,
+      name: form.name.trim(),
+      region: form.region.trim(),
+      type: form.type.trim(),
+      address: form.address?.trim() || null,
+      phone: form.phone?.trim() || null,
+      emergency_phone: form.emergency_phone?.trim() || null,
+      email: form.email?.trim() || null,
+    };
+    const result = editingId === 'new' ? await createProvider(payload) : await updateProvider(editingId, payload);
+    setSaving(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    closeForm();
+    await load();
+  };
+
+  const toggle = async (provider: ProviderRow) => {
+    setSavingId(provider.id);
+    const { error: err } = await setProviderActive(provider.id, !provider.is_active);
+    if (err) setError(err);
+    else setProviders((prev) => prev.map((item) => (item.id === provider.id ? { ...item, is_active: !item.is_active } : item)));
+    setSavingId(null);
+  };
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-[0.78fr_1.22fr]">
+      <div className={`overflow-hidden ${cardCls}`} style={{ backgroundColor: 'var(--nc-surface)' }}>
+        <div className="flex items-center justify-between border-b nc-border p-4">
+          <div>
+            <h3 className="text-sm font-black">{isSw ? 'Vituo na Watoa Huduma' : 'Facilities & Providers'}</h3>
+            <p className="mt-0.5 text-[11px] font-semibold nc-text-muted">
+              {isSw ? 'Dhibiti hospitali, kliniki na timu zake.' : 'Manage facilities and their doctors/staff.'}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={load} className="rounded-md border nc-border p-2 nc-text-muted hover:bg-slate-50 dark:hover:bg-slate-800" title="Refresh">
+              <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+            </button>
+            <button type="button" onClick={startCreate} className="flex items-center gap-1.5 rounded-md bg-[#075FD6] px-3 py-2 text-xs font-black text-white">
+              <Plus className="h-3.5 w-3.5" /> {isSw ? 'Ongeza' : 'Add'}
+            </button>
+          </div>
+        </div>
+
+        {error && <p className="border-b border-red-100 bg-red-50 p-3 text-xs font-medium text-red-700">{error}</p>}
+
+        <div className="max-h-[620px] overflow-y-auto p-2">
+          {providers.map((provider) => (
+            <button
+              key={provider.id}
+              type="button"
+              onClick={() => setSelectedId(provider.id)}
+              className={`mb-2 w-full rounded-md border p-3 text-left transition-colors ${
+                selectedId === provider.id
+                  ? 'border-[#075FD6] bg-blue-50/70 dark:border-cyan-500 dark:bg-cyan-950/20'
+                  : 'border-slate-200 bg-white hover:border-[#B8D4F5] dark:border-slate-800 dark:bg-[#101F31]'
+              }`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-black">{provider.name}</p>
+                  <p className="mt-1 truncate text-[11px] font-semibold nc-text-muted">{provider.region}</p>
+                </div>
+                <span className={`rounded-md px-2 py-1 text-[10px] font-black ${provider.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+                  {provider.is_active ? 'Active' : 'Suspended'}
+                </span>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] font-bold nc-text-secondary">
+                <span className="rounded-md bg-slate-100 px-2 py-1 dark:bg-slate-800">{provider.type}</span>
+                {provider.nhif_enabled && <span className="rounded-md bg-blue-50 px-2 py-1 text-[#075FD6] dark:bg-cyan-950 dark:text-cyan-300">NHIF</span>}
+              </div>
+            </button>
+          ))}
+          {!loading && !providers.length && <p className="py-10 text-center text-xs nc-text-muted">{isSw ? 'Hakuna vituo.' : 'No facilities yet.'}</p>}
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        {(editingId || !selected) ? (
+          <div className={`p-4 ${cardCls}`} style={{ backgroundColor: 'var(--nc-surface)' }}>
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-black">{editingId === 'new' ? (isSw ? 'Ongeza Kituo' : 'Add Facility') : (isSw ? 'Hariri Kituo' : 'Edit Facility')}</h3>
+                <p className="mt-0.5 text-[11px] font-semibold nc-text-muted">
+                  {isSw ? 'Taarifa hizi hutumika kwenye miadi na uendeshaji.' : 'These details drive bookings and provider operations.'}
+                </p>
+              </div>
+              <button type="button" onClick={closeForm} className="rounded-md border nc-border p-2 nc-text-muted hover:bg-slate-50 dark:hover:bg-slate-800">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={saveProvider} className="grid gap-3 text-xs sm:grid-cols-2">
+              <label className="sm:col-span-2">
+                <span className="mb-1 block font-bold nc-text-secondary">Facility name</span>
+                <input required value={form.name} onChange={(e) => updateForm('name', e.target.value)} className="nc-input px-3 py-2" />
+              </label>
+              <label>
+                <span className="mb-1 block font-bold nc-text-secondary">Region</span>
+                <input required value={form.region} onChange={(e) => updateForm('region', e.target.value)} className="nc-input px-3 py-2" />
+              </label>
+              <label>
+                <span className="mb-1 block font-bold nc-text-secondary">Type</span>
+                <input required value={form.type} onChange={(e) => updateForm('type', e.target.value)} placeholder="Private Hospital" className="nc-input px-3 py-2" />
+              </label>
+              <label className="sm:col-span-2">
+                <span className="mb-1 block font-bold nc-text-secondary">Address</span>
+                <input value={form.address || ''} onChange={(e) => updateForm('address', e.target.value)} className="nc-input px-3 py-2" />
+              </label>
+              <label>
+                <span className="mb-1 block font-bold nc-text-secondary">Phone</span>
+                <input value={form.phone || ''} onChange={(e) => updateForm('phone', e.target.value)} className="nc-input px-3 py-2" />
+              </label>
+              <label>
+                <span className="mb-1 block font-bold nc-text-secondary">Emergency phone</span>
+                <input value={form.emergency_phone || ''} onChange={(e) => updateForm('emergency_phone', e.target.value)} className="nc-input px-3 py-2" />
+              </label>
+              <label className="sm:col-span-2">
+                <span className="mb-1 block font-bold nc-text-secondary">Email</span>
+                <input type="email" value={form.email || ''} onChange={(e) => updateForm('email', e.target.value)} className="nc-input px-3 py-2" />
+              </label>
+              <label className="flex items-center gap-2 font-bold nc-text-secondary">
+                <input type="checkbox" checked={form.nhif_enabled} onChange={(e) => updateForm('nhif_enabled', e.target.checked)} className="h-4 w-4 accent-[#075FD6]" />
+                NHIF enabled
+              </label>
+              <label className="flex items-center gap-2 font-bold nc-text-secondary">
+                <input type="checkbox" checked={form.is_active} onChange={(e) => updateForm('is_active', e.target.checked)} className="h-4 w-4 accent-[#075FD6]" />
+                Active
+              </label>
+              <div className="flex justify-end gap-2 sm:col-span-2">
+                <button type="button" onClick={closeForm} className="rounded-md border nc-border px-3 py-2 font-bold nc-text-secondary">Cancel</button>
+                <button type="submit" disabled={saving} className="flex items-center gap-1.5 rounded-md bg-[#075FD6] px-3 py-2 font-black text-white disabled:opacity-60">
+                  <Save className="h-3.5 w-3.5" /> {saving ? 'Saving...' : 'Save facility'}
+                </button>
+              </div>
+            </form>
+          </div>
+        ) : (
+          <>
+            <div className={`p-4 ${cardCls}`} style={{ backgroundColor: 'var(--nc-surface)' }}>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-[11px] font-black nc-text-muted">Selected facility</p>
+                  <h3 className="mt-1 text-lg font-black">{selected.name}</h3>
+                  <p className="mt-1 text-xs font-semibold nc-text-secondary">{selected.type} - {selected.region}</p>
+                  <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
+                    {selected.address && <p className="flex items-center gap-2 nc-text-secondary"><MapPin className="h-3.5 w-3.5 text-[#075FD6]" /> {selected.address}</p>}
+                    {selected.phone && <p className="flex items-center gap-2 nc-text-secondary"><Phone className="h-3.5 w-3.5 text-[#075FD6]" /> {selected.phone}</p>}
+                    {selected.email && <p className="flex items-center gap-2 nc-text-secondary"><Mail className="h-3.5 w-3.5 text-[#075FD6]" /> {selected.email}</p>}
+                    {selected.emergency_phone && <p className="flex items-center gap-2 nc-text-secondary"><Siren className="h-3.5 w-3.5 text-rose-500" /> {selected.emergency_phone}</p>}
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" onClick={() => startEdit(selected)} className="flex items-center gap-1.5 rounded-md border nc-border px-3 py-2 text-xs font-black nc-text-secondary hover:bg-slate-50 dark:hover:bg-slate-800">
+                    <Edit3 className="h-3.5 w-3.5" /> Edit
+                  </button>
+                  <button type="button" disabled={savingId === selected.id} onClick={() => toggle(selected)} className="rounded-md border nc-border px-3 py-2 text-xs font-black nc-text-secondary hover:bg-slate-50 disabled:opacity-50 dark:hover:bg-slate-800">
+                    {selected.is_active ? 'Suspend' : 'Activate'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-4 xl:grid-cols-2">
+              <TeamList
+                icon={<Stethoscope className="h-4 w-4 text-[#075FD6]" />}
+                title={isSw ? 'Madaktari wa Kituo' : 'Facility Doctors'}
+                empty={isSw ? 'Hakuna madaktari bado.' : 'No doctors attached yet.'}
+                loading={directoryLoading}
+                rows={doctors.map((doctor) => ({
+                  id: doctor.id,
+                  name: doctor.full_name,
+                  meta: [doctor.specialty, doctor.sub_specialty].filter(Boolean).join(' - '),
+                  status: doctor.is_active ? (doctor.is_verified ? 'Verified' : 'Active') : 'Inactive',
+                }))}
+              />
+              <TeamList
+                icon={<UserCog className="h-4 w-4 text-[#075FD6]" />}
+                title={isSw ? 'Wafanyakazi wa Kituo' : 'Provider Staff'}
+                empty={isSw ? 'Hakuna wafanyakazi bado.' : 'No provider staff attached yet.'}
+                loading={directoryLoading}
+                rows={staff.map((member) => ({
+                  id: member.id,
+                  name: member.full_name,
+                  meta: [member.job_title, member.department].filter(Boolean).join(' - '),
+                  status: member.is_active ? 'Active' : 'Inactive',
+                }))}
+              />
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const TeamList: React.FC<{
+  icon: React.ReactNode;
+  title: string;
+  empty: string;
+  loading: boolean;
+  rows: { id: string; name: string; meta: string; status: string }[];
+}> = ({ icon, title, empty, loading, rows }) => (
+  <div className={`overflow-hidden ${cardCls}`} style={{ backgroundColor: 'var(--nc-surface)' }}>
+    <div className="flex items-center justify-between border-b nc-border p-4">
+      <div className="flex items-center gap-2">
+        {icon}
+        <h3 className="text-sm font-black">{title}</h3>
+      </div>
+      <span className="rounded-md bg-blue-50 px-2 py-1 text-[10px] font-black text-[#075FD6] dark:bg-cyan-950 dark:text-cyan-300">
+        {rows.length}
+      </span>
+    </div>
+    <div className="space-y-2 p-2">
+      {loading ? (
+        <p className="p-3 text-xs nc-text-muted">Loading team...</p>
+      ) : rows.length ? (
+        rows.map((row) => (
+          <div key={row.id} className="flex items-center justify-between gap-3 rounded-md border border-slate-100 p-3 text-xs dark:border-slate-800">
+            <div className="min-w-0">
+              <p className="truncate font-black">{row.name}</p>
+              <p className="mt-0.5 truncate nc-text-muted">{row.meta || '-'}</p>
+            </div>
+            <span className={`rounded-md px-2 py-1 text-[10px] font-black ${row.status === 'Inactive' ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'}`}>
+              {row.status}
+            </span>
+          </div>
+        ))
+      ) : (
+        <p className="p-3 text-xs nc-text-muted">{empty}</p>
+      )}
+    </div>
+  </div>
+);
 
 const ProvidersPanel: React.FC<{ isSw: boolean }> = ({ isSw }) => {
   const [providers, setProviders] = useState<ProviderRow[]>([]);

@@ -374,7 +374,7 @@ export default function App() {
     );
   }
 
-  const shellMaxWidth = isAuthenticated && userRole !== 'patient' ? 'max-w-[1180px]' : 'max-w-[430px]';
+  const shellMaxWidth = isAuthenticated ? 'max-w-[1180px]' : 'max-w-[430px]';
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-start antialiased transition-colors duration-300 nc-bg nc-text app-canvas">
@@ -411,7 +411,7 @@ export default function App() {
         )}
 
         {/* Main Content: Authenticated Patient Dashboard OR Credentials Form & OTP */}
-        <div className={`flex-1 flex flex-col ${isAuthenticated && userRole !== 'patient' ? 'px-4 sm:px-6 lg:px-8 pb-8' : 'px-4 pb-24'}`}>
+        <div className={`flex-1 flex flex-col ${isAuthenticated ? 'px-4 sm:px-6 lg:px-8 pb-8' : 'px-4 pb-24'}`}>
           {isAuthenticated ? (
             /* Authenticated role-based dashboard */
             <div className="pt-2">
