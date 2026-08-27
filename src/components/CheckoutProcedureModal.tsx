@@ -28,6 +28,14 @@ import { TANZANIA_INSURANCE_PROVIDERS } from '../data/insurance';
 import { fetchBills, settleBill } from '../lib/bills';
 import { insertMedicalRecord } from '../lib/records';
 
+const secureNumericCode = (digits: number): string => {
+  const min = 10 ** (digits - 1);
+  const span = 9 * min;
+  const array = new Uint32Array(1);
+  globalThis.crypto?.getRandomValues(array);
+  return String(min + (array[0] % span));
+};
+
 export interface MedicalBill {
   id: string;
   invoiceNumber: string;
@@ -153,7 +161,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
 
     setSettlementSuccess(true);
     const newReceipt = {
-      receiptNo: `REC-INS-${Math.floor(100000 + Math.random() * 900000)}`,
+      receiptNo: `REC-INS-${secureNumericCode(8)}`,
       mode: 'insurance' as const,
       methodTitle: `Bima ya Afya (${selectedInsuranceProvider})`,
       authRef,
@@ -197,7 +205,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
 
     setSettlementSuccess(true);
     const newReceipt = {
-      receiptNo: `REC-CSH-${Math.floor(100000 + Math.random() * 900000)}`,
+      receiptNo: `REC-CSH-${secureNumericCode(8)}`,
       mode: 'cash' as const,
       methodTitle: methodLabel,
       authRef,

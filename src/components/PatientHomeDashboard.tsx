@@ -34,7 +34,7 @@ import { PrescriptionsModal } from './PrescriptionsModal';
 import { InsuranceModal } from './InsuranceModal';
 import { FacilitiesModal } from './FacilitiesModal';
 import { AiTriageModal } from './AiTriageModal';
-import { Appointment, INITIAL_APPOINTMENTS } from '../data/doctors';
+import { Appointment } from '../data/doctors';
 import { MedicalRecord } from '../data/medicalRecords';
 import { getPatientCountry } from '../data/countries';
 import { formatDob } from '../utils/dateUtils';
@@ -145,7 +145,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
   };
 
   // Appointments Management State (internal or lifted)
-  const [internalAppointmentsList, setInternalAppointmentsList] = useState<Appointment[]>(INITIAL_APPOINTMENTS);
+  const [internalAppointmentsList, setInternalAppointmentsList] = useState<Appointment[]>([]);
   const appointmentsList = externalAppointmentsList || internalAppointmentsList;
   const setAppointmentsList = externalSetAppointmentsList || setInternalAppointmentsList;
   const [appointmentToast, setAppointmentToast] = useState<string | null>(null);

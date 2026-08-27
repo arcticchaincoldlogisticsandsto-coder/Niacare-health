@@ -331,6 +331,81 @@ button { -webkit-tap-highlight-color: transparent; }
   background: color-mix(in srgb, var(--nc-surface-elevated) 72%, transparent);
 }
 
+/* System-wide reference rhythm inspired by the check/mobile boards:
+   quiet grey canvas, white clinical cards, strong blue actions, compact rows. */
+.app-canvas .nc-card,
+.app-canvas .nc-ref-panel,
+.app-canvas section,
+.app-canvas article {
+  border-color: var(--nc-border) !important;
+}
+
+.app-canvas [class*="bg-white"] {
+  background-color: var(--nc-surface) !important;
+}
+
+.app-canvas [class*="bg-slate-50"],
+.app-canvas [class*="bg-gray-50"],
+.app-canvas [class*="bg-zinc-50"] {
+  background-color: var(--nc-surface-elevated) !important;
+}
+
+.app-canvas [class*="text-slate-900"],
+.app-canvas [class*="text-gray-900"],
+.app-canvas [class*="text-zinc-900"] {
+  color: var(--nc-text) !important;
+}
+
+.app-canvas [class*="text-slate-600"],
+.app-canvas [class*="text-gray-600"],
+.app-canvas [class*="text-zinc-600"] {
+  color: var(--nc-text-secondary) !important;
+}
+
+.app-canvas [class*="text-slate-500"],
+.app-canvas [class*="text-gray-500"],
+.app-canvas [class*="text-zinc-500"],
+.app-canvas [class*="text-slate-400"],
+.app-canvas [class*="text-gray-400"],
+.app-canvas [class*="text-zinc-400"] {
+  color: var(--nc-text-muted) !important;
+}
+
+.app-canvas [class*="border-slate-"],
+.app-canvas [class*="border-gray-"],
+.app-canvas [class*="border-zinc-"] {
+  border-color: var(--nc-border) !important;
+}
+
+.app-canvas [class*="hover:border-cyan-"],
+.app-canvas [class*="hover:border-teal-"],
+.app-canvas [class*="hover:border-purple-"] {
+  border-color: var(--nc-primary) !important;
+}
+
+.app-canvas [class*="font-black"] {
+  font-weight: 800 !important;
+}
+
+@media (max-width: 640px) {
+  .app-canvas {
+    background:
+      radial-gradient(circle at 50% -12%, rgba(47, 128, 237, 0.12), transparent 34%),
+      var(--nc-bg);
+  }
+
+  .app-canvas main,
+  .app-canvas #patient-home-dashboard {
+    max-width: 430px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .app-canvas .nc-card {
+    border-radius: 1rem !important;
+  }
+}
+
 /* Pulse animation for emergency beacon */
 @keyframes emergencyPulse {
   0%, 100% {

@@ -64,6 +64,39 @@ $$;
 revoke all on function public.is_admin() from public;
 grant execute on function public.is_admin() to authenticated;
 
+-- Shared trigger helpers are defined early because later tables attach these
+-- triggers as they are created. Keeping them here makes a brand-new database
+-- run reliable instead of depending on functions left over from an older run.
+create or replace function public.set_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+create or replace function public.audit_row_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.audit_logs (actor_id, action, resource_type, resource_id, patient_id, metadata)
+  values (
+    auth.uid(),
+    upper(TG_TABLE_NAME) || '_' || TG_OP,
+    TG_TABLE_NAME,
+    new.id,
+    new.patient_id,
+    '{}'::jsonb
+  );
+  return new;
+end;
+$$;
+
 drop policy if exists "Profiles are viewable by owner" on public.profiles;
 create policy "Profiles are viewable by owner"
   on public.profiles for select
@@ -925,6 +958,71 @@ create policy "Bill items are viewable by patient and staff"
     )
   );
 
+drop policy if exists "Bill items are manageable by provider staff" on public.bill_items;
+create policy "Bill items are manageable by provider staff"
+  on public.bill_items for all
+  using (
+    exists (
+      select 1 from public.bills b
+      join public.appointments a on a.id = b.appointment_id
+      join public.provider_staff ps on ps.provider_id = a.provider_id
+      where b.id = bill_items.bill_id and ps.user_id = auth.uid() and ps.is_active = true
+    )
+    or public.is_admin()
+  )
+  with check (
+    exists (
+      select 1 from public.bills b
+      join public.appointments a on a.id = b.appointment_id
+      join public.provider_staff ps on ps.provider_id = a.provider_id
+      where b.id = bill_items.bill_id and ps.user_id = auth.uid() and ps.is_active = true
+    )
+    or public.is_admin()
+  );
+
+create or replace function public.sync_bill_total_from_items()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_bill_id uuid;
+begin
+  v_bill_id := coalesce(new.bill_id, old.bill_id);
+
+  update public.bills b
+  set
+    total_tzs = coalesce((
+      select sum(bi.total_tzs)::integer from public.bill_items bi where bi.bill_id = v_bill_id
+    ), 0),
+    items = coalesce((
+      select jsonb_agg(
+        jsonb_build_object(
+          'description', bi.description,
+          'quantity', bi.quantity,
+          'unit_price_tzs', bi.unit_price_tzs,
+          'total_tzs', bi.total_tzs,
+          'category', bi.category
+        )
+        order by bi.created_at
+      )
+      from public.bill_items bi where bi.bill_id = v_bill_id
+    ), '[]'::jsonb)
+  where b.id = v_bill_id;
+
+  if TG_OP = 'DELETE' then
+    return old;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists sync_bill_items_total on public.bill_items;
+create trigger sync_bill_items_total
+  after insert or update or delete on public.bill_items
+  for each row execute function public.sync_bill_total_from_items();
+
 -- ============================================================================
 -- PAYMENTS — settlement transactions for bills
 -- ============================================================================
@@ -972,6 +1070,56 @@ create policy "Payments are insertable by patient and staff"
     or public.is_admin()
   );
 
+drop policy if exists "Payments are updatable by provider staff" on public.payments;
+create policy "Payments are updatable by provider staff"
+  on public.payments for update
+  using (
+    auth.uid() = processed_by
+    or exists (
+      select 1 from public.bills b
+      join public.appointments a on a.id = b.appointment_id
+      join public.provider_staff ps on ps.provider_id = a.provider_id
+      where b.id = payments.bill_id and ps.user_id = auth.uid() and ps.is_active = true
+    )
+    or public.is_admin()
+  )
+  with check (
+    auth.uid() = processed_by
+    or exists (
+      select 1 from public.bills b
+      join public.appointments a on a.id = b.appointment_id
+      join public.provider_staff ps on ps.provider_id = a.provider_id
+      where b.id = payments.bill_id and ps.user_id = auth.uid() and ps.is_active = true
+    )
+    or public.is_admin()
+  );
+
+create or replace function public.settle_bill_from_completed_payment()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.status = 'completed' then
+    update public.bills
+    set
+      status = 'settled',
+      settlement_method = new.method,
+      settlement_ref = coalesce(new.provider_ref, new.id::text),
+      settled_at = coalesce(settled_at, now())
+    where id = new.bill_id
+      and status is distinct from 'settled';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists settle_bill_after_payment on public.payments;
+create trigger settle_bill_after_payment
+  after insert or update of status on public.payments
+  for each row execute function public.settle_bill_from_completed_payment();
+
 -- ============================================================================
 -- DOCTOR SCHEDULE — real booked/available slots per doctor per day
 -- ============================================================================
@@ -1018,6 +1166,27 @@ create policy "Doctors and staff can manage own schedule"
     )
     or public.is_admin()
   );
+
+create or replace function public.release_schedule_slot_on_cancel()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.status = 'cancelled' and old.status is distinct from 'cancelled' and new.doctor_profile_id is not null then
+    update public.doctor_schedule
+    set is_booked = false, appointment_id = null
+    where appointment_id = new.id;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists release_schedule_slot_on_appointment_cancel on public.appointments;
+create trigger release_schedule_slot_on_appointment_cancel
+  after update of status on public.appointments
+  for each row execute function public.release_schedule_slot_on_cancel();
 
 -- ============================================================================
 -- book_appointment() — atomic, race-safe booking.
@@ -1385,6 +1554,89 @@ create policy "Personal files are deletable by owner"
     bucket_id = 'personal-files'
     and (storage.foldername(name))[1] = auth.uid()::text
   );
+
+-- ============================================================================
+-- DATA INTEGRITY GUARDS — re-runnable constraints that keep production data
+-- realistic: no negative money/stock, plausible vitals, sane coordinates, and
+-- unique operational references where duplicates would confuse staff.
+-- ============================================================================
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'providers_lat_lng_valid') then
+    alter table public.providers add constraint providers_lat_lng_valid
+      check ((lat is null or lat between -90 and 90) and (lng is null or lng between -180 and 180)) not valid;
+  end if;
+
+  if not exists (select 1 from pg_constraint where conname = 'doctor_profiles_money_nonnegative') then
+    alter table public.doctor_profiles add constraint doctor_profiles_money_nonnegative
+      check (
+        consultation_fee_tzs >= 0
+        and telehealth_fee_tzs >= 0
+        and home_visit_fee_tzs >= 0
+        and reviews_count >= 0
+        and (experience_years is null or experience_years >= 0)
+        and rating between 0 and 5
+      ) not valid;
+  end if;
+
+  if not exists (select 1 from pg_constraint where conname = 'appointments_amounts_nonnegative') then
+    alter table public.appointments add constraint appointments_amounts_nonnegative
+      check (co_pay_amount_tzs >= 0) not valid;
+  end if;
+
+  if not exists (select 1 from pg_constraint where conname = 'vitals_plausible_ranges') then
+    alter table public.vitals add constraint vitals_plausible_ranges
+      check (
+        (temperature_c is null or temperature_c between 25 and 45)
+        and (heart_rate is null or heart_rate between 20 and 250)
+        and (respiratory_rate is null or respiratory_rate between 5 and 80)
+        and (spo2 is null or spo2 between 0 and 100)
+        and (systolic_bp is null or systolic_bp between 40 and 260)
+        and (diastolic_bp is null or diastolic_bp between 20 and 180)
+        and (weight_kg is null or weight_kg between 0 and 400)
+        and (height_cm is null or height_cm between 20 and 260)
+      ) not valid;
+  end if;
+
+  if not exists (select 1 from pg_constraint where conname = 'bills_totals_nonnegative') then
+    alter table public.bills add constraint bills_totals_nonnegative
+      check (total_tzs >= 0 and total_usd >= 0) not valid;
+  end if;
+
+  if not exists (select 1 from pg_constraint where conname = 'bill_items_amounts_valid') then
+    alter table public.bill_items add constraint bill_items_amounts_valid
+      check (quantity > 0 and unit_price_tzs >= 0 and total_tzs >= 0) not valid;
+  end if;
+
+  if not exists (select 1 from pg_constraint where conname = 'payments_amount_nonnegative') then
+    alter table public.payments add constraint payments_amount_nonnegative
+      check (amount_tzs >= 0) not valid;
+  end if;
+
+  if not exists (select 1 from pg_constraint where conname = 'emergency_dispatches_coordinates_valid') then
+    alter table public.emergency_dispatches add constraint emergency_dispatches_coordinates_valid
+      check (
+        (latitude is null or latitude between -90 and 90)
+        and (longitude is null or longitude between -180 and 180)
+        and (facility_distance_km is null or facility_distance_km >= 0)
+        and (facility_eta_min is null or facility_eta_min >= 0)
+      ) not valid;
+  end if;
+
+  if not exists (select 1 from pg_constraint where conname = 'inventory_quantities_nonnegative') then
+    alter table public.inventory_items add constraint inventory_quantities_nonnegative
+      check (quantity >= 0 and minimum_quantity >= 0) not valid;
+  end if;
+end $$;
+
+create unique index if not exists appointments_ticket_number_unique
+  on public.appointments (ticket_number);
+
+create unique index if not exists bills_invoice_number_unique
+  on public.bills (invoice_number);
+
+create unique index if not exists emergency_dispatches_dispatch_ref_unique
+  on public.emergency_dispatches (dispatch_ref);
 
 -- ============================================================================
 -- SEED PROVIDERS — affiliated hospitals and clinics in Tanzania

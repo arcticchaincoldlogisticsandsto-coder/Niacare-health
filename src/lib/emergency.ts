@@ -1,5 +1,13 @@
 import { supabase } from './supabaseClient';
 
+const secureNumericCode = (digits: number): string => {
+  const min = 10 ** (digits - 1);
+  const span = 9 * min;
+  const array = new Uint32Array(1);
+  globalThis.crypto?.getRandomValues(array);
+  return String(min + (array[0] % span));
+};
+
 export interface DispatchInput {
   condition: string;
   latitude: number | null;
@@ -14,7 +22,7 @@ export interface DispatchInput {
 export const createDispatch = async (
   input: DispatchInput
 ): Promise<{ dispatchRef: string; error?: string }> => {
-  const dispatchRef = `NC-EMS-${Math.floor(100000 + Math.random() * 900000)}`;
+  const dispatchRef = `NC-EMS-${secureNumericCode(8)}`;
 
   const { error } = await supabase.from('emergency_dispatches').insert({
     patient_id: input.patientId,

@@ -44,6 +44,14 @@ const doctorInitial = (name: string): string => {
   return (stripped.charAt(0) || 'D').toUpperCase();
 };
 
+const secureNumericCode = (digits: number): string => {
+  const min = 10 ** (digits - 1);
+  const span = 9 * min;
+  const array = new Uint32Array(1);
+  globalThis.crypto?.getRandomValues(array);
+  return String(min + (array[0] % span));
+};
+
 interface AppointmentBookingModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -297,7 +305,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
   const handleCompleteBooking = async () => {
     if (!selectedDoctor || !authUserId || !selectedSlot) return;
 
-    const randomTicketSuffix = Math.floor(1000 + Math.random() * 9000);
+    const ticketSuffix = secureNumericCode(6);
     const hospitalPrefix = selectedDoctor.hospital.includes('Muhimbili')
       ? 'MNH'
       : selectedDoctor.hospital.includes('Aga Khan')
@@ -307,18 +315,18 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
       : 'NC';
 
     const newAppointmentData: Omit<Appointment, 'id'> = {
-      ticketNumber: `NC-${hospitalPrefix}-${randomTicketSuffix}`,
+      ticketNumber: `NC-${hospitalPrefix}-${ticketSuffix}`,
       doctorId: selectedDoctor.id,
       doctorName: selectedDoctor.name,
       doctorSpecialty: selectedDoctor.specialty,
       hospitalName: selectedDoctor.hospital,
       hospitalLocation: selectedDoctor.hospitalLocation,
-      roomNumber: `Chumba Na. ${Math.floor(100 + Math.random() * 300)} (Ghorofa ya 1)`,
+      roomNumber: selectedDoctor.roomNumber || 'Room assigned at check-in',
       consultationType: consultationType,
       date: selectedDate,
       timeSlot: selectedSlot,
       status: 'confirmed',
-      queueNumber: `#A-${Math.floor(10 + Math.random() * 90)}`,
+      queueNumber: `#A-${secureNumericCode(3)}`,
       reason: visitReason,
       symptomsNote: symptomsNote,
       insuranceProvider: paymentMethod === 'insurance' ? insuranceName : 'Malipo ya Moja kwa Moja',
