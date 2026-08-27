@@ -49,11 +49,15 @@ export const fetchPrescriptions = async (
   return { prescriptions: (data as PrescriptionRow[]).map(mapRowToPrescription) };
 };
 
+// Patients no longer have raw UPDATE access to prescriptions (RLS would
+// otherwise let them rewrite medication_name/dosage_instructions on a real,
+// doctor-issued prescription — see supabase/schema.sql). This calls a
+// SECURITY DEFINER function that only ever touches taken_today.
 export const updatePrescriptionTaken = async (
   id: string,
   takenToday: boolean
 ): Promise<{ success: boolean; error?: string }> => {
-  const { error } = await supabase.from('prescriptions').update({ taken_today: takenToday }).eq('id', id);
+  const { error } = await supabase.rpc('set_prescription_taken', { p_id: id, p_taken: takenToday });
   if (error) return { success: false, error: error.message };
   return { success: true };
 };
@@ -82,14 +86,17 @@ export const insertPrescription = async (
   return { prescription: mapRowToPrescription(data as PrescriptionRow) };
 };
 
+// Only ever called to request a refill (never to un-request one) anywhere
+// in the app today, matching the request_prescription_refill() RPC below,
+// which only sets the flag true.
 export const updatePrescriptionRefillRequested = async (
   id: string,
   refillRequested: boolean
 ): Promise<{ success: boolean; error?: string }> => {
-  const { error } = await supabase
-    .from('prescriptions')
-    .update({ refill_requested: refillRequested })
-    .eq('id', id);
+  if (!refillRequested) {
+    return { success: false, error: 'Cancelling a refill request is not supported.' };
+  }
+  const { error } = await supabase.rpc('request_prescription_refill', { p_id: id });
   if (error) return { success: false, error: error.message };
   return { success: true };
 };

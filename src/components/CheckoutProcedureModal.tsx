@@ -155,7 +155,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
     if (!currentBill || !authUserId) return;
     setIsProcessingPayment(true);
     const authRef = insurancePreAuthCode || `NHIF-CLAIM-${Date.now().toString().slice(-6)}`;
-    const { success } = await settleBill(currentBill.id, `Insurance (${selectedInsuranceProvider})`, authRef);
+    const { success } = await settleBill(currentBill.id, 'insurance', authRef);
     setIsProcessingPayment(false);
 
     if (!success) return;
@@ -198,8 +198,12 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
         : cashPaymentMethod === 'cash_counter'
         ? `Fedha Taslimu Kaunta (Control No: ${controlNumber})`
         : 'Kadi ya Benki (Visa/Mastercard)';
+    // payments.method has a strict DB check constraint (insurance/cash/
+    // mobile_money/bank_transfer/card) — the human-readable methodLabel
+    // above is for the on-screen/PDF receipt only, never sent to the DB.
+    const settlementMethod = cashPaymentMethod === 'mpesa' ? 'mobile_money' : cashPaymentMethod === 'card' ? 'card' : 'cash';
     const authRef = `TXN-${Date.now().toString().slice(-8)}`;
-    const { success } = await settleBill(currentBill.id, methodLabel, authRef);
+    const { success } = await settleBill(currentBill.id, settlementMethod, authRef);
     setIsProcessingPayment(false);
 
     if (!success) return;

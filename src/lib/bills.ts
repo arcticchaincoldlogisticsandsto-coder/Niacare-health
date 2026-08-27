@@ -64,20 +64,24 @@ export const insertBill = async (
   return { bill: mapRowToBill(data as BillRow) };
 };
 
+// Settlement is no longer a raw client UPDATE (RLS no longer grants patients
+// direct write access to bills — see supabase/schema.sql). This calls a
+// SECURITY DEFINER function that validates the bill belongs to the caller
+// and isn't already settled, then records it as a real payment. Still
+// simulated in the sense that no real payment gateway sits behind it yet,
+// but the trust boundary is now a server-side function, not an open column.
+export type PaymentMethod = 'insurance' | 'cash' | 'mobile_money' | 'bank_transfer' | 'card';
+
 export const settleBill = async (
   id: string,
-  settlementMethod: string,
+  settlementMethod: PaymentMethod,
   settlementRef: string
 ): Promise<{ success: boolean; error?: string }> => {
-  const { error } = await supabase
-    .from('bills')
-    .update({
-      status: 'settled',
-      settlement_method: settlementMethod,
-      settlement_ref: settlementRef,
-      settled_at: new Date().toISOString(),
-    })
-    .eq('id', id);
+  const { error } = await supabase.rpc('settle_bill_as_patient', {
+    p_bill_id: id,
+    p_method: settlementMethod,
+    p_ref: settlementRef,
+  });
 
   if (error) return { success: false, error: error.message };
   return { success: true };

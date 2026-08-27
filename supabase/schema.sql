@@ -427,11 +427,16 @@ create policy "Medical records are viewable by owner"
     or public.is_admin()
   );
 
+-- SECURITY: patients may only self-insert a 'consultation' record (the real
+-- shape CheckoutProcedureModal creates after a self-service checkout) — not
+-- 'lab' / 'radiology' / 'vaccine' / 'prescription', which would let a patient
+-- forge a fake clinical result into their own timeline, indistinguishable
+-- from a real one issued by a clinician.
 drop policy if exists "Medical records are insertable by clinical staff" on public.medical_records;
 create policy "Medical records are insertable by clinical staff"
   on public.medical_records for insert
   with check (
-    auth.uid() = patient_id
+    (auth.uid() = patient_id and category = 'consultation')
     or exists (
       select 1 from public.doctor_profiles dp where dp.user_id = auth.uid() and dp.is_active = true
     )
@@ -441,16 +446,25 @@ create policy "Medical records are insertable by clinical staff"
     or public.is_admin()
   );
 
+-- SECURITY: the previous version let ANY active doctor or provider-staff
+-- account update ANY patient's medical record, with no check that they ever
+-- treated that patient (only auth.uid() = created_by was self-scoped). Now
+-- scoped the same way medical_records SELECT already is: a real appointment
+-- connecting that clinician/facility to this specific patient.
 drop policy if exists "Medical records are updatable by clinical staff" on public.medical_records;
 create policy "Medical records are updatable by clinical staff"
   on public.medical_records for update
   using (
     auth.uid() = created_by
     or exists (
-      select 1 from public.doctor_profiles dp where dp.user_id = auth.uid() and dp.is_active = true
+      select 1 from public.appointments a
+      join public.doctor_profiles dp on dp.id = a.doctor_profile_id
+      where a.patient_id = medical_records.patient_id and dp.user_id = auth.uid()
     )
     or exists (
-      select 1 from public.provider_staff ps where ps.user_id = auth.uid() and ps.is_active = true
+      select 1 from public.appointments a
+      join public.provider_staff ps on ps.provider_id = a.provider_id
+      where a.patient_id = medical_records.patient_id and ps.user_id = auth.uid() and ps.is_active = true
     )
     or public.is_admin()
   );
@@ -615,31 +629,149 @@ alter table public.prescriptions
 
 alter table public.prescriptions enable row level security;
 
+-- SECURITY: this was previously one `for all` policy where `auth.uid() =
+-- patient_id` satisfied SELECT *and* UPDATE *and* DELETE — a patient could
+-- silently rewrite medication_name/dosage_instructions on their own real
+-- prescription, or delete it outright, via a raw client call (the app UI
+-- only ever touches taken_today/refill_requested, but RLS is what actually
+-- has to stop a modified/malicious client, not the UI). It also let ANY
+-- active doctor or provider-staff account read/edit/delete ANY patient's
+-- prescriptions with no treatment relationship required. Split into four
+-- scoped policies: patients get read-only access plus two narrow RPCs below
+-- for the two fields they legitimately touch; clinical staff access is now
+-- scoped to patients they actually have an appointment/encounter with.
 drop policy if exists "Prescriptions are manageable by patient and clinical staff" on public.prescriptions;
-create policy "Prescriptions are manageable by patient and clinical staff"
-  on public.prescriptions for all
+
+create policy "Prescriptions are viewable by patient and treating staff"
+  on public.prescriptions for select
   using (
     auth.uid() = patient_id
     or auth.uid() = created_by
     or exists (
-      select 1 from public.doctor_profiles dp where dp.user_id = auth.uid() and dp.is_active = true
+      select 1 from public.appointments a
+      join public.doctor_profiles dp on dp.id = a.doctor_profile_id
+      where a.patient_id = prescriptions.patient_id and dp.user_id = auth.uid()
     )
     or exists (
-      select 1 from public.provider_staff ps where ps.user_id = auth.uid() and ps.is_active = true
+      select 1 from public.encounters e
+      join public.doctor_profiles dp on dp.id = e.doctor_profile_id
+      where e.patient_id = prescriptions.patient_id and dp.user_id = auth.uid()
+    )
+    or exists (
+      select 1 from public.appointments a
+      join public.provider_staff ps on ps.provider_id = a.provider_id
+      where a.patient_id = prescriptions.patient_id and ps.user_id = auth.uid() and ps.is_active = true
+    )
+    or public.is_admin()
+  );
+
+create policy "Prescriptions are insertable by clinical staff"
+  on public.prescriptions for insert
+  with check (
+    exists (select 1 from public.doctor_profiles dp where dp.user_id = auth.uid() and dp.is_active = true)
+    or exists (select 1 from public.provider_staff ps where ps.user_id = auth.uid() and ps.is_active = true)
+    or public.is_admin()
+  );
+
+create policy "Prescriptions are updatable by treating clinical staff"
+  on public.prescriptions for update
+  using (
+    auth.uid() = created_by
+    or exists (
+      select 1 from public.appointments a
+      join public.doctor_profiles dp on dp.id = a.doctor_profile_id
+      where a.patient_id = prescriptions.patient_id and dp.user_id = auth.uid()
+    )
+    or exists (
+      select 1 from public.encounters e
+      join public.doctor_profiles dp on dp.id = e.doctor_profile_id
+      where e.patient_id = prescriptions.patient_id and dp.user_id = auth.uid()
+    )
+    or exists (
+      select 1 from public.appointments a
+      join public.provider_staff ps on ps.provider_id = a.provider_id
+      where a.patient_id = prescriptions.patient_id and ps.user_id = auth.uid() and ps.is_active = true
     )
     or public.is_admin()
   )
   with check (
-    auth.uid() = patient_id
-    or auth.uid() = created_by
+    auth.uid() = created_by
     or exists (
-      select 1 from public.doctor_profiles dp where dp.user_id = auth.uid() and dp.is_active = true
+      select 1 from public.appointments a
+      join public.doctor_profiles dp on dp.id = a.doctor_profile_id
+      where a.patient_id = prescriptions.patient_id and dp.user_id = auth.uid()
     )
     or exists (
-      select 1 from public.provider_staff ps where ps.user_id = auth.uid() and ps.is_active = true
+      select 1 from public.encounters e
+      join public.doctor_profiles dp on dp.id = e.doctor_profile_id
+      where e.patient_id = prescriptions.patient_id and dp.user_id = auth.uid()
+    )
+    or exists (
+      select 1 from public.appointments a
+      join public.provider_staff ps on ps.provider_id = a.provider_id
+      where a.patient_id = prescriptions.patient_id and ps.user_id = auth.uid() and ps.is_active = true
     )
     or public.is_admin()
   );
+
+create policy "Prescriptions are deletable by prescriber or admin"
+  on public.prescriptions for delete
+  using (auth.uid() = created_by or public.is_admin());
+
+-- Patients update exactly two self-service fields (taken_today,
+-- refill_requested) through these SECURITY DEFINER functions instead of a
+-- raw table UPDATE, so RLS never has to grant them open column access.
+create or replace function public.set_prescription_taken(p_id uuid, p_taken boolean)
+returns public.prescriptions
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_row public.prescriptions;
+begin
+  select * into v_row from public.prescriptions where id = p_id;
+  if v_row.id is null then
+    raise exception 'Prescription not found.' using errcode = 'P0002';
+  end if;
+  if auth.uid() is null or auth.uid() <> v_row.patient_id then
+    raise exception 'Not authorized to update this prescription.' using errcode = '42501';
+  end if;
+
+  update public.prescriptions set taken_today = p_taken where id = p_id
+  returning * into v_row;
+  return v_row;
+end;
+$$;
+
+revoke all on function public.set_prescription_taken(uuid, boolean) from public;
+grant execute on function public.set_prescription_taken(uuid, boolean) to authenticated;
+
+create or replace function public.request_prescription_refill(p_id uuid)
+returns public.prescriptions
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_row public.prescriptions;
+begin
+  select * into v_row from public.prescriptions where id = p_id;
+  if v_row.id is null then
+    raise exception 'Prescription not found.' using errcode = 'P0002';
+  end if;
+  if auth.uid() is null or auth.uid() <> v_row.patient_id then
+    raise exception 'Not authorized to update this prescription.' using errcode = '42501';
+  end if;
+
+  update public.prescriptions set refill_requested = true where id = p_id
+  returning * into v_row;
+  return v_row;
+end;
+$$;
+
+revoke all on function public.request_prescription_refill(uuid) from public;
+grant execute on function public.request_prescription_refill(uuid) to authenticated;
 
 -- ============================================================================
 -- LABORATORY — a doctor orders a test, provider staff (lab techs) progress
@@ -911,18 +1043,86 @@ create policy "Bills are viewable by patient and staff"
     or public.is_admin()
   );
 
+-- SECURITY (spec TEST 3): there was no INSERT policy on bills at all — under
+-- RLS that silently denies every insert, so insertBill() (called from the
+-- patient's own session right after booking) was very likely failing on
+-- every booking. Patients may insert their own bill, but only pre-settled.
+drop policy if exists "Bills are insertable by patient and staff" on public.bills;
+create policy "Bills are insertable by patient and staff"
+  on public.bills for insert
+  with check (
+    (auth.uid() = patient_id and status = 'pending')
+    or exists (
+      select 1 from public.appointments a
+      join public.provider_staff ps on ps.provider_id = a.provider_id
+      where a.id = bills.appointment_id and ps.user_id = auth.uid() and ps.is_active = true
+    )
+    or public.is_admin()
+  );
+
+-- SECURITY (spec TEST 3, "patient marks bill as paid"): `auth.uid() =
+-- patient_id` here previously satisfied UPDATE too, so any signed-in patient
+-- could call `supabase.from('bills').update({status:'settled',...})`
+-- directly from the browser and it would succeed — completely bypassing
+-- settleBill()/the payment step. Patients no longer get direct UPDATE at
+-- all; the simulated "pay" action now goes through
+-- settle_bill_as_patient() below, which inserts a real payments row and
+-- lets the existing settle_bill_from_completed_payment trigger do the
+-- settlement, instead of trusting the client to set the status column.
 drop policy if exists "Bills are updatable by staff" on public.bills;
 create policy "Bills are updatable by staff"
   on public.bills for update
   using (
-    auth.uid() = patient_id
-    or exists (
+    exists (
       select 1 from public.appointments a
       join public.provider_staff ps on ps.provider_id = a.provider_id
-      where a.id = bills.appointment_id and ps.user_id = auth.uid()
+      where a.id = bills.appointment_id and ps.user_id = auth.uid() and ps.is_active = true
     )
     or public.is_admin()
   );
+
+-- Patient-facing "pay this bill" (still simulated — no real payment gateway
+-- is wired up yet, see project notes) goes through this function instead of
+-- a raw UPDATE, so the trust boundary is a validated server-side function
+-- rather than an open column grant. Swapping the caller of this insert for
+-- a real payment-provider webhook handler later is a drop-in change.
+create or replace function public.settle_bill_as_patient(
+  p_bill_id uuid,
+  p_method text,
+  p_ref text
+)
+returns public.bills
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_bill public.bills;
+begin
+  select * into v_bill from public.bills where id = p_bill_id;
+  if v_bill.id is null then
+    raise exception 'Bill not found.' using errcode = 'P0002';
+  end if;
+  if auth.uid() is null or auth.uid() <> v_bill.patient_id then
+    raise exception 'Not authorized to settle this bill.' using errcode = '42501';
+  end if;
+  if v_bill.status = 'settled' then
+    raise exception 'This bill has already been settled.' using errcode = '22023';
+  end if;
+  if p_method not in ('insurance', 'cash', 'mobile_money', 'bank_transfer', 'card') then
+    raise exception 'Invalid payment method.' using errcode = '22023';
+  end if;
+
+  insert into public.payments (bill_id, patient_id, method, amount_tzs, status, provider_ref, processed_by)
+  values (p_bill_id, v_bill.patient_id, p_method, v_bill.total_tzs, 'completed', p_ref, auth.uid());
+
+  select * into v_bill from public.bills where id = p_bill_id;
+  return v_bill;
+end;
+$$;
+
+revoke all on function public.settle_bill_as_patient(uuid, text, text) from public;
+grant execute on function public.settle_bill_as_patient(uuid, text, text) to authenticated;
 
 -- ============================================================================
 -- BILL ITEMS — line items for each bill, for auditability
@@ -1060,16 +1260,24 @@ create policy "Payments are viewable by patient and staff"
     or public.is_admin()
   );
 
+-- SECURITY: `auth.uid() = patient_id` here let a patient insert a payments
+-- row with status: 'completed' directly — which the settle_bill_from_
+-- completed_payment trigger below then used to mark their own bill settled,
+-- a second route to the exact TEST 3 forgery this policy set out to allow.
+-- It also went unaudited (audit_payments_change only fires on UPDATE).
+-- Patients now settle a bill exclusively through settle_bill_as_patient(),
+-- a SECURITY DEFINER function that performs this same insert server-side
+-- after validating the bill actually belongs to them and isn't already
+-- settled — so direct insert is staff/admin only.
 drop policy if exists "Payments are insertable by patient and staff" on public.payments;
-create policy "Payments are insertable by patient and staff"
+create policy "Payments are insertable by staff"
   on public.payments for insert
   with check (
-    auth.uid() = patient_id
-    or exists (
+    exists (
       select 1 from public.bills b
       join public.appointments a on a.id = b.appointment_id
       join public.provider_staff ps on ps.provider_id = a.provider_id
-      where b.id = payments.bill_id and ps.user_id = auth.uid()
+      where b.id = payments.bill_id and ps.user_id = auth.uid() and ps.is_active = true
     )
     or public.is_admin()
   );
