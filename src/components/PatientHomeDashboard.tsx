@@ -292,138 +292,9 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
         </div>
       )}
 
-      {/* 2. Interactive Digital Health Passport Card (NiaCare Pasipoti ya Afya) */}
-      <div
-        id="card-digital-health-passport"
-        className="relative rounded-2xl overflow-hidden shadow-xl p-5 text-white bg-gradient-to-br from-[#062444] via-[#0A4275] to-[#041D34] border border-cyan-500/30"
-      >
-        {/* Holographic Watermark Pattern */}
-        <div className="absolute -right-8 -bottom-8 w-44 h-44 bg-cyan-400/10 rounded-full blur-2xl pointer-events-none" />
-        <div className="absolute right-4 top-4 opacity-15 pointer-events-none">
-          <Shield className="w-24 h-24 text-white" />
-        </div>
-
-        {/* Card Top: Country Flag, Chip & Medical Crest */}
-        <div className="flex items-center justify-between mb-4 relative z-10">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-cyan-300">
-              <Shield className="w-4 h-4" />
-            </div>
-            <div>
-              <span className="text-[10px] uppercase font-mono tracking-widest text-cyan-200 font-bold block">
-                {patientCountry.headerTitle}
-              </span>
-              <h3 className="text-xs sm:text-sm font-black tracking-tight text-white flex items-center gap-1.5">
-                <span>NIACARE HEALTH PASSPORT</span>
-                <span className="text-base">{patientCountry.flag}</span>
-              </h3>
-            </div>
-          </div>
-
-          {/* Smart Chip Graphic & Flag Code */}
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-mono font-black bg-white/15 px-2 py-1 rounded-lg border border-white/20 flex items-center gap-1 text-white shadow-xs">
-              <span>{patientCountry.flag}</span>
-              <span>{patientCountry.code}</span>
-            </span>
-            <div className="w-8 h-6 rounded-md bg-gradient-to-br from-amber-200 via-amber-400 to-amber-600 border border-amber-300/80 shadow-xs flex items-center justify-center">
-              <div className="w-4 h-3 border border-amber-900/40 rounded-xs opacity-70" />
-            </div>
-          </div>
-        </div>
-
-        {/* Card Middle: Primary Patient Credentials */}
-        <div className="space-y-3 mb-4 relative z-10">
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
-            <div>
-              <span className="text-[9px] uppercase tracking-wider text-cyan-200 font-bold block">
-                {language === 'sw' ? 'JINA LA MGONJWA' : 'PATIENT NAME'}
-              </span>
-              <p className="font-extrabold text-sm text-white truncate">{patientName}</p>
-            </div>
-            <div>
-              <span className="text-[9px] uppercase tracking-wider text-cyan-200 font-bold block">
-                {language === 'sw' ? 'RAIA / NCHI' : 'CITIZENSHIP / COUNTRY'}
-              </span>
-              <p className="font-bold text-xs text-white truncate flex items-center gap-1">
-                <span>{patientCountry.flag}</span>
-                <span>{patientCountry.name}</span>
-              </p>
-            </div>
-            <div className="col-span-2 sm:col-span-1">
-              <span className="text-[9px] uppercase tracking-wider text-cyan-200 font-bold block">
-                {primaryDocType}
-              </span>
-              <p className="font-mono font-bold text-xs text-white truncate">{primaryDocNumber}</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 pt-1 border-t border-white/10 text-[11px]">
-            <div>
-              <span className="text-[9px] text-cyan-200 font-semibold block">DAMU (Blood)</span>
-              <span className="font-mono font-extrabold text-amber-300 text-xs truncate block">
-                {patientBloodType === 'unknown' ? (language === 'sw' ? 'Sina Uhakika' : 'Unknown') : `${patientBloodType} ${patientBloodType.endsWith('+') ? 'Pos' : patientBloodType.endsWith('-') ? 'Neg' : ''}`}
-              </span>
-            </div>
-            <div>
-              <span className="text-[9px] text-cyan-200 font-semibold block">KUZALIWA (DOB)</span>
-              <span className="font-bold text-white text-xs truncate block" title={patientDob}>
-                {patientDob} ({patientAge}y)
-              </span>
-            </div>
-            <div>
-              <span className="text-[9px] text-cyan-200 font-semibold block">STATUS</span>
-              <span className="font-bold text-emerald-300 text-xs flex items-center gap-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Active
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Insurance Coverage Badge */}
-        <div className="p-2.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 mb-4 flex items-center justify-between text-xs relative z-10">
-          <div className="flex items-center gap-2">
-            <Building2 className="w-4 h-4 text-cyan-300 flex-shrink-0" />
-            <div className="truncate">
-              <span className="text-[9px] text-cyan-200 block font-semibold leading-none">
-                {t.insuranceCoverage[language]}
-              </span>
-              <span className="font-bold text-[11px] text-white truncate block">
-                {insuranceProviderName}
-              </span>
-            </div>
-          </div>
-          <span className="text-[9px] font-extrabold bg-emerald-500/90 text-white px-2 py-0.5 rounded-full uppercase tracking-wider flex-shrink-0">
-            {t.activeInsuranceBadge[language]}
-          </span>
-        </div>
-
-        {/* Card Action Buttons: Show QR Code Check-in & Download Official PDF */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 relative z-10">
-          <button
-            id="btn-show-qr-passport"
-            type="button"
-            onClick={() => setActiveModal('qr')}
-            className="w-full py-2.5 px-4 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-md cursor-pointer transition-all active:scale-98"
-          >
-            <QrCode className="w-4 h-4" />
-            <span>{t.viewQr[language]} (Check-in)</span>
-          </button>
-
-          <button
-            id="btn-download-passport-pdf"
-            type="button"
-            onClick={handleDirectPassportPdfDownload}
-            className="w-full py-2.5 px-4 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-white/20 font-black text-xs flex items-center justify-center gap-2 backdrop-blur-md shadow-md cursor-pointer transition-all active:scale-98"
-          >
-            <FileDown className="w-4 h-4 text-cyan-300" />
-            <span>{language === 'sw' ? 'Pakua Pasipoti (PDF)' : 'Download Passport (PDF)'}</span>
-          </button>
-        </div>
-      </div>
-
-      {/* 2. UPCOMING HOSPITAL APPOINTMENT CARD (Positioned right below profile) */}
+      {/* 1. UPCOMING HOSPITAL APPOINTMENT CARD — the single most important
+          thing on this screen ("what's next for me"), so it leads, before
+          the health passport card below. */}
       {(() => {
         const activeAppointment = appointmentsList.find((a) => a.status !== 'cancelled');
         return (
@@ -532,6 +403,122 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
           </div>
         );
       })()}
+
+      {/* 2. Digital Health Passport — real functionality (QR check-in,
+          PDF download), kept but de-decorated: no holographic blur, no
+          gold "chip" graphic. Healthcare clarity over decoration. */}
+      <div
+        id="card-digital-health-passport"
+        className="relative rounded-2xl overflow-hidden shadow-sm p-5 text-white bg-gradient-to-br from-[#0A4275] to-[#041D34] border border-cyan-500/20"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-cyan-300">
+              <Shield className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="text-[10px] uppercase font-mono tracking-widest text-cyan-200 font-bold block">
+                {patientCountry.headerTitle}
+              </span>
+              <h3 className="text-xs sm:text-sm font-black tracking-tight text-white flex items-center gap-1.5">
+                <span>NIACARE HEALTH PASSPORT</span>
+                <span className="text-base">{patientCountry.flag}</span>
+              </h3>
+            </div>
+          </div>
+          <span className="text-[11px] font-mono font-black bg-white/15 px-2 py-1 rounded-lg border border-white/20 flex items-center gap-1 text-white flex-shrink-0">
+            <span>{patientCountry.flag}</span>
+            <span>{patientCountry.code}</span>
+          </span>
+        </div>
+
+        <div className="space-y-3 mb-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+            <div>
+              <span className="text-[9px] uppercase tracking-wider text-cyan-200 font-bold block">
+                {language === 'sw' ? 'JINA LA MGONJWA' : 'PATIENT NAME'}
+              </span>
+              <p className="font-extrabold text-sm text-white truncate">{patientName}</p>
+            </div>
+            <div>
+              <span className="text-[9px] uppercase tracking-wider text-cyan-200 font-bold block">
+                {language === 'sw' ? 'RAIA / NCHI' : 'CITIZENSHIP / COUNTRY'}
+              </span>
+              <p className="font-bold text-xs text-white truncate flex items-center gap-1">
+                <span>{patientCountry.flag}</span>
+                <span>{patientCountry.name}</span>
+              </p>
+            </div>
+            <div className="col-span-2 sm:col-span-1">
+              <span className="text-[9px] uppercase tracking-wider text-cyan-200 font-bold block">
+                {primaryDocType}
+              </span>
+              <p className="font-mono font-bold text-xs text-white truncate">{primaryDocNumber}</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 pt-1 border-t border-white/10 text-[11px]">
+            <div>
+              <span className="text-[9px] text-cyan-200 font-semibold block">DAMU (Blood)</span>
+              <span className="font-mono font-extrabold text-amber-300 text-xs truncate block">
+                {patientBloodType === 'unknown' ? (language === 'sw' ? 'Sina Uhakika' : 'Unknown') : `${patientBloodType} ${patientBloodType.endsWith('+') ? 'Pos' : patientBloodType.endsWith('-') ? 'Neg' : ''}`}
+              </span>
+            </div>
+            <div>
+              <span className="text-[9px] text-cyan-200 font-semibold block">KUZALIWA (DOB)</span>
+              <span className="font-bold text-white text-xs truncate block" title={patientDob}>
+                {patientDob} ({patientAge}y)
+              </span>
+            </div>
+            <div>
+              <span className="text-[9px] text-cyan-200 font-semibold block">STATUS</span>
+              <span className="font-bold text-emerald-300 text-xs flex items-center gap-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                Active
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-2.5 rounded-xl bg-white/10 border border-white/15 mb-4 flex items-center justify-between text-xs">
+          <div className="flex items-center gap-2">
+            <Building2 className="w-4 h-4 text-cyan-300 flex-shrink-0" />
+            <div className="truncate">
+              <span className="text-[9px] text-cyan-200 block font-semibold leading-none">
+                {t.insuranceCoverage[language]}
+              </span>
+              <span className="font-bold text-[11px] text-white truncate block">
+                {insuranceProviderName}
+              </span>
+            </div>
+          </div>
+          <span className="text-[9px] font-extrabold bg-emerald-500/90 text-white px-2 py-0.5 rounded-full uppercase tracking-wider flex-shrink-0">
+            {t.activeInsuranceBadge[language]}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <button
+            id="btn-show-qr-passport"
+            type="button"
+            onClick={() => setActiveModal('qr')}
+            className="w-full py-2.5 px-4 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-98"
+          >
+            <QrCode className="w-4 h-4" />
+            <span>{t.viewQr[language]} (Check-in)</span>
+          </button>
+
+          <button
+            id="btn-download-passport-pdf"
+            type="button"
+            onClick={handleDirectPassportPdfDownload}
+            className="w-full py-2.5 px-4 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-white/20 font-black text-xs flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-98"
+          >
+            <FileDown className="w-4 h-4 text-cyan-300" />
+            <span>{language === 'sw' ? 'Pakua Pasipoti (PDF)' : 'Download Passport (PDF)'}</span>
+          </button>
+        </div>
+      </div>
 
       {/* 3. Active Prescription Banner with 1-Tap Pill Checkoff (only if a real prescription exists) */}
       {activePrescription && (
