@@ -331,14 +331,59 @@ export default function App() {
     );
   }
 
+  if (!isAuthenticated && hasEnteredAuthFlow && authMode === 'login' && !isHomeOtpActive) {
+    return (
+      <div className="min-h-screen antialiased transition-colors duration-300 nc-bg nc-text">
+        <QuickLogin
+          language={language}
+          theme={theme}
+          onSendOtp={handleSendOtp}
+          onRegister={() => setAuthMode('register')}
+          onOpenLanguageSelector={() => setIsLanguageModalOpen(true)}
+        />
+
+        <LanguageSelectorModal
+          isOpen={isLanguageModalOpen}
+          onClose={() => setIsLanguageModalOpen(false)}
+          currentLanguage={language}
+          onSelectLanguage={setLanguage}
+          theme={theme}
+        />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated && !hasEnteredAuthFlow) {
+    return (
+      <div className="min-h-screen antialiased transition-colors duration-300 nc-bg nc-text">
+        <LandingScreen
+          language={language}
+          theme={theme}
+          onGetStarted={() => { setAuthMode('register'); setHasEnteredAuthFlow(true); }}
+          onSignIn={() => { setAuthMode('login'); setHasEnteredAuthFlow(true); }}
+        />
+
+        <LanguageSelectorModal
+          isOpen={isLanguageModalOpen}
+          onClose={() => setIsLanguageModalOpen(false)}
+          currentLanguage={language}
+          onSelectLanguage={setLanguage}
+          theme={theme}
+        />
+      </div>
+    );
+  }
+
+  const shellMaxWidth = isAuthenticated && userRole !== 'patient' ? 'max-w-[1180px]' : 'max-w-[430px]';
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-start antialiased transition-colors duration-300 nc-bg nc-text app-canvas">
       {/* A focused patient workspace on mobile, with a more natural clinical layout on larger screens. */}
       <main
-        className={`w-full max-w-[430px] md:max-w-[720px] lg:max-w-[980px] mx-auto min-h-screen flex flex-col sm:my-4 sm:rounded-[28px] overflow-hidden relative border transition-all duration-300 ${
+        className={`w-full ${shellMaxWidth} mx-auto min-h-screen flex flex-col sm:my-4 sm:min-h-[calc(100vh-2rem)] sm:rounded-xl overflow-hidden relative border transition-all duration-300 ${
           isDark
             ? 'bg-[#0B1522] border-slate-800 shadow-[0_25px_60px_rgba(0,0,0,0.85)]'
-            : 'bg-white border-slate-200/80 shadow-xl'
+            : 'bg-white border-slate-200/80 shadow-[0_8px_28px_rgba(36,72,112,0.10)]'
         }`}
       >
         {/* Top Header Section — the full marketing hero (logo, tagline,
@@ -366,7 +411,7 @@ export default function App() {
         )}
 
         {/* Main Content: Authenticated Patient Dashboard OR Credentials Form & OTP */}
-        <div className="px-4 sm:px-5 pb-6 flex-1 flex flex-col">
+        <div className={`flex-1 flex flex-col ${isAuthenticated && userRole !== 'patient' ? 'px-4 sm:px-6 lg:px-8 pb-8' : 'px-4 pb-24'}`}>
           {isAuthenticated ? (
             /* Authenticated role-based dashboard */
             <div className="pt-2">
@@ -421,6 +466,7 @@ export default function App() {
               theme={theme}
               onSendOtp={handleSendOtp}
               onRegister={() => setAuthMode('register')}
+              onOpenLanguageSelector={() => setIsLanguageModalOpen(true)}
             />
           ) : (
             /* Credentials Form & Security Block */

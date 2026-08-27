@@ -59,7 +59,7 @@ type SectionKey = (typeof SECTIONS)[number]['key'];
 
 // Matches the .nc-card radius used by Doctor/Provider/Patient dashboards —
 // one consistent card language across every role, not a per-screen value.
-const cardCls = 'rounded-2xl border nc-border';
+const cardCls = 'rounded-xl border nc-border shadow-[0_1px_2px_rgba(15,45,80,0.025)]';
 
 const MiniBarChart: React.FC<{ data: { label: string; value: number }[]; color: string }> = ({ data, color }) => {
   const max = Math.max(1, ...data.map((d) => d.value));

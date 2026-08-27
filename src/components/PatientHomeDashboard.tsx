@@ -44,6 +44,7 @@ import { fetchPrescriptions, updatePrescriptionTaken, Prescription } from '../li
 import { logAuditEvent } from '../lib/audit';
 import { Avatar } from './Avatar';
 import { LaboratoryModal } from './LaboratoryModal';
+import { BottomNav } from './BottomNav';
 
 interface PatientHomeDashboardProps {
   userCategory: UserCategory;
@@ -77,6 +78,15 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
   const [activeModal, setActiveModal] = useState<
     'qr' | 'appointment' | 'prescriptions' | 'records' | 'personal_files' | 'insurance' | 'facilities' | 'ai' | 'checkout' | 'laboratory' | null
   >(null);
+  const [activeNav, setActiveNav] = useState<'home' | 'appointments' | 'records' | 'prescriptions' | 'profile'>('home');
+
+  const handleNavigation = (key: typeof activeNav) => {
+    setActiveNav(key);
+    if (key === 'appointments') setActiveModal('appointment');
+    if (key === 'records') setActiveModal('records');
+    if (key === 'prescriptions') setActiveModal('prescriptions');
+    if (key === 'profile') onOpenSettings();
+  };
 
   // Quick PDF download toast notice
   const [pdfToast, setPdfToast] = useState<string | null>(null);
@@ -213,10 +223,10 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
     <div id="patient-home-dashboard" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
       {/* 1. Patient Profile Welcome Header */}
       <div
-        className={`p-4 rounded-2xl border transition-all ${
+        className={`p-4 rounded-xl border transition-all ${
           isDark
-            ? 'bg-[#101F31] border-slate-700/90 text-white shadow-lg'
-            : 'bg-white border-slate-200/90 text-slate-900 shadow-xs'
+            ? 'bg-[#101F31] border-slate-700/90 text-white'
+            : 'bg-white border-slate-200/90 text-slate-900'
         }`}
       >
         <div className="flex items-center justify-between gap-3">
@@ -299,7 +309,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
         const activeAppointment = appointmentsList.find((a) => a.status !== 'cancelled');
         return (
           <div
-            className={`p-4 rounded-2xl border shadow-sm ${
+            className={`p-4 rounded-xl border ${
               isDark ? 'bg-[#101F31] border-slate-700/80' : 'bg-white border-slate-200/90'
             }`}
           >
@@ -323,7 +333,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
 
             {activeAppointment ? (
               <div
-                className={`p-3.5 rounded-2xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
+                className={`p-3.5 rounded-xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
                   isDark ? 'bg-[#091422] border-slate-800' : 'bg-[#F9FBFE] border-slate-100'
                 }`}
               >
@@ -381,7 +391,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
               </div>
             ) : (
               <div
-                className={`p-3.5 rounded-2xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
+                className={`p-3.5 rounded-xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
                   isDark ? 'bg-[#091422] border-slate-800' : 'bg-[#F9FBFE] border-slate-100'
                 }`}
               >
@@ -409,7 +419,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
           gold "chip" graphic. Healthcare clarity over decoration. */}
       <div
         id="card-digital-health-passport"
-        className="relative rounded-2xl overflow-hidden shadow-sm p-5 text-white bg-gradient-to-br from-[#0A4275] to-[#041D34] border border-cyan-500/20"
+        className="relative rounded-xl overflow-hidden p-4 text-white nc-gradient-passport border border-cyan-500/20"
       >
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -1052,6 +1062,8 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
         theme={theme}
         patientId={authUserId}
       />
+
+      <BottomNav active={activeNav} onChange={handleNavigation} language={language} />
 
       {/* MODAL 9: COMPREHENSIVE HOSPITAL CHECKOUT & BILLING PROCEDURES */}
       <CheckoutProcedureModal

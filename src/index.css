@@ -2,11 +2,11 @@
 
 :root {
   /* NiaCare brand palette */
-  --nc-primary: #0A4275;
-  --nc-primary-dark: #041D34;
-  --nc-primary-light: #186EBA;
-  --nc-accent: #06B6D4;
-  --nc-accent-light: #67E8F9;
+  --nc-primary: #0057B8;
+  --nc-primary-dark: #003E83;
+  --nc-primary-light: #1675D1;
+  --nc-accent: #12B8A6;
+  --nc-accent-light: #65DCCF;
 
   /* Semantic colors */
   --nc-success: #10B981;
@@ -21,14 +21,14 @@
   --nc-purple-subtle: #EDE9FE;
 
   /* Light mode surfaces */
-  --nc-bg: #F0F5FA;
+  --nc-bg: #F7FAFE;
   --nc-surface: #FFFFFF;
-  --nc-surface-elevated: #F9FBFE;
-  --nc-border: rgba(203, 213, 225, 0.8);
-  --nc-border-strong: #CBD5E1;
-  --nc-text: #0F172A;
-  --nc-text-secondary: #475569;
-  --nc-text-muted: #64748B;
+  --nc-surface-elevated: #FBFDFF;
+  --nc-border: #E4EBF4;
+  --nc-border-strong: #D5E0ED;
+  --nc-text: #10233E;
+  --nc-text-secondary: #52647B;
+  --nc-text-muted: #7A8AA0;
   --nc-placeholder: #94A3B8;
 }
 
@@ -51,6 +51,8 @@
     background-color: var(--nc-bg);
     color: var(--nc-text);
     text-rendering: optimizeLegibility;
+    font-size: 14px;
+    line-height: 1.45;
   }
 
   .font-mono {
@@ -69,11 +71,7 @@
   }
 }
 
-.app-canvas {
-  background:
-    radial-gradient(circle at 12% 0%, rgba(14, 116, 144, 0.08), transparent 30rem),
-    var(--nc-bg);
-}
+.app-canvas { background: var(--nc-bg); }
 
 .dark .app-canvas {
   background:
@@ -92,7 +90,7 @@
   .nc-text-muted { color: var(--nc-text-muted); }
 
   .nc-btn-primary {
-    @apply rounded-xl font-black text-xs transition-all active:scale-[0.98];
+    @apply rounded-lg font-extrabold text-xs transition-all active:scale-[0.98];
     background-color: var(--nc-primary);
     color: #FFFFFF;
   }
@@ -109,9 +107,10 @@
   }
 
   .nc-card {
-    @apply rounded-2xl border transition-all;
+    @apply rounded-xl border transition-all;
     background-color: var(--nc-surface);
     border-color: var(--nc-border);
+    box-shadow: 0 1px 2px rgba(15, 45, 80, 0.025);
   }
 
   .dark .nc-card {
@@ -120,7 +119,7 @@
   }
 
   .nc-input {
-    @apply w-full text-sm rounded-xl border outline-none transition-all;
+    @apply w-full text-sm rounded-lg border outline-none transition-all;
     background-color: var(--nc-surface);
     border-color: var(--nc-border-strong);
     color: var(--nc-text);
@@ -143,8 +142,55 @@
   }
 
   .nc-gradient-passport {
-    background: linear-gradient(135deg, #062444 0%, #0A4275 50%, #041D34 100%);
+    background: linear-gradient(135deg, #003E83 0%, #0057B8 60%, #1675D1 100%);
   }
+}
+
+/* Compact clinical primitives mirrored from the supplied product reference. */
+.nc-page-title { color: var(--nc-text); font-weight: 800; letter-spacing: -0.025em; }
+.nc-section-title { color: var(--nc-text); font-size: .8125rem; font-weight: 800; }
+.nc-list-row { border-bottom: 1px solid var(--nc-border); }
+.nc-list-row:last-child { border-bottom: 0; }
+.nc-status { border-radius: 9999px; font-size: 10px; font-weight: 700; line-height: 1; padding: 5px 8px; }
+button, input, select, textarea { font: inherit; }
+button { -webkit-tap-highlight-color: transparent; }
+
+/* Reference-board polish: compact clinical UI, not bubbly marketing cards. */
+.rounded-2xl,
+.rounded-3xl {
+  border-radius: 0.75rem !important;
+}
+
+.rounded-t-3xl {
+  border-top-left-radius: 0.75rem !important;
+  border-top-right-radius: 0.75rem !important;
+}
+
+.shadow-xl,
+.shadow-2xl {
+  box-shadow: 0 8px 24px rgba(15, 45, 80, 0.09) !important;
+}
+
+.dark .shadow-xl,
+.dark .shadow-2xl {
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.42) !important;
+}
+
+.shadow-lg {
+  box-shadow: 0 6px 18px rgba(15, 45, 80, 0.08) !important;
+}
+
+.nc-ref-panel {
+  border: 1px solid var(--nc-border);
+  border-radius: 0.75rem;
+  background: var(--nc-surface);
+  box-shadow: 0 1px 2px rgba(15, 45, 80, 0.025);
+}
+
+.nc-ref-subtle {
+  border: 1px solid var(--nc-border);
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--nc-surface-elevated) 72%, transparent);
 }
 
 /* Pulse animation for emergency beacon */
@@ -182,4 +228,8 @@
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--nc-text-muted);
+}
+
+@media (min-width: 640px) {
+  .app-canvas { padding: 16px; }
 }
