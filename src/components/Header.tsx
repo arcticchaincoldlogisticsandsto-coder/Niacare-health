@@ -34,7 +34,7 @@ export const Header: React.FC<HeaderProps> = ({
               className="w-full h-full object-contain"
             />
           </div>
-          <h1 className={`text-base font-extrabold tracking-tight leading-none ${isDark ? 'text-white' : 'text-[#0B4F9E]'}`}>
+          <h1 className={`text-base font-semibold tracking-tight leading-none ${isDark ? 'text-white' : 'text-[#0B4F9E]'}`}>
             Nia<span className="text-[#12A8B7]">Care</span>
           </h1>
         </div>
@@ -45,8 +45,8 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={onOpenSettingsModal}
             className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all cursor-pointer ${
               isDark
-                ? 'bg-[#16273C] border-slate-700 text-cyan-300 hover:bg-[#1E3550]'
-                : 'bg-white border-slate-200 text-[#0A4275] hover:bg-slate-50'
+                ? 'bg-[#16273C] border-slate-700 text-primary-light hover:bg-[#1E3550]'
+                : 'bg-white border-slate-200 text-[var(--nc-primary)] hover:bg-slate-50'
             }`}
             title="Settings & Profile"
           >
@@ -68,12 +68,12 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={onOpenSettingsModal}
             className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border transition-all cursor-pointer shadow-xs ${
               isDark
-                ? 'bg-[#16273C] border-slate-700 text-cyan-300 hover:bg-[#1E3550]'
-                : 'bg-white border-slate-200 text-[#0A4275] hover:bg-slate-50'
+                ? 'bg-[#16273C] border-slate-700 text-primary-light hover:bg-[#1E3550]'
+                : 'bg-white border-slate-200 text-[var(--nc-primary)] hover:bg-slate-50'
             }`}
             title="Settings & Profile (Mipangilio ya Akaunti)"
           >
-            <Settings className="w-3.5 h-3.5 text-cyan-500" />
+            <Settings className="w-3.5 h-3.5 text-primary" />
             <span className="text-[11px] font-bold">
               {language === 'sw' ? 'Mipangilio' : language === 'fr' ? 'Paramètres' : 'Settings'}
             </span>
@@ -96,7 +96,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           <h1
-            className={`text-3xl font-extrabold tracking-tight font-sans flex items-center transition-colors ${
+            className={`text-3xl font-semibold tracking-tight font-sans flex items-center transition-colors ${
               isDark ? 'text-white' : 'text-[#0A3663]'
             }`}
           >

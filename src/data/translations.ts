@@ -1002,9 +1002,9 @@ const RAW_TRANSLATIONS = {
       fr: 'Voir la politique de confidentialité PDPA',
     },
     saveChanges: {
-      sw: 'Funga & Hifadhi Mipangilio',
-      en: 'Close & Save Settings',
-      fr: 'Fermer et Enregistrer',
+      sw: 'Imekamilika',
+      en: 'Done',
+      fr: 'Terminé',
     },
   },
   dashboard: {

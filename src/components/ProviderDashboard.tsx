@@ -43,20 +43,20 @@ const TasksPanel: React.FC<{ isSw: boolean; providerId: string }> = ({ isSw, pro
 
   const TASK_STYLES: Record<string, string> = {
     pending: 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
-    in_progress: 'bg-blue-50 text-[#0A4275] dark:bg-cyan-950 dark:text-cyan-300',
+    in_progress: 'bg-primary/5 text-[var(--nc-primary)] dark:bg-primary/10 dark:text-primary-light',
     completed: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
   };
 
   return (
     <div className="nc-card p-4">
       <div className="flex items-center gap-2 mb-3">
-        <ClipboardList className="w-4 h-4 text-cyan-500" />
+        <ClipboardList className="w-4 h-4 text-primary" />
         <h3 className="text-sm font-bold text-slate-900 dark:text-white">{isSw ? 'Majukumu' : 'Tasks'}</h3>
       </div>
       {error && <p className="text-xs text-rose-600 mb-2">{error}</p>}
       <div className="flex gap-2 mb-3">
         <input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder={isSw ? 'Ongeza jukumu jipya...' : 'Add a new task...'} className="nc-input flex-1 px-3 py-2 text-xs" />
-        <button type="button" onClick={handleAdd} disabled={adding || !newTitle.trim()} className="rounded-lg bg-[#0A4275] dark:bg-cyan-500 text-white dark:text-[#041D34] px-3 py-2 text-xs font-bold disabled:opacity-50 flex items-center gap-1">
+        <button type="button" onClick={handleAdd} disabled={adding || !newTitle.trim()} className="rounded-lg bg-[var(--nc-primary)] dark:bg-primary text-white dark:text-[#041D34] px-3 py-2 text-xs font-bold disabled:opacity-50 flex items-center gap-1">
           <Plus className="w-3.5 h-3.5" />
         </button>
       </div>
@@ -65,7 +65,7 @@ const TasksPanel: React.FC<{ isSw: boolean; providerId: string }> = ({ isSw, pro
       ) : (
         <div className="space-y-2">
           {tasks.map((t) => (
-            <button key={t.id} type="button" onClick={() => cycleStatus(t)} className="w-full flex items-center justify-between rounded-xl border border-slate-100 dark:border-slate-800 p-3 text-xs text-left hover:border-[#0A4275] dark:hover:border-cyan-500 transition-colors">
+            <button key={t.id} type="button" onClick={() => cycleStatus(t)} className="w-full flex items-center justify-between rounded-xl border border-slate-100 dark:border-slate-800 p-3 text-xs text-left hover:border-[var(--nc-primary)] dark:hover:border-primary transition-colors">
               <div className="min-w-0">
                 <p className="font-bold text-slate-900 dark:text-white truncate">{t.title}</p>
                 {t.patientName && <p className="text-slate-500 dark:text-slate-400 truncate">{t.patientName}</p>}
@@ -122,7 +122,7 @@ const InventoryPanel: React.FC<{ isSw: boolean; providerId: string }> = ({ isSw,
         <input value={newItem.name} onChange={(e) => setNewItem((p) => ({ ...p, name: e.target.value }))} placeholder={isSw ? 'Jina la kifaa' : 'Item name'} className="nc-input px-2.5 py-2 col-span-2 sm:col-span-1" />
         <input value={newItem.quantity} onChange={(e) => setNewItem((p) => ({ ...p, quantity: e.target.value }))} placeholder={isSw ? 'Kiasi' : 'Qty'} type="number" className="nc-input px-2.5 py-2" />
         <input value={newItem.minimum} onChange={(e) => setNewItem((p) => ({ ...p, minimum: e.target.value }))} placeholder={isSw ? 'Kiwango cha chini' : 'Minimum'} type="number" className="nc-input px-2.5 py-2" />
-        <button type="button" onClick={handleAdd} disabled={adding || !newItem.name.trim()} className="rounded-lg bg-[#0A4275] dark:bg-cyan-500 text-white dark:text-[#041D34] px-2.5 py-2 font-bold disabled:opacity-50 flex items-center justify-center gap-1">
+        <button type="button" onClick={handleAdd} disabled={adding || !newItem.name.trim()} className="rounded-lg bg-[var(--nc-primary)] dark:bg-primary text-white dark:text-[#041D34] px-2.5 py-2 font-bold disabled:opacity-50 flex items-center justify-center gap-1">
           <Plus className="w-3.5 h-3.5" /> {isSw ? 'Ongeza' : 'Add'}
         </button>
       </div>
@@ -178,13 +178,13 @@ const MessagesPanel: React.FC<{ isSw: boolean; providerId: string }> = ({ isSw, 
   return (
     <div className="nc-card p-4">
       <div className="flex items-center gap-2 mb-3">
-        <MessageSquare className="w-4 h-4 text-purple-500" />
+        <MessageSquare className="w-4 h-4 text-primary" />
         <h3 className="text-sm font-bold text-slate-900 dark:text-white">{isSw ? 'Ujumbe wa Kituo' : 'Facility Messages'}</h3>
       </div>
       {error && <p className="text-xs text-rose-600 mb-2">{error}</p>}
       <div className="flex gap-2 mb-3">
         <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={isSw ? 'Andika ujumbe...' : 'Post an update to your team...'} className="nc-input flex-1 px-3 py-2 text-xs" />
-        <button type="button" onClick={send} disabled={sending || !draft.trim()} className="rounded-lg bg-[#0A4275] dark:bg-cyan-500 text-white dark:text-[#041D34] px-3 py-2 text-xs font-bold disabled:opacity-50">
+        <button type="button" onClick={send} disabled={sending || !draft.trim()} className="rounded-lg bg-[var(--nc-primary)] dark:bg-primary text-white dark:text-[#041D34] px-3 py-2 text-xs font-bold disabled:opacity-50">
           <Send className="w-3.5 h-3.5" />
         </button>
       </div>
@@ -235,7 +235,7 @@ interface TodayAppointment {
 }
 
 const STATUS_STYLES: Record<string, string> = {
-  confirmed: 'bg-blue-50 text-[#0A4275] dark:bg-cyan-950 dark:text-cyan-300',
+  confirmed: 'bg-primary/5 text-[var(--nc-primary)] dark:bg-primary/10 dark:text-primary-light',
   in_queue: 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
   completed: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
   cancelled: 'bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300',
@@ -318,7 +318,7 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({ language, 
   };
 
   const statCards = useMemo(() => [
-    { label: isSw ? 'Ziara za Leo' : "Today's Appointments", value: counts.appointmentsToday, Icon: CalendarDays, colour: 'text-cyan-600 dark:text-cyan-400' },
+    { label: isSw ? 'Ziara za Leo' : "Today's Appointments", value: counts.appointmentsToday, Icon: CalendarDays, colour: 'text-primary dark:text-primary-light' },
     { label: isSw ? 'Wagonjwa Waliosubiri' : 'Queued Patients', value: counts.queued, Icon: Users, colour: 'text-emerald-600 dark:text-emerald-400' },
     { label: isSw ? 'Malipo Yaliyobaki' : 'Pending Bills', value: counts.pendingBills, Icon: CreditCard, colour: 'text-amber-600 dark:text-amber-400' },
     { label: isSw ? 'Wafanyakazi Hai' : 'Active Staff', value: counts.activeStaff, Icon: ShieldCheck, colour: 'text-rose-500' },
@@ -329,7 +329,7 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({ language, 
       <div className="flex items-center justify-between mb-5">
         <div>
           <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">{staff?.job_title || (isSw ? 'Mtumishi wa Kituo' : 'Facility Staff')}</p>
-          <h2 className="text-lg font-black text-slate-900 dark:text-white">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
             {provider ? provider.name : isSw ? 'Jukwaa la Kituo' : 'Provider Dashboard'}
           </h2>
           {staff?.department && <p className="text-[11px] text-slate-500 dark:text-slate-400">{staff.department}</p>}
@@ -368,7 +368,7 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({ language, 
               <Icon className={`w-4 h-4 ${colour}`} />
               <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{label}</span>
             </div>
-            <p className="text-2xl font-black text-slate-900 dark:text-white">{loading ? '—' : value}</p>
+            <p className="text-2xl font-semibold text-slate-900 dark:text-white">{loading ? '—' : value}</p>
           </div>
         ))}
       </div>
@@ -387,7 +387,7 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({ language, 
               onClick={() => setSection(key)}
               className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
                 section === key
-                  ? 'bg-[#0A4275] text-white dark:bg-cyan-500 dark:text-[#041D34]'
+                  ? 'bg-[var(--nc-primary)] text-white dark:bg-primary dark:text-[#041D34]'
                   : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
@@ -405,7 +405,7 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({ language, 
         <div className="nc-card p-4 mb-4">
           <div className="mb-3 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-cyan-500" />
+              <Users className="w-4 h-4 text-primary" />
               <h3 className="text-sm font-bold text-slate-900 dark:text-white">{isSw ? 'Wagonjwa wa Leo' : "Today's Patients"}</h3>
             </div>
             <div className="relative w-40 sm:w-56">
@@ -433,7 +433,7 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({ language, 
                     <div className="min-w-0">
                       <p className="font-bold text-slate-900 dark:text-white truncate flex items-center gap-1">
                         {apt.patient_name || 'Patient'}
-                        {apt.consultation_type === 'telehealth' && <Video className="w-3 h-3 text-cyan-500 flex-shrink-0" />}
+                        {apt.consultation_type === 'telehealth' && <Video className="w-3 h-3 text-primary flex-shrink-0" />}
                       </p>
                       <p className="text-slate-500 dark:text-slate-400">{apt.time_slot}</p>
                     </div>
@@ -447,7 +447,7 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({ language, 
                         type="button"
                         disabled={checkingInId === apt.id}
                         onClick={() => checkIn(apt.id)}
-                        className="rounded-lg bg-[#0A4275] dark:bg-cyan-500 text-white dark:text-[#041D34] px-2 py-1 font-bold flex items-center gap-1 disabled:opacity-50"
+                        className="rounded-lg bg-[var(--nc-primary)] dark:bg-primary text-white dark:text-[#041D34] px-2 py-1 font-bold flex items-center gap-1 disabled:opacity-50"
                         title={isSw ? 'Ingiza Mgonjwa' : 'Check In'}
                       >
                         <UserCheck className="w-3.5 h-3.5" />
@@ -463,7 +463,7 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({ language, 
 
       <div className="nc-card p-4 mb-4">
         <div className="flex items-center gap-2 mb-3">
-          <Building2 className="w-4 h-4 text-blue-500" />
+          <Building2 className="w-4 h-4 text-primary" />
           <h3 className="text-sm font-bold text-slate-900 dark:text-white">{isSw ? 'Kituo' : 'Facility'}</h3>
         </div>
         {provider ? (

@@ -65,25 +65,52 @@ export const SuccessPassportModal: React.FC<SuccessPassportModalProps> = ({
     setTimeout(() => setToastMessage(''), 3000);
   };
 
+  const handleShareQr = async () => {
+    const shareText =
+      language === 'sw'
+        ? `Kadi yangu ya NiaCare: ${patientName} — Nambari: ${patientId}`
+        : `My NiaCare Health Passport: ${patientName} — ID: ${patientId}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'NiaCare Health Passport', text: shareText });
+      } catch {
+        // User cancelled the native share sheet — no error to surface.
+      }
+      return;
+    }
+
+    if (navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(shareText);
+        showToast(t.shareAlert[language]);
+        return;
+      } catch {
+        // Clipboard access denied — fall through to the toast below.
+      }
+    }
+    showToast(t.shareAlert[language]);
+  };
+
   return (
     <div
       id="modal-success-passport"
       className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200"
     >
-      <div className="bg-[#0B1A2C] text-white w-full max-w-md rounded-2xl p-6 shadow-2xl border border-blue-500/40 relative overflow-hidden animate-in zoom-in-95 duration-200 my-auto">
+      <div className="bg-[#0B1A2C] text-white w-full max-w-md rounded-2xl p-6 shadow-2xl border border-primary/40 relative overflow-hidden animate-in zoom-in-95 duration-200 my-auto">
         {/* Glow effects */}
         <div className="absolute top-0 right-0 w-48 h-48 bg-[#0F4C81]/40 rounded-full blur-3xl -z-10"></div>
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-500/20 rounded-full blur-3xl -z-10"></div>
 
         {/* Top Celebration Badge */}
         <div className="text-center mb-4">
-          <div className="w-14 h-14 bg-emerald-500 text-white rounded-2xl flex items-center justify-center mx-auto mb-2.5 shadow-lg shadow-emerald-500/30 ring-4 ring-emerald-400/20">
-            <CheckCircle2 className="w-8 h-8 animate-bounce" />
+          <div className="w-14 h-14 bg-emerald-500 text-white rounded-2xl flex items-center justify-center mx-auto mb-2.5 shadow-lg shadow-emerald-500/30 ring-4 ring-emerald-400/20 animate-in zoom-in-95 duration-300">
+            <CheckCircle2 className="w-8 h-8" />
           </div>
           <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-emerald-300 bg-emerald-950/60 px-3 py-1 rounded-full border border-emerald-500/40">
             {t.authenticatedBadge[language]}
           </span>
-          <h3 className="text-xl font-black text-white mt-1.5">
+          <h3 className="text-xl font-semibold text-white mt-1.5">
             {t.cardReadyTitle[language]}
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">
@@ -92,7 +119,7 @@ export const SuccessPassportModal: React.FC<SuccessPassportModalProps> = ({
         </div>
 
         {/* Digital Health Smart Card (NiaCare Universal Card) */}
-        <div className="bg-gradient-to-br from-[#0F4C81] via-[#0B3A64] to-[#082846] rounded-2xl p-4.5 text-white border border-blue-400/40 shadow-2xl relative overflow-hidden mb-5">
+        <div className="bg-gradient-to-br from-[#0F4C81] via-[#0B3A64] to-[#082846] rounded-2xl p-4.5 text-white border border-primary/40 shadow-2xl relative overflow-hidden mb-5">
           {/* Card background watermark */}
           <div className="absolute right-[-20px] bottom-[-20px] opacity-10 pointer-events-none">
             <Heart className="w-40 h-40" />
@@ -110,11 +137,11 @@ export const SuccessPassportModal: React.FC<SuccessPassportModalProps> = ({
                 />
               </div>
               <div>
-                <span className="font-extrabold text-sm tracking-wide flex items-center gap-1.5">
+                <span className="font-semibold text-sm tracking-wide flex items-center gap-1.5">
                   <span>NiaCare™ Passport</span>
                   <span>{patientCountry.flag}</span>
                 </span>
-                <p className="text-[9px] text-blue-200 font-mono">{patientCountry.headerTitle}</p>
+                <p className="text-[9px] text-primary-light font-mono">{patientCountry.headerTitle}</p>
               </div>
             </div>
             <div className="flex items-center gap-1.5">
@@ -132,7 +159,7 @@ export const SuccessPassportModal: React.FC<SuccessPassportModalProps> = ({
           <div className="grid grid-cols-3 gap-2 text-xs">
             <div className="col-span-2 space-y-2">
               <div>
-                <span className="text-[9px] text-blue-200 font-medium block uppercase tracking-wider">
+                <span className="text-[9px] text-primary-light font-medium block uppercase tracking-wider">
                   {t.patientLegalName[language]}
                 </span>
                 <p className="font-bold text-sm text-white tracking-tight truncate">{patientName}</p>
@@ -140,13 +167,13 @@ export const SuccessPassportModal: React.FC<SuccessPassportModalProps> = ({
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <span className="text-[9px] text-blue-200 font-medium block uppercase">
+                  <span className="text-[9px] text-primary-light font-medium block uppercase">
                     {idLabel}
                   </span>
-                  <p className="font-mono font-semibold text-[11px] text-blue-100 truncate">{idNumber}</p>
+                  <p className="font-mono font-semibold text-[11px] text-primary-light truncate">{idNumber}</p>
                 </div>
                 <div>
-                  <span className="text-[9px] text-blue-200 font-medium block uppercase">
+                  <span className="text-[9px] text-primary-light font-medium block uppercase">
                     {t.coverLabel[language]}
                   </span>
                   <p className="font-bold text-[11px] text-emerald-300 truncate">{insuranceName}</p>
@@ -155,16 +182,16 @@ export const SuccessPassportModal: React.FC<SuccessPassportModalProps> = ({
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <span className="text-[9px] text-blue-200 font-medium block uppercase">
+                  <span className="text-[9px] text-primary-light font-medium block uppercase">
                     {t.universalIdLabel[language]}
                   </span>
                   <p className="font-mono text-xs text-yellow-300 font-bold">{patientId}</p>
                 </div>
                 <div>
-                  <span className="text-[9px] text-blue-200 font-medium block uppercase">
+                  <span className="text-[9px] text-primary-light font-medium block uppercase">
                     DOB / Umri
                   </span>
-                  <p className="font-medium text-[11px] text-cyan-200 truncate">
+                  <p className="font-medium text-[11px] text-primary-light truncate">
                     {activeDob} ({activeAge}y)
                   </p>
                 </div>
@@ -179,11 +206,11 @@ export const SuccessPassportModal: React.FC<SuccessPassportModalProps> = ({
           </div>
 
           {/* Quick Vital Safety Strip */}
-          <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-[10px] text-blue-200">
+          <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-[10px] text-primary-light">
             <span className="flex items-center gap-1.5 font-semibold text-white">
               <Activity className="w-3.5 h-3.5 text-rose-400" />
               <span>{t.bloodGroup[language]}:</span>
-              <span className="text-rose-300 font-extrabold font-mono px-1.5 py-0.2 rounded bg-rose-500/20 border border-rose-400/40">
+              <span className="text-rose-300 font-semibold font-mono px-1.5 py-0.2 rounded bg-rose-500/20 border border-rose-400/40">
                 {activeBloodType === 'unknown' ? (language === 'sw' ? 'Sina Uhakika' : 'Unknown') : activeBloodType}
               </span>
             </span>
@@ -205,7 +232,7 @@ export const SuccessPassportModal: React.FC<SuccessPassportModalProps> = ({
             id="btn-go-to-dashboard"
             type="button"
             onClick={onClose}
-            className="w-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 py-3 px-4 rounded-xl font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20 cursor-pointer transition-all active:scale-98"
+            className="w-full bg-primary hover:bg-primary-light text-white py-3 px-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary/20 cursor-pointer transition-all"
           >
             <span>{language === 'sw' ? 'Endelea kwenye Dashibodi ya Afya' : language === 'fr' ? 'Accéder au Tableau de Bord' : 'Enter Home Health Dashboard'}</span>
             <span>→</span>
@@ -215,18 +242,19 @@ export const SuccessPassportModal: React.FC<SuccessPassportModalProps> = ({
             <button
               id="btn-download-pass"
               type="button"
-              onClick={() => showToast(t.walletAlert[language])}
-              className="w-full bg-white/15 hover:bg-white/25 text-white py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 border border-white/20 shadow-md cursor-pointer transition-colors"
+              disabled
+              title={language === 'sw' ? 'Inakuja hivi karibuni' : 'Coming soon'}
+              className="w-full bg-white/5 text-white/50 py-2.5 px-3 rounded-xl font-semibold text-xs flex items-center justify-center gap-1.5 border border-white/10 cursor-not-allowed"
             >
-              <Download className="w-3.5 h-3.5 text-cyan-300" />
+              <Download className="w-3.5 h-3.5" />
               <span>{t.addToWallet[language]}</span>
             </button>
 
             <button
               id="btn-share-pass"
               type="button"
-              onClick={() => showToast(t.shareAlert[language])}
-              className="w-full bg-white/10 hover:bg-white/20 text-white py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 border border-white/20 cursor-pointer transition-colors"
+              onClick={handleShareQr}
+              className="w-full bg-white/10 hover:bg-white/20 text-white py-2.5 px-3 rounded-xl font-semibold text-xs flex items-center justify-center gap-1.5 border border-white/20 cursor-pointer transition-colors"
             >
               <Share2 className="w-3.5 h-3.5" />
               <span>{t.shareQr[language]}</span>

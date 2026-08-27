@@ -19,8 +19,8 @@ export const TrustBar: React.FC<TrustBarProps> = ({ language, theme = 'light' })
         <div
           className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm border ${
             isDark
-              ? 'bg-blue-950/70 border-blue-800/80 text-cyan-400'
-              : 'bg-blue-100/90 border-blue-200 text-[#0F4C81]'
+              ? 'bg-primary/15 border-primary/30 text-primary-light'
+              : 'bg-primary/10 border-primary/20 text-primary'
           }`}
         >
           <ShieldCheck className="w-7 h-7" />
@@ -51,8 +51,8 @@ export const TrustBar: React.FC<TrustBarProps> = ({ language, theme = 'light' })
         <div
           className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm border ${
             isDark
-              ? 'bg-cyan-950/70 border-cyan-800/80 text-cyan-300'
-              : 'bg-cyan-100/90 border-cyan-200 text-cyan-700'
+              ? 'bg-primary/15 border-primary/30 text-primary-light'
+              : 'bg-primary/10 border-primary/20 text-primary'
           }`}
         >
           <Award className="w-7 h-7" />

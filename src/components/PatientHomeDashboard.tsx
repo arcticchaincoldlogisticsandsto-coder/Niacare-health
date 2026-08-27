@@ -234,7 +234,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
             </div>
             <div className="min-w-0">
               <p className="text-xs font-semibold nc-text-muted">{greeting}</p>
-              <h1 className="truncate text-xl font-extrabold leading-tight text-[#10233E] dark:text-white">
+              <h1 className="truncate text-xl font-semibold leading-tight text-[#10233E] dark:text-white">
                 {patientName}
               </h1>
               <p className="truncate text-[11px] font-semibold nc-text-muted">
@@ -246,7 +246,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
           <div className="flex shrink-0 items-center gap-2">
             <button
               type="button"
-              className="relative flex h-10 w-10 items-center justify-center rounded-xl border nc-border bg-white text-[#0A4275] shadow-sm dark:bg-[#101F31]"
+              className="relative flex h-10 w-10 items-center justify-center rounded-xl border nc-border bg-white text-primary shadow-sm dark:bg-[#101F31] dark:text-primary-light"
               title="Notifications"
             >
               <Bell className="h-4 w-4" />
@@ -255,7 +255,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
             <button
               type="button"
               onClick={onOpenSettings}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border nc-border bg-white text-[#0A4275] shadow-sm dark:bg-[#101F31]"
+              className="flex h-10 w-10 items-center justify-center rounded-xl border nc-border bg-white text-primary shadow-sm dark:bg-[#101F31] dark:text-primary-light"
               title="Settings"
             >
               <Settings className="h-4 w-4" />
@@ -281,7 +281,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
               <Siren className="h-5 w-5" />
             </span>
             <span>
-              <span className="block text-xs font-extrabold uppercase tracking-wide">Emergency Care</span>
+              <span className="block text-xs font-semibold uppercase tracking-wide">Emergency Care</span>
               <span className="block text-sm font-semibold text-white/90">1-tap help and ambulance guidance</span>
             </span>
           </span>
@@ -313,13 +313,13 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
           >
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <Clock className={`w-4 h-4 ${isDark ? 'text-cyan-400' : 'text-[#0A4275]'}`} />
-                <h3 className={`text-xs sm:text-sm font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                <Clock className={`w-4 h-4 ${isDark ? 'text-primary-light' : 'text-primary'}`} />
+                <h3 className={`text-xs sm:text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
                   {t.upcomingTitle[language]}
                 </h3>
               </div>
               {activeAppointment ? (
-                <span className="text-[10px] font-bold text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-950/60 px-2 py-0.5 rounded-full border border-cyan-200 dark:border-cyan-800">
+                <span className="text-[10px] font-bold text-primary dark:text-primary-light bg-primary/5 dark:bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20 dark:border-primary/30">
                   {activeAppointment.date} • {activeAppointment.timeSlot}
                 </span>
               ) : (
@@ -336,12 +336,12 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-500/15 text-blue-600 dark:text-cyan-400 flex items-center justify-center font-bold flex-shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary dark:text-primary-light flex items-center justify-center font-semibold flex-shrink-0">
                     <Stethoscope className="w-5 h-5" />
                   </div>
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <h4 className="text-xs font-black text-slate-900 dark:text-white">
+                      <h4 className="text-xs font-semibold text-slate-900 dark:text-white">
                         {activeAppointment.doctorName}
                       </h4>
                       <span className="text-[10px] font-bold font-mono px-1.5 py-0.2 bg-emerald-500/20 text-emerald-400 rounded">
@@ -372,7 +372,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
                   <button
                     type="button"
                     onClick={() => setActiveModal('appointment')}
-                    className="w-full sm:w-auto px-3 py-2 rounded-xl text-xs font-bold bg-[#0A4275] dark:bg-cyan-500 text-white dark:text-slate-950 hover:opacity-90 cursor-pointer transition-all flex items-center justify-center gap-1 shadow-sm"
+                    className="w-full sm:w-auto px-3 py-2 rounded-xl text-xs font-bold bg-primary text-white hover:bg-primary-light cursor-pointer transition-all flex items-center justify-center gap-1 shadow-sm"
                   >
                     <span>
                       {activeAppointment.consultationType === 'telehealth'
@@ -401,7 +401,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
                 <button
                   type="button"
                   onClick={() => setActiveModal('appointment')}
-                  className="px-3 py-2 rounded-xl text-xs font-bold bg-cyan-500 text-slate-950 hover:bg-cyan-400 cursor-pointer transition-all flex items-center gap-1 flex-shrink-0 shadow-sm"
+                  className="px-3 py-2 rounded-xl text-xs font-bold bg-primary text-white hover:bg-primary-light cursor-pointer transition-all flex items-center gap-1 flex-shrink-0 shadow-sm"
                 >
                   <CalendarCheck className="w-3.5 h-3.5" />
                   <span>{language === 'sw' ? 'Weka Miadi' : 'Book Appointment'}</span>
@@ -417,24 +417,24 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
           gold "chip" graphic. Healthcare clarity over decoration. */}
       <div
         id="card-digital-health-passport"
-        className="relative rounded-xl overflow-hidden p-4 text-white nc-gradient-passport border border-cyan-500/20"
+        className="relative rounded-xl overflow-hidden p-4 text-white nc-gradient-passport border border-white/15"
       >
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-cyan-300">
+            <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-white/85">
               <Shield className="w-4 h-4" />
             </div>
             <div>
-              <span className="text-[10px] uppercase font-mono tracking-widest text-cyan-200 font-bold block">
+              <span className="text-[10px] uppercase font-mono tracking-widest text-white/70 font-semibold block">
                 {patientCountry.headerTitle}
               </span>
-              <h3 className="text-xs sm:text-sm font-black tracking-tight text-white flex items-center gap-1.5">
+              <h3 className="text-xs sm:text-sm font-semibold tracking-tight text-white flex items-center gap-1.5">
                 <span>NIACARE HEALTH PASSPORT</span>
                 <span className="text-base">{patientCountry.flag}</span>
               </h3>
             </div>
           </div>
-          <span className="text-[11px] font-mono font-black bg-white/15 px-2 py-1 rounded-lg border border-white/20 flex items-center gap-1 text-white flex-shrink-0">
+          <span className="text-[11px] font-mono font-semibold bg-white/15 px-2 py-1 rounded-lg border border-white/20 flex items-center gap-1 text-white flex-shrink-0">
             <span>{patientCountry.flag}</span>
             <span>{patientCountry.code}</span>
           </span>
@@ -443,13 +443,13 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
         <div className="space-y-3 mb-4">
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
             <div>
-              <span className="text-[9px] uppercase tracking-wider text-cyan-200 font-bold block">
+              <span className="text-[9px] uppercase tracking-wider text-white/70 font-semibold block">
                 {language === 'sw' ? 'JINA LA MGONJWA' : 'PATIENT NAME'}
               </span>
-              <p className="font-extrabold text-sm text-white truncate">{patientName}</p>
+              <p className="font-semibold text-sm text-white truncate">{patientName}</p>
             </div>
             <div>
-              <span className="text-[9px] uppercase tracking-wider text-cyan-200 font-bold block">
+              <span className="text-[9px] uppercase tracking-wider text-white/70 font-semibold block">
                 {language === 'sw' ? 'RAIA / NCHI' : 'CITIZENSHIP / COUNTRY'}
               </span>
               <p className="font-bold text-xs text-white truncate flex items-center gap-1">
@@ -458,7 +458,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
               </p>
             </div>
             <div className="col-span-2 sm:col-span-1">
-              <span className="text-[9px] uppercase tracking-wider text-cyan-200 font-bold block">
+              <span className="text-[9px] uppercase tracking-wider text-white/70 font-semibold block">
                 {primaryDocType}
               </span>
               <p className="font-mono font-bold text-xs text-white truncate">{primaryDocNumber}</p>
@@ -467,19 +467,19 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
 
           <div className="grid grid-cols-3 gap-2 pt-1 border-t border-white/10 text-[11px]">
             <div>
-              <span className="text-[9px] text-cyan-200 font-semibold block">DAMU (Blood)</span>
-              <span className="font-mono font-extrabold text-amber-300 text-xs truncate block">
+              <span className="text-[9px] text-white/70 font-semibold block">DAMU (Blood)</span>
+              <span className="font-mono font-semibold text-amber-300 text-xs truncate block">
                 {patientBloodType === 'unknown' ? (language === 'sw' ? 'Sina Uhakika' : 'Unknown') : `${patientBloodType} ${patientBloodType.endsWith('+') ? 'Pos' : patientBloodType.endsWith('-') ? 'Neg' : ''}`}
               </span>
             </div>
             <div>
-              <span className="text-[9px] text-cyan-200 font-semibold block">KUZALIWA (DOB)</span>
+              <span className="text-[9px] text-white/70 font-semibold block">KUZALIWA (DOB)</span>
               <span className="font-bold text-white text-xs truncate block" title={patientDob}>
                 {patientDob} ({patientAge}y)
               </span>
             </div>
             <div>
-              <span className="text-[9px] text-cyan-200 font-semibold block">STATUS</span>
+              <span className="text-[9px] text-white/70 font-semibold block">STATUS</span>
               <span className="font-bold text-emerald-300 text-xs flex items-center gap-0.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                 Active
@@ -490,9 +490,9 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
 
         <div className="p-2.5 rounded-xl bg-white/10 border border-white/15 mb-4 flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
-            <Building2 className="w-4 h-4 text-cyan-300 flex-shrink-0" />
+            <Building2 className="w-4 h-4 text-white/85 flex-shrink-0" />
             <div className="truncate">
-              <span className="text-[9px] text-cyan-200 block font-semibold leading-none">
+              <span className="text-[9px] text-white/70 block font-semibold leading-none">
                 {t.insuranceCoverage[language]}
               </span>
               <span className="font-bold text-[11px] text-white truncate block">
@@ -500,7 +500,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
               </span>
             </div>
           </div>
-          <span className="text-[9px] font-extrabold bg-emerald-500/90 text-white px-2 py-0.5 rounded-full uppercase tracking-wider flex-shrink-0">
+          <span className="text-[9px] font-semibold bg-emerald-500/90 text-white px-2 py-0.5 rounded-full uppercase tracking-wider flex-shrink-0">
             {t.activeInsuranceBadge[language]}
           </span>
         </div>
@@ -510,7 +510,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
             id="btn-show-qr-passport"
             type="button"
             onClick={() => setActiveModal('qr')}
-            className="w-full py-2.5 px-4 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-98"
+            className="w-full py-2.5 px-4 rounded-xl bg-white hover:bg-white/90 text-primary font-semibold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all"
           >
             <QrCode className="w-4 h-4" />
             <span>{t.viewQr[language]} (Check-in)</span>
@@ -520,9 +520,9 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
             id="btn-download-passport-pdf"
             type="button"
             onClick={handleDirectPassportPdfDownload}
-            className="w-full py-2.5 px-4 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-white/20 font-black text-xs flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-98"
+            className="w-full py-2.5 px-4 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-white/20 font-semibold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-98"
           >
-            <FileDown className="w-4 h-4 text-cyan-300" />
+            <FileDown className="w-4 h-4 text-white/85" />
             <span>{language === 'sw' ? 'Pakua Pasipoti (PDF)' : 'Download Passport (PDF)'}</span>
           </button>
         </div>
@@ -568,7 +568,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
           <button
             type="button"
             onClick={handleTogglePillTaken}
-            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex-shrink-0 transition-all cursor-pointer shadow-xs ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex-shrink-0 transition-all cursor-pointer shadow-xs ${
               activePrescription.takenToday
                 ? isDark
                   ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
@@ -585,7 +585,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
 
       {/* Appointment Toast Notification if triggered */}
       {appointmentToast && (
-        <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-700 text-white font-bold text-xs flex items-center justify-between shadow-lg animate-in slide-in-from-top duration-300">
+        <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-primary-dark text-white font-bold text-xs flex items-center justify-between shadow-lg animate-in slide-in-from-top duration-300">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-200" />
             <span>{appointmentToast}</span>
@@ -593,7 +593,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
           <button
             type="button"
             onClick={() => setActiveModal('appointment')}
-            className="px-2 py-1 rounded bg-black/20 hover:bg-black/30 text-[11px] font-black underline cursor-pointer"
+            className="px-2 py-1 rounded bg-black/20 hover:bg-black/30 text-[11px] font-semibold underline cursor-pointer"
           >
             Tazama Tiketi
           </button>
@@ -604,28 +604,28 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
       <div
         className={`hidden p-4 rounded-2xl border relative overflow-hidden transition-all ${
           isDark
-            ? 'bg-gradient-to-r from-[#0C2340] via-[#0E2C52] to-[#123966] border-cyan-500/40 text-white shadow-xl'
-            : 'bg-gradient-to-r from-[#0A4275] via-[#0F5A9E] to-[#186EBA] border-blue-300 text-white shadow-md'
+            ? 'bg-gradient-to-r from-[#0C2340] via-[#0E2C52] to-[#123966] border-primary/40 text-white shadow-xl'
+            : 'bg-gradient-to-r from-primary-dark via-primary to-primary-light border-primary/40 text-white shadow-md'
         }`}
       >
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 relative z-10">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-cyan-400 text-slate-950">
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-primary text-white">
                 1-TAP BOOKING
               </span>
-              <span className="text-[11px] text-cyan-200 font-semibold">
+              <span className="text-[11px] text-white/70 font-semibold">
                 Madaktari Bingwa 500+ nchini
               </span>
             </div>
-            <h3 className="text-sm sm:text-base font-black tracking-tight">
+            <h3 className="text-sm sm:text-base font-semibold tracking-tight">
               {language === 'sw'
                 ? 'Weka Miadi ya Daktari & Hospitali (Referral & Video)'
                 : language === 'fr'
                 ? 'Prendre Rendez-vous Médical (Hôpital & Vidéo)'
                 : 'Book Doctor & Hospital Consultation (In-Person / Video)'}
             </h3>
-            <p className="text-[11px] text-cyan-100/80">
+            <p className="text-[11px] text-white/70">
               Muhimbili (MNH), Aga Khan, KCMC Moshi, Bugando Mwanza • Bima ya NHIF / Direct Pay
             </p>
           </div>
@@ -634,7 +634,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
             id="btn-quick-banner-book"
             type="button"
             onClick={() => setActiveModal('appointment')}
-            className="w-full sm:w-auto px-4 py-2.5 rounded-2xl bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-lg cursor-pointer transition-all active:scale-95 flex-shrink-0"
+            className="w-full sm:w-auto px-4 py-2.5 rounded-2xl bg-white hover:bg-white/90 text-primary font-semibold text-xs flex items-center justify-center gap-1.5 shadow-lg cursor-pointer transition-all flex-shrink-0"
           >
             <CalendarCheck className="w-4 h-4" />
             <span>{language === 'sw' ? 'Weka Miadi Sasa' : 'Book Appointment'}</span>
@@ -650,7 +650,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
         }`}
       >
         <div className="flex items-center justify-between mb-3">
-          <h3 className={`text-xs sm:text-sm font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>
+          <h3 className={`text-xs sm:text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
             {t.quickActions[language]}
           </h3>
           <span className="text-[10px] text-slate-400 font-medium">NiaCare Digital Hub</span>
@@ -664,15 +664,15 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
             onClick={() => setActiveModal('appointment')}
             className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group active:scale-98 ${
               isDark
-                ? 'bg-[#091422] border-slate-800 hover:border-cyan-500 hover:bg-[#0c1a2d]'
-                : 'bg-[#F9FBFE] border-slate-200/80 hover:border-[#0A4275] hover:bg-blue-50/50'
+                ? 'bg-[#091422] border-slate-800 hover:border-primary hover:bg-[#0c1a2d]'
+                : 'bg-[#F9FBFE] border-slate-200/80 hover:border-primary hover:bg-primary/5'
             }`}
           >
-            <div className="w-9 h-9 rounded-xl bg-blue-500/15 text-blue-600 dark:text-cyan-400 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary dark:text-primary-light flex items-center justify-center mb-2">
               <Calendar className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-xs font-black text-slate-900 dark:text-white leading-tight">
+              <h4 className="text-xs font-semibold text-slate-900 dark:text-white leading-tight">
                 {t.bookAppointment[language]}
               </h4>
               <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">
@@ -688,20 +688,19 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
             onClick={() => setActiveModal('checkout')}
             className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group active:scale-98 ${
               isDark
-                ? 'bg-gradient-to-br from-[#0c261e] to-[#091422] border-emerald-500/60 hover:border-emerald-400 hover:bg-[#0f2e24]'
-                : 'bg-gradient-to-br from-emerald-50/80 to-blue-50/60 border-emerald-500/60 hover:border-emerald-600 hover:bg-emerald-100/50'
+                ? 'bg-[#091422] border-slate-800 hover:border-primary hover:bg-[#0c1a2d]'
+                : 'bg-[#F9FBFE] border-slate-200/80 hover:border-primary hover:bg-primary/5'
             }`}
           >
-            <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform shadow-xs">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary dark:text-primary-light flex items-center justify-center mb-2">
               <Banknote className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-1">
-                <h4 className="text-xs font-black text-slate-900 dark:text-white leading-tight">
+                <h4 className="text-xs font-semibold text-slate-900 dark:text-white leading-tight">
                   {t.checkoutBilling[language]}
                 </h4>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              </div>
+                </div>
               <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mt-0.5 leading-tight">
                 {t.checkoutBillingSub[language]}
               </p>
@@ -715,15 +714,15 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
             onClick={() => setActiveModal('prescriptions')}
             className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group active:scale-98 ${
               isDark
-                ? 'bg-[#091422] border-slate-800 hover:border-cyan-500 hover:bg-[#0c1a2d]'
-                : 'bg-[#F9FBFE] border-slate-200/80 hover:border-[#0A4275] hover:bg-blue-50/50'
+                ? 'bg-[#091422] border-slate-800 hover:border-primary hover:bg-[#0c1a2d]'
+                : 'bg-[#F9FBFE] border-slate-200/80 hover:border-primary hover:bg-primary/5'
             }`}
           >
-            <div className="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary dark:text-primary-light flex items-center justify-center mb-2">
               <Pill className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-xs font-black text-slate-900 dark:text-white leading-tight">
+              <h4 className="text-xs font-semibold text-slate-900 dark:text-white leading-tight">
                 {t.prescriptions[language]}
               </h4>
               <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">
@@ -740,15 +739,15 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
             onClick={() => setActiveModal('laboratory')}
             className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group active:scale-98 ${
               isDark
-                ? 'bg-[#091422] border-slate-800 hover:border-cyan-500 hover:bg-[#0c1a2d]'
-                : 'bg-[#F9FBFE] border-slate-200/80 hover:border-[#0A4275] hover:bg-blue-50/50'
+                ? 'bg-[#091422] border-slate-800 hover:border-primary hover:bg-[#0c1a2d]'
+                : 'bg-[#F9FBFE] border-slate-200/80 hover:border-primary hover:bg-primary/5'
             }`}
           >
-            <div className="w-9 h-9 rounded-xl bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary dark:text-primary-light flex items-center justify-center mb-2">
               <FileText className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-xs font-black text-slate-900 dark:text-white leading-tight">
+              <h4 className="text-xs font-semibold text-slate-900 dark:text-white leading-tight">
                 {t.labResults[language]}
               </h4>
               <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">
@@ -764,15 +763,15 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
             onClick={() => setActiveModal('personal_files')}
             className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group active:scale-98 ${
               isDark
-                ? 'bg-[#091422] border-slate-800 hover:border-cyan-500 hover:bg-[#0c1a2d]'
-                : 'bg-[#F9FBFE] border-slate-200/80 hover:border-[#0A4275] hover:bg-blue-50/50'
+                ? 'bg-[#091422] border-slate-800 hover:border-primary hover:bg-[#0c1a2d]'
+                : 'bg-[#F9FBFE] border-slate-200/80 hover:border-primary hover:bg-primary/5'
             }`}
           >
-            <div className="w-9 h-9 rounded-xl bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary dark:text-primary-light flex items-center justify-center mb-2">
               <FolderLock className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-xs font-black text-slate-900 dark:text-white leading-tight">
+              <h4 className="text-xs font-semibold text-slate-900 dark:text-white leading-tight">
                 {t.personalFiles[language]}
               </h4>
               <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">
@@ -788,15 +787,15 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
             onClick={() => setActiveModal('insurance')}
             className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group active:scale-98 ${
               isDark
-                ? 'bg-[#091422] border-slate-800 hover:border-cyan-500 hover:bg-[#0c1a2d]'
-                : 'bg-[#F9FBFE] border-slate-200/80 hover:border-[#0A4275] hover:bg-blue-50/50'
+                ? 'bg-[#091422] border-slate-800 hover:border-primary hover:bg-[#0c1a2d]'
+                : 'bg-[#F9FBFE] border-slate-200/80 hover:border-primary hover:bg-primary/5'
             }`}
           >
-            <div className="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary dark:text-primary-light flex items-center justify-center mb-2">
               <CreditCard className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-xs font-black text-slate-900 dark:text-white leading-tight">
+              <h4 className="text-xs font-semibold text-slate-900 dark:text-white leading-tight">
                 {t.insuranceCoverage[language]}
               </h4>
               <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">
@@ -812,15 +811,15 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
             onClick={() => setActiveModal('facilities')}
             className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group active:scale-98 ${
               isDark
-                ? 'bg-[#091422] border-slate-800 hover:border-cyan-500 hover:bg-[#0c1a2d]'
-                : 'bg-[#F9FBFE] border-slate-200/80 hover:border-[#0A4275] hover:bg-blue-50/50'
+                ? 'bg-[#091422] border-slate-800 hover:border-primary hover:bg-[#0c1a2d]'
+                : 'bg-[#F9FBFE] border-slate-200/80 hover:border-primary hover:bg-primary/5'
             }`}
           >
-            <div className="w-9 h-9 rounded-xl bg-rose-500/15 text-rose-600 dark:text-rose-400 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary dark:text-primary-light flex items-center justify-center mb-2">
               <MapPin className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-xs font-black text-slate-900 dark:text-white leading-tight">
+              <h4 className="text-xs font-semibold text-slate-900 dark:text-white leading-tight">
                 {t.findFacility[language]}
               </h4>
               <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">
@@ -836,18 +835,18 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
             onClick={() => setActiveModal('ai')}
             className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group active:scale-98 sm:col-span-2 ${
               isDark
-                ? 'bg-[#091422] border-slate-800 hover:border-cyan-500 hover:bg-[#0c1a2d]'
-                : 'bg-[#F9FBFE] border-slate-200/80 hover:border-[#0A4275] hover:bg-blue-50/50'
+                ? 'bg-[#091422] border-slate-800 hover:border-primary hover:bg-[#0c1a2d]'
+                : 'bg-[#F9FBFE] border-slate-200/80 hover:border-primary hover:bg-primary/5'
             }`}
           >
             <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-xl bg-cyan-500/20 text-cyan-600 dark:text-cyan-300 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
+              <div className="w-9 h-9 rounded-xl bg-primary/15 text-primary dark:text-primary-light flex items-center justify-center flex-shrink-0">
                 <Stethoscope className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-xs font-black text-slate-900 dark:text-white leading-tight flex items-center gap-1">
+                <h4 className="text-xs font-semibold text-slate-900 dark:text-white leading-tight flex items-center gap-1">
                   <span>{t.aiConsult[language]}</span>
-                  <Sparkles className="w-3 h-3 text-cyan-500" />
+                  <Sparkles className="w-3 h-3 text-primary" />
                 </h4>
                 <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">
                   {t.aiConsultSub[language]}
@@ -866,8 +865,8 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
       >
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <FileText className="w-4 h-4 text-purple-500" />
-            <h3 className={`text-xs sm:text-sm font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            <FileText className="w-4 h-4 text-primary" />
+            <h3 className={`text-xs sm:text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
               {language === 'sw' ? 'Rekodi za Matibabu & Majibu ya Vipimo' : 'Medical Records & Diagnostic History'}
             </h3>
           </div>
@@ -876,7 +875,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
               id="btn-view-all-records"
               type="button"
               onClick={() => setActiveModal('records')}
-              className="text-[11px] font-bold text-purple-600 dark:text-purple-400 hover:underline cursor-pointer flex items-center gap-1"
+              className="text-[11px] font-bold text-primary dark:text-primary-light hover:underline cursor-pointer flex items-center gap-1"
             >
               <span>
                 {language === 'sw' ? `Fungua Zote (${medicalRecords.length})` : `View All (${medicalRecords.length})`}
@@ -902,19 +901,19 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
             <div
               key={rec.id}
               onClick={() => setActiveModal('records')}
-              className={`p-3 rounded-2xl border flex items-center justify-between text-xs cursor-pointer transition-all hover:scale-[1.005] ${
+              className={`p-3 rounded-2xl border flex items-center justify-between text-xs cursor-pointer transition-all ${
                 isDark
-                  ? 'bg-[#091422] border-slate-800/80 hover:border-purple-500/60'
-                  : 'bg-slate-50/80 border-slate-200/70 hover:border-purple-300'
+                  ? 'bg-[#091422] border-slate-800/80 hover:border-primary/60'
+                  : 'bg-slate-50/80 border-slate-200/70 hover:border-primary/40'
               }`}
             >
               <div className="flex items-center gap-2.5 min-w-0">
                 <div
                   className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
                     rec.category === 'lab'
-                      ? 'bg-purple-500'
+                      ? 'bg-primary'
                       : rec.category === 'radiology'
-                      ? 'bg-blue-500'
+                      ? 'bg-primary'
                       : rec.category === 'vaccine'
                       ? 'bg-amber-500'
                       : 'bg-emerald-500'
@@ -934,7 +933,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
                 <button
                   type="button"
                   onClick={(e) => handleQuickRecordDownload(rec, e)}
-                  className="p-1.5 rounded-lg bg-purple-500/15 text-purple-600 dark:text-purple-300 hover:bg-purple-500/25 transition-colors"
+                  className="p-1.5 rounded-lg bg-primary/10 text-primary dark:text-primary-light hover:bg-primary/20 transition-colors"
                   title="Download PDF"
                 >
                   <Download className="w-3.5 h-3.5" />
@@ -955,7 +954,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
             id="btn-open-medical-records-modal"
             type="button"
             onClick={() => setActiveModal('records')}
-            className="w-full py-2.5 px-4 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-black text-xs flex items-center justify-center gap-2 shadow-sm cursor-pointer transition-all active:scale-98"
+            className="w-full py-2.5 px-4 rounded-xl bg-primary hover:bg-primary-light text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-sm cursor-pointer transition-all active:scale-98"
           >
             <FileText className="w-4 h-4" />
             <span>

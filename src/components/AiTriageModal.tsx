@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Sparkles, Send, AlertCircle } from 'lucide-react';
+import { X, Sparkles, Send, AlertCircle, Thermometer, FlaskConical } from 'lucide-react';
 import { Language, Theme } from '../types';
 import { supabase } from '../lib/supabaseClient';
 
@@ -106,11 +106,11 @@ export const AiTriageModal: React.FC<AiTriageModalProps> = ({ isOpen, onClose, t
         </button>
 
         <div className="flex items-center gap-2 mb-3 flex-shrink-0">
-          <div className="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
             <Sparkles className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-sm font-black">NiaAI Smart Triage Assistant</h3>
+            <h3 className="text-sm font-semibold">NiaAI Smart Triage Assistant</h3>
             <span className="text-[10px] text-emerald-500 font-semibold block leading-none">
               ● Mfumo wa AI wa Ushauri wa Afya Mtandaoni
             </span>
@@ -138,7 +138,7 @@ export const AiTriageModal: React.FC<AiTriageModalProps> = ({ isOpen, onClose, t
               key={i}
               className={`p-3 rounded-2xl max-w-[85%] leading-relaxed ${
                 msg.sender === 'user'
-                  ? 'ml-auto bg-[#0A4275] text-white rounded-br-xs'
+                  ? 'ml-auto bg-primary text-white rounded-br-xs'
                   : isDark
                   ? 'bg-slate-800/90 text-slate-200 rounded-bl-xs border border-slate-700/60'
                   : 'bg-slate-100 text-slate-800 rounded-bl-xs'
@@ -154,9 +154,9 @@ export const AiTriageModal: React.FC<AiTriageModalProps> = ({ isOpen, onClose, t
               }`}
             >
               <span className="inline-flex gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce [animation-delay:-0.3s]" />
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce [animation-delay:-0.15s]" />
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce" />
+                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" />
               </span>
             </div>
           )}
@@ -167,16 +167,18 @@ export const AiTriageModal: React.FC<AiTriageModalProps> = ({ isOpen, onClose, t
           <button
             type="button"
             onClick={() => setAiMessage('Nina maumivu ya kichwa na homa kidogo')}
-            className="px-2.5 py-1 rounded-full border border-slate-700 bg-slate-800/60 text-slate-300 whitespace-nowrap cursor-pointer hover:border-cyan-400"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-full border border-slate-700 bg-slate-800/60 text-slate-300 whitespace-nowrap cursor-pointer hover:border-primary-light"
           >
-            🤒 Homa & Kichwa
+            <Thermometer className="w-3 h-3" />
+            Homa &amp; Kichwa
           </button>
           <button
             type="button"
             onClick={() => setAiMessage('Nahitaji ushauri wa kipimo cha Malaria')}
-            className="px-2.5 py-1 rounded-full border border-slate-700 bg-slate-800/60 text-slate-300 whitespace-nowrap cursor-pointer hover:border-cyan-400"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-full border border-slate-700 bg-slate-800/60 text-slate-300 whitespace-nowrap cursor-pointer hover:border-primary-light"
           >
-            🧪 Kipimo cha Malaria
+            <FlaskConical className="w-3 h-3" />
+            Kipimo cha Malaria
           </button>
         </div>
 
@@ -197,7 +199,7 @@ export const AiTriageModal: React.FC<AiTriageModalProps> = ({ isOpen, onClose, t
             type="button"
             onClick={handleSendAiMessage}
             disabled={isSending}
-            className="p-3 rounded-xl bg-cyan-500 text-slate-950 font-bold cursor-pointer hover:bg-cyan-400 transition-all flex-shrink-0 disabled:opacity-60 disabled:cursor-wait"
+            className="p-3 rounded-xl bg-primary text-white font-semibold cursor-pointer hover:bg-primary-light transition-all flex-shrink-0 disabled:opacity-60 disabled:cursor-wait"
           >
             <Send className="w-4 h-4" />
           </button>

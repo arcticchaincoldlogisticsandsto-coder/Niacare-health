@@ -13,7 +13,7 @@ interface LaboratoryModalProps {
 const INTERPRETATION_STYLES: Record<string, string> = {
   normal: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
   abnormal: 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
-  critical: 'bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300 font-black',
+  critical: 'bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300 font-semibold',
 };
 
 export const LaboratoryModal: React.FC<LaboratoryModalProps> = ({ isOpen, onClose, theme, patientId }) => {
@@ -41,10 +41,10 @@ export const LaboratoryModal: React.FC<LaboratoryModalProps> = ({ isOpen, onClos
       <div className={`w-full max-w-lg rounded-2xl border shadow-2xl overflow-hidden flex flex-col max-h-[90vh] ${isDark ? 'bg-[#0B1728] border-slate-700/80 text-white' : 'bg-white border-slate-200 text-slate-900'}`}>
         <div className={`p-4 sm:p-5 border-b flex items-center justify-between gap-3 ${isDark ? 'bg-[#101F33] border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-purple-500/20 text-purple-400 flex items-center justify-center flex-shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-primary/20 text-primary-light flex items-center justify-center flex-shrink-0">
               <FlaskConical className="w-5 h-5" />
             </div>
-            <h2 className="text-base font-black tracking-tight">Laboratory</h2>
+            <h2 className="text-base font-semibold tracking-tight">Laboratory</h2>
           </div>
           <button type="button" onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-900 dark:hover:text-white">
             <X className="w-5 h-5" />

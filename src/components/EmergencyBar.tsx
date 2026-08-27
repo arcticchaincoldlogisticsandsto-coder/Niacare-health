@@ -8,7 +8,13 @@ import {
   Navigation,
   ChevronRight,
   Clock,
+  AlertTriangle,
+  HeartPulse,
+  Wind,
+  Baby,
+  Zap,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { Language } from '../types';
 import { NEARBY_HOSPITALS } from '../data/countries';
 import { TRANSLATIONS } from '../data/translations';
@@ -136,12 +142,12 @@ export const EmergencyBar: React.FC<EmergencyBarProps> = ({ language, authUserId
     setIsDispatched(false);
   };
 
-  const emergencyConditions: { id: 'trauma' | 'cardiac' | 'respiratory' | 'maternity' | 'unconscious'; icon: string }[] = [
-    { id: 'trauma', icon: '🚨' },
-    { id: 'cardiac', icon: '❤️‍🩹' },
-    { id: 'respiratory', icon: '🫁' },
-    { id: 'maternity', icon: '🤰' },
-    { id: 'unconscious', icon: '⚡' },
+  const emergencyConditions: { id: 'trauma' | 'cardiac' | 'respiratory' | 'maternity' | 'unconscious'; Icon: LucideIcon }[] = [
+    { id: 'trauma', Icon: AlertTriangle },
+    { id: 'cardiac', Icon: HeartPulse },
+    { id: 'respiratory', Icon: Wind },
+    { id: 'maternity', Icon: Baby },
+    { id: 'unconscious', Icon: Zap },
   ];
 
   return (
@@ -162,7 +168,7 @@ export const EmergencyBar: React.FC<EmergencyBarProps> = ({ language, authUserId
             </div>
 
             <div className="text-left">
-              <h2 className="text-sm sm:text-base font-extrabold tracking-wide text-white uppercase leading-tight font-sans">
+              <h2 className="text-sm sm:text-base font-semibold tracking-wide text-white uppercase leading-tight font-sans">
                 {t.barTitle[language]}
               </h2>
               <p className="text-xs sm:text-[13px] text-white/90 font-medium">
@@ -192,7 +198,7 @@ export const EmergencyBar: React.FC<EmergencyBarProps> = ({ language, authUserId
                   <Siren className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black tracking-tight">
+                  <h3 className="text-lg font-semibold tracking-tight">
                     {t.modalTitle[language]}
                   </h3>
                   <p className="text-xs text-red-100">
@@ -217,15 +223,15 @@ export const EmergencyBar: React.FC<EmergencyBarProps> = ({ language, authUserId
             <div className="p-4 sm:p-6 overflow-y-auto space-y-4 text-slate-800">
               {/* If Dispatched Successfully */}
               {isDispatched ? (
-                <div className="bg-emerald-50 border-2 border-emerald-500 rounded-2xl p-4 text-center space-y-3">
-                  <div className="w-14 h-14 bg-emerald-500 text-white rounded-full flex items-center justify-center mx-auto shadow-lg animate-bounce">
+                <div className="bg-emerald-50 border-2 border-emerald-500 rounded-2xl p-4 text-center space-y-3 animate-in zoom-in-95 duration-300">
+                  <div className="w-14 h-14 bg-emerald-500 text-white rounded-full flex items-center justify-center mx-auto shadow-lg">
                     <CheckCircle className="w-8 h-8" />
                   </div>
                   <div>
                     <span className="text-xs font-mono font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-md">
                       ID: {dispatchId}
                     </span>
-                    <h4 className="text-xl font-black text-emerald-900 mt-2">
+                    <h4 className="text-xl font-semibold text-emerald-900 mt-2">
                       {t.dispatchedTitle[language]}
                     </h4>
                     <p className="text-xs text-emerald-700 mt-1">
@@ -267,11 +273,11 @@ export const EmergencyBar: React.FC<EmergencyBarProps> = ({ language, authUserId
               ) : countdown !== null ? (
                 /* Countdown Triggering Screen */
                 <div className="bg-red-50 border-2 border-red-500 rounded-2xl p-6 text-center space-y-4">
-                  <div className="w-20 h-20 bg-red-600 text-white rounded-full flex items-center justify-center mx-auto shadow-xl text-3xl font-black emergency-glow">
+                  <div className="w-20 h-20 bg-red-600 text-white rounded-full flex items-center justify-center mx-auto shadow-xl text-3xl font-bold emergency-glow">
                     {countdown}s
                   </div>
                   <div>
-                    <h4 className="text-xl font-black text-red-900">
+                    <h4 className="text-xl font-semibold text-red-900">
                       {t.initiatingTitle[language]}
                     </h4>
                     <p className="text-xs text-red-700 mt-1 max-w-sm mx-auto">
@@ -292,18 +298,18 @@ export const EmergencyBar: React.FC<EmergencyBarProps> = ({ language, authUserId
                 <>
                   {/* GPS Locator Card */}
                   <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-blue-100 text-[#0A4275] flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center flex-shrink-0 mt-0.5">
                       <MapPin className="w-4 h-4" />
                     </div>
                     <div className="flex-1 text-xs">
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-slate-900">
+                        <span className="font-semibold text-slate-900">
                           {t.gpsPinpoint[language]}
                         </span>
                         <button
                           type="button"
                           onClick={triggerGpsLocate}
-                          className="text-[11px] text-[#0A4275] font-semibold hover:underline flex items-center gap-0.5 cursor-pointer"
+                          className="text-[11px] text-primary font-semibold hover:underline flex items-center gap-0.5 cursor-pointer"
                         >
                           <Navigation className="w-3 h-3" />
                           {t.refresh[language]}
@@ -331,7 +337,7 @@ export const EmergencyBar: React.FC<EmergencyBarProps> = ({ language, authUserId
                               : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
                           }`}
                         >
-                          <span className="text-lg mb-1">{cond.icon}</span>
+                          <cond.Icon className="w-4 h-4 mb-1" />
                           <span className="leading-tight">
                             {t.conditions[cond.id][language]}
                           </span>
@@ -384,9 +390,9 @@ export const EmergencyBar: React.FC<EmergencyBarProps> = ({ language, authUserId
                       id="btn-confirm-dispatch"
                       type="button"
                       onClick={startDispatchCountdown}
-                      className="w-full bg-[#E51E2B] hover:bg-[#D01824] text-white py-3.5 px-4 rounded-xl font-extrabold text-sm sm:text-base flex items-center justify-center gap-2 shadow-lg shadow-red-600/30 cursor-pointer"
+                      className="w-full bg-[#E51E2B] hover:bg-[#D01824] text-white py-3.5 px-4 rounded-xl font-semibold text-sm sm:text-base flex items-center justify-center gap-2 shadow-lg shadow-red-600/30 cursor-pointer"
                     >
-                      <Siren className="w-5 h-5 animate-pulse" />
+                      <Siren className="w-5 h-5" />
                       {t.confirmDispatchBtn[language]}
                     </button>
 

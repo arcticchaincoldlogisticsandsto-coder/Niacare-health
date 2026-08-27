@@ -121,7 +121,7 @@ export const TwoFactorSecurity: React.FC<TwoFactorSecurityProps> = ({
       {/* 2FA Header */}
       <div className="flex items-center justify-between mb-3.5">
         <div className="flex items-center gap-2">
-          <Shield className={`w-4 h-4 ${isDark ? 'text-cyan-400' : 'text-slate-800'}`} />
+          <Shield className={`w-4 h-4 ${isDark ? 'text-primary-light' : 'text-slate-800'}`} />
           <h3 className={`text-sm font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
             {t.title[language]}
           </h3>
@@ -161,8 +161,8 @@ export const TwoFactorSecurity: React.FC<TwoFactorSecurityProps> = ({
               className={`py-2 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                 otpChannel === 'phone'
                   ? isDark
-                    ? 'bg-cyan-500 text-[#041D34]'
-                    : 'bg-[#0A4275] text-white'
+                    ? 'bg-primary text-white'
+                    : 'bg-primary text-white'
                   : isDark
                   ? 'text-slate-400 hover:text-white bg-transparent'
                   : 'text-slate-600 hover:text-slate-900 bg-transparent'
@@ -183,8 +183,8 @@ export const TwoFactorSecurity: React.FC<TwoFactorSecurityProps> = ({
               className={`py-2 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                 otpChannel === 'email'
                   ? isDark
-                    ? 'bg-cyan-500 text-[#041D34]'
-                    : 'bg-[#0A4275] text-white'
+                    ? 'bg-primary text-white'
+                    : 'bg-primary text-white'
                   : isDark
                   ? 'text-slate-400 hover:text-white bg-transparent'
                   : 'text-slate-600 hover:text-slate-900 bg-transparent'
@@ -200,11 +200,11 @@ export const TwoFactorSecurity: React.FC<TwoFactorSecurityProps> = ({
         {otpChannel === 'phone' ? (
           <div
             className={`p-2.5 sm:p-3 rounded-2xl border flex items-center justify-between text-xs transition-all ${
-              isDark ? 'bg-[#0A1522] border-slate-700/80 text-slate-300' : 'bg-[#F0F5FA] border-blue-100 text-slate-700'
+              isDark ? 'bg-[#0A1522] border-slate-700/80 text-slate-300' : 'bg-[#F0F5FA] border-primary-light text-slate-700'
             }`}
           >
             <div className="flex items-center gap-2">
-              <Smartphone className={`w-4 h-4 ${isDark ? 'text-cyan-400' : 'text-[#0A4275]'}`} />
+              <Smartphone className={`w-4 h-4 ${isDark ? 'text-primary-light' : 'text-primary'}`} />
               <div>
                 <p className="text-[11px] text-slate-500 font-medium">
                   {t.dispatchedToPhone[language]}
@@ -216,7 +216,7 @@ export const TwoFactorSecurity: React.FC<TwoFactorSecurityProps> = ({
             </div>
             <span
               className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                isDark ? 'bg-cyan-950 text-cyan-300' : 'bg-blue-100 text-[#0A4275]'
+                isDark ? 'bg-primary/10 text-primary-light' : 'bg-primary/10 text-primary'
               }`}
             >
               SMS
@@ -226,19 +226,19 @@ export const TwoFactorSecurity: React.FC<TwoFactorSecurityProps> = ({
           /* Email Channel Target Display / Input */
           <div
             className={`p-2.5 sm:p-3 rounded-2xl border text-xs transition-all space-y-2 ${
-              isDark ? 'bg-[#0A1522] border-slate-700/80 text-slate-300' : 'bg-[#F0F5FA] border-blue-100 text-slate-700'
+              isDark ? 'bg-[#0A1522] border-slate-700/80 text-slate-300' : 'bg-[#F0F5FA] border-primary-light text-slate-700'
             }`}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Mail className={`w-4 h-4 ${isDark ? 'text-cyan-400' : 'text-[#0A4275]'}`} />
+                <Mail className={`w-4 h-4 ${isDark ? 'text-primary-light' : 'text-primary'}`} />
                 <p className="text-[11px] text-slate-500 font-medium">
                   {t.dispatchedToEmail[language]}
                 </p>
               </div>
               <span
                 className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                  isDark ? 'bg-purple-950 text-purple-300' : 'bg-indigo-100 text-indigo-800'
+                  isDark ? 'bg-primary/10 text-primary-light' : 'bg-primary/10 text-primary'
                 }`}
               >
                 EMAIL
@@ -255,8 +255,8 @@ export const TwoFactorSecurity: React.FC<TwoFactorSecurityProps> = ({
                 onChange={(e) => handleEmailChange(e.target.value)}
                 className={`w-full text-xs sm:text-sm rounded-xl px-3 py-2 border outline-none font-medium transition-all ${
                   isDark
-                    ? 'bg-[#0E1A29] text-white border-slate-700 focus:border-cyan-400 placeholder:text-slate-500'
-                    : 'bg-white text-slate-900 border-slate-200 focus:border-[#0A4275] focus:ring-1 focus:ring-[#0A4275] placeholder:text-slate-400'
+                    ? 'bg-[#0E1A29] text-white border-slate-700 focus:border-primary-light placeholder:text-slate-500'
+                    : 'bg-white text-slate-900 border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary placeholder:text-slate-400'
                 }`}
               />
             </div>
@@ -280,17 +280,17 @@ export const TwoFactorSecurity: React.FC<TwoFactorSecurityProps> = ({
             isSending ? 'opacity-70 cursor-wait' : 'cursor-pointer'
           } ${
             isDark
-              ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-500/20'
-              : 'bg-[#0A4275] hover:bg-[#08365f] text-white shadow-md shadow-[#0A4275]/20'
+              ? 'bg-primary hover:bg-primary-light text-white shadow-lg shadow-primary/20'
+              : 'bg-primary hover:bg-primary-dark text-white shadow-md shadow-primary/20'
           }`}
         >
-          <div className="flex items-center justify-center gap-2 text-sm sm:text-base font-extrabold tracking-wide">
+          <div className="flex items-center justify-center gap-2 text-sm sm:text-base font-semibold tracking-wide">
             <Send className="w-4 h-4" />
             <span>{isSending ? '...' : t.sendOtpBtn[language]}</span>
           </div>
           <span
             className={`text-[11px] sm:text-xs font-normal ${
-              isDark ? 'text-slate-900/80 font-semibold' : 'text-blue-100'
+              isDark ? 'text-slate-900/80 font-semibold' : 'text-primary-light'
             }`}
           >
             {otpChannel === 'phone'
@@ -323,7 +323,7 @@ export const TwoFactorSecurity: React.FC<TwoFactorSecurityProps> = ({
                   setPdpaAccepted(e.target.checked);
                   if (e.target.checked) setErrorMessage('');
                 }}
-                className="w-4 h-4 text-[#0A4275] bg-white border-slate-300 rounded-sm focus:ring-[#0A4275] cursor-pointer"
+                className="w-4 h-4 text-primary bg-white border-slate-300 rounded-sm focus:ring-primary cursor-pointer"
               />
             </div>
 
@@ -344,7 +344,7 @@ export const TwoFactorSecurity: React.FC<TwoFactorSecurityProps> = ({
             type="button"
             onClick={onOpenPdpaModal}
             className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-colors cursor-pointer ${
-              isDark ? 'bg-cyan-950 text-cyan-400 hover:bg-cyan-900' : 'bg-blue-50 text-[#0A4275] hover:bg-blue-100'
+              isDark ? 'bg-primary/10 text-primary-light hover:bg-primary/15' : 'bg-primary/5 text-primary hover:bg-primary/10'
             }`}
             title="Read PDPA Compliance Terms"
           >
@@ -368,8 +368,8 @@ export const TwoFactorSecurity: React.FC<TwoFactorSecurityProps> = ({
               id="btn-link-register"
               type="button"
               onClick={onOpenRegistrationChoice}
-              className={`font-black hover:underline cursor-pointer ml-1 ${
-                isDark ? 'text-cyan-400 hover:text-cyan-300' : 'text-[#0A4275]'
+              className={`font-semibold hover:underline cursor-pointer ml-1 ${
+                isDark ? 'text-primary-light hover:text-primary-light' : 'text-primary'
               }`}
             >
               {authMode === 'register'
@@ -381,7 +381,7 @@ export const TwoFactorSecurity: React.FC<TwoFactorSecurityProps> = ({
                 : t.registerHere[language]}
             </button>
           </p>
-          <p className={`text-[11px] font-semibold mt-0.5 ${isDark ? 'text-cyan-300/80' : 'text-[#0A4275]'}`}>
+          <p className={`text-[11px] font-semibold mt-0.5 ${isDark ? 'text-primary-light/80' : 'text-primary'}`}>
             {t.categorySubtext[language]}
           </p>
 

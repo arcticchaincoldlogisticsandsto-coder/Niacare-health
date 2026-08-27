@@ -163,11 +163,11 @@ export const EncounterModal: React.FC<EncounterModalProps> = ({
       >
         <div className={`p-4 sm:p-5 border-b flex items-center justify-between gap-3 ${isDark ? 'bg-[#101F33] border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center flex-shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-primary/20 text-primary-light flex items-center justify-center flex-shrink-0">
               <Stethoscope className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-black tracking-tight">{isSw ? 'Mkutano wa Kliniki' : 'Clinical Encounter'}</h2>
+              <h2 className="text-base font-semibold tracking-tight">{isSw ? 'Mkutano wa Kliniki' : 'Clinical Encounter'}</h2>
               <p className="text-xs text-slate-400">{patientName}</p>
             </div>
           </div>
@@ -188,7 +188,7 @@ export const EncounterModal: React.FC<EncounterModalProps> = ({
             <div className="py-10 text-center space-y-2">
               <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto" />
               <p className="font-bold text-sm">{isSw ? 'Mkutano Umekamilika' : 'Encounter completed'}</p>
-              <button type="button" onClick={handleClose} className="mt-3 px-4 py-2 rounded-lg bg-[#0A4275] dark:bg-cyan-500 text-white dark:text-[#041D34] font-bold">
+              <button type="button" onClick={handleClose} className="mt-3 px-4 py-2 rounded-lg bg-[var(--nc-primary)] dark:bg-primary text-white dark:text-[#041D34] font-bold">
                 {isSw ? 'Funga' : 'Done'}
               </button>
             </div>
@@ -252,7 +252,7 @@ export const EncounterModal: React.FC<EncounterModalProps> = ({
                 {/* Diagnosis */}
                 <div className={`p-3 rounded-2xl border ${isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
                   <div className="flex items-center gap-2 mb-2 font-bold">
-                    <ClipboardList className="w-4 h-4 text-purple-500" /> {isSw ? 'Utambuzi' : 'Diagnosis'}
+                    <ClipboardList className="w-4 h-4 text-primary" /> {isSw ? 'Utambuzi' : 'Diagnosis'}
                     {diagnosisSaved && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />}
                   </div>
                   <div className="flex gap-2 mb-2">
@@ -283,7 +283,7 @@ export const EncounterModal: React.FC<EncounterModalProps> = ({
                     type="button"
                     onClick={handleSaveDiagnosis}
                     disabled={savingDiagnosis || !diagnosis.trim()}
-                    className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold disabled:opacity-60"
+                    className="px-3 py-1.5 rounded-lg bg-primary hover:bg-primary text-white font-bold disabled:opacity-60"
                   >
                     {savingDiagnosis ? '...' : isSw ? 'Hifadhi Utambuzi' : 'Save Diagnosis'}
                   </button>
@@ -356,7 +356,7 @@ export const EncounterModal: React.FC<EncounterModalProps> = ({
                   type="button"
                   onClick={handleComplete}
                   disabled={completing}
-                  className="w-full py-3 rounded-2xl bg-[#0A4275] dark:bg-cyan-500 text-white dark:text-[#041D34] font-black text-sm disabled:opacity-60 flex items-center justify-center gap-2"
+                  className="w-full py-3 rounded-2xl bg-[var(--nc-primary)] dark:bg-primary text-white dark:text-[#041D34] font-semibold text-sm disabled:opacity-60 flex items-center justify-center gap-2"
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   {completing ? (isSw ? 'Inakamilisha...' : 'Completing…') : isSw ? 'Kamilisha Mkutano' : 'Complete Encounter'}

@@ -5,13 +5,11 @@ import {
   Fingerprint,
   Scan,
   ShieldCheck,
-  Smartphone,
   Lock,
   Check,
   Copy,
   Moon,
   Sun,
-  Globe,
   Sparkles,
   ChevronRight,
   Shield,
@@ -66,7 +64,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 }) => {
   const [activeBiometricTab, setActiveBiometricTab] = useState<'fingerprint' | 'faceid'>('fingerprint');
   const [copiedId, setCopiedId] = useState(false);
-  const [directOtpEnabled, setDirectOtpEnabled] = useState(true);
 
   // Real biometric state — checked against the actual browser/device, and
   // against whether this account has a registered WebAuthn credential.
@@ -134,15 +131,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     primaryDocNumber = intlData?.passportNumber || 'US89240182A';
   }
 
-  const quickLanguages: { code: string; label: string; nativeName: string; flag: string }[] = [
+  const quickLanguages: { code: Language; label: string; nativeName: string; flag: string }[] = [
     { code: 'sw', label: 'Kiswahili', nativeName: 'Kiswahili', flag: '🇹🇿' },
     { code: 'en', label: 'English', nativeName: 'English', flag: '🇬🇧' },
     { code: 'fr', label: 'Français', nativeName: 'Français', flag: '🇫🇷' },
-    { code: 'ar', label: 'العربية', nativeName: 'Arabic', flag: '🇸🇦' },
   ];
 
   const currentLangObj = WORLD_LANGUAGES.find((l) => l.code === language);
-  const isCustomLangSelected = !quickLanguages.some((q) => q.code === language);
 
   if (!isOpen) return null;
 
@@ -172,7 +167,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         {/* Header */}
         <div
           className={`p-4 sm:p-5 flex items-center justify-between border-b ${
-            isDark ? 'bg-[#0A1420] text-white border-slate-800' : 'bg-[#0A4275] text-white border-blue-900/40'
+            isDark ? 'bg-[#0A1420] text-white border-slate-800' : 'bg-[var(--nc-primary)] text-white border-primary/40'
           }`}
         >
           <div className="flex items-center gap-3">
@@ -180,10 +175,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <Settings className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="font-extrabold text-base sm:text-lg tracking-tight">
+              <h3 className="font-semibold text-base sm:text-lg tracking-tight">
                 {t.title[language]}
               </h3>
-              <p className="text-xs text-blue-100/90 font-medium">
+              <p className="text-xs text-primary/90 font-medium">
                 {t.subtitle[language]}
               </p>
             </div>
@@ -212,7 +207,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <div className="flex items-center gap-2">
                 <div
                   className={`w-7 h-7 rounded-lg flex items-center justify-center ${
-                    isDark ? 'bg-cyan-500/20 text-cyan-400' : 'bg-blue-100 text-[#0A4275]'
+                    isDark ? 'bg-primary/20 text-primary-light' : 'bg-primary/10 text-[var(--nc-primary)]'
                   }`}
                 >
                   <IdCard className="w-4 h-4" />
@@ -245,7 +240,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   {language === 'sw' ? 'NiaCare Patient ID' : 'Patient ID Number'}
                 </span>
                 <div className="flex items-center gap-2">
-                  <span className="font-mono font-black text-sm text-cyan-500 dark:text-cyan-400 tracking-wide">
+                  <span className="font-mono font-semibold text-sm text-primary dark:text-primary-light tracking-wide">
                     {patientId}
                   </span>
                   <span className="text-xs">{patientCountry.flag}</span>
@@ -262,7 +257,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   copiedId
                     ? 'bg-emerald-500 text-white border-emerald-500'
                     : isDark
-                    ? 'bg-slate-800 border-slate-600 text-slate-200 hover:border-cyan-400 hover:text-white'
+                    ? 'bg-slate-800 border-slate-600 text-slate-200 hover:border-primary-light hover:text-white'
                     : 'bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-200'
                 }`}
                 title="Copy Patient ID"
@@ -285,7 +280,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   {language === 'sw' ? 'Hali ya Usajili' : 'Status'}
                 </span>
                 <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                   {language === 'sw' ? 'Imethibitishwa (Active)' : 'Verified (Active)'}
                 </span>
               </div>
@@ -302,7 +297,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <div className="flex items-center gap-2">
                 <div
                   className={`w-7 h-7 rounded-lg flex items-center justify-center ${
-                    isDark ? 'bg-amber-500/20 text-amber-400' : 'bg-blue-100 text-[#0A4275]'
+                    isDark ? 'bg-amber-500/20 text-amber-400' : 'bg-primary/10 text-[var(--nc-primary)]'
                   }`}
                 >
                   <Palette className="w-4 h-4" />
@@ -315,8 +310,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <span
                 className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
                   isDark
-                    ? 'bg-cyan-950/80 text-cyan-300 border-cyan-800'
-                    : 'bg-blue-50 text-blue-700 border-blue-200'
+                    ? 'bg-primary/15 text-primary-light border-primary-dark'
+                    : 'bg-primary/5 text-primary-dark border-primary-light'
                 }`}
               >
                 {isDark ? 'Dark Mode Active' : 'Light Mode Active'}
@@ -338,7 +333,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 }}
                 className={`p-3 rounded-2xl border text-left cursor-pointer transition-all flex flex-col justify-between gap-2 relative ${
                   !isDark
-                    ? 'bg-white border-blue-600 ring-2 ring-blue-500/20 shadow-md text-slate-900'
+                    ? 'bg-white border-primary ring-2 ring-primary/20 shadow-md text-slate-900'
                     : 'bg-[#08111D] border-slate-800 hover:border-slate-700 text-slate-400'
                 }`}
               >
@@ -347,7 +342,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <Sun className="w-4 h-4" />
                   </div>
                   {!isDark && (
-                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold">
+                    <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-[10px] font-bold">
                       ✓
                     </span>
                   )}
@@ -369,16 +364,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 }}
                 className={`p-3 rounded-2xl border text-left cursor-pointer transition-all flex flex-col justify-between gap-2 relative ${
                   isDark
-                    ? 'bg-[#13253A] border-cyan-400 ring-2 ring-cyan-500/20 shadow-md text-white'
+                    ? 'bg-[#13253A] border-primary-light ring-2 ring-primary/20 shadow-md text-white'
                     : 'bg-white border-slate-200 hover:border-slate-300 text-slate-600'
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <div className="w-8 h-8 rounded-xl bg-slate-900 text-cyan-400 flex items-center justify-center shadow-xs border border-cyan-500/30">
+                  <div className="w-8 h-8 rounded-xl bg-slate-900 text-primary-light flex items-center justify-center shadow-xs border border-primary/30">
                     <Moon className="w-4 h-4" />
                   </div>
                   {isDark && (
-                    <span className="w-5 h-5 rounded-full bg-cyan-500 text-slate-950 flex items-center justify-center text-[10px] font-bold">
+                    <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-[10px] font-bold">
                       ✓
                     </span>
                   )}
@@ -404,7 +399,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <div className="flex items-center gap-2">
                 <div
                   className={`w-7 h-7 rounded-lg flex items-center justify-center ${
-                    isDark ? 'bg-cyan-500/20 text-cyan-400' : 'bg-blue-100 text-[#0A4275]'
+                    isDark ? 'bg-primary/20 text-primary-light' : 'bg-primary/10 text-[var(--nc-primary)]'
                   }`}
                 >
                   <Languages className="w-4 h-4" />
@@ -417,8 +412,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <span
                 className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
                   isDark
-                    ? 'bg-blue-950/80 text-cyan-300 border-blue-800'
-                    : 'bg-blue-50 text-blue-700 border-blue-200'
+                    ? 'bg-primary/15 text-primary-light border-primary-dark'
+                    : 'bg-primary/5 text-primary-dark border-primary-light'
                 }`}
               >
                 {currentLangObj ? `${currentLangObj.flag} ${currentLangObj.name}` : language.toUpperCase()}
@@ -442,8 +437,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     className={`p-2.5 rounded-xl border flex items-center justify-between gap-2 cursor-pointer transition-all ${
                       isSelected
                         ? isDark
-                          ? 'bg-[#13253A] border-cyan-400 text-cyan-300 font-bold shadow-xs'
-                          : 'bg-blue-50 border-[#0A4275] text-[#0A4275] font-bold shadow-xs'
+                          ? 'bg-[#13253A] border-primary-light text-primary-light font-bold shadow-xs'
+                          : 'bg-primary/5 border-[var(--nc-primary)] text-[var(--nc-primary)] font-bold shadow-xs'
                         : isDark
                         ? 'bg-[#08111D] border-slate-800 hover:border-slate-700 text-slate-300 font-medium'
                         : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700 font-medium'
@@ -456,7 +451,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     {isSelected && (
                       <span
                         className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                          isDark ? 'bg-cyan-500 text-slate-950' : 'bg-[#0A4275] text-white'
+                          isDark ? 'bg-primary text-white' : 'bg-[var(--nc-primary)] text-white'
                         }`}
                       >
                         ✓
@@ -467,44 +462,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               })}
             </div>
 
-            {/* Custom Active Badge if using language beyond top 4 */}
-            {isCustomLangSelected && currentLangObj && (
-              <div className={`mb-3 p-2.5 rounded-xl border flex items-center justify-between ${
-                isDark ? 'bg-[#13253A] border-cyan-500/50 text-cyan-300' : 'bg-blue-50 border-blue-300 text-[#0A4275]'
-              }`}>
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">{currentLangObj.flag}</span>
-                  <div>
-                    <p className="text-xs font-bold">{currentLangObj.name} ({currentLangObj.nativeName})</p>
-                    <p className="text-[10px] opacity-80">{currentLangObj.region} Language Active</p>
-                  </div>
-                </div>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500 text-slate-950">Active</span>
-              </div>
-            )}
-
-            {/* Browse all 70+ World Languages Modal Trigger */}
-            {onOpenLanguageModal && (
-              <button
-                id="btn-settings-open-all-languages"
-                type="button"
-                onClick={() => {
-                  onClose();
-                  onOpenLanguageModal();
-                }}
-                className={`w-full p-2.5 rounded-xl border text-xs font-bold flex items-center justify-between cursor-pointer transition-colors ${
-                  isDark
-                    ? 'bg-[#08121E] border-slate-700 text-cyan-300 hover:bg-slate-800'
-                    : 'bg-white border-slate-200 text-[#0A4275] hover:bg-blue-50'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <Globe className="w-3.5 h-3.5 text-cyan-500" />
-                  <span>{t.browseAllLanguages?.[language] || 'Tazama Lugha Zote 70+ za Dunia'}</span>
-                </div>
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            )}
           </div>
 
           {/* SECTION 3: BIOMETRIC LOGIN & SECURITY */}
@@ -518,7 +475,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <div className="flex items-center gap-2">
                 <div
                   className={`w-7 h-7 rounded-lg flex items-center justify-center ${
-                    isDark ? 'bg-cyan-500/20 text-cyan-400' : 'bg-blue-100 text-[#0A4275]'
+                    isDark ? 'bg-primary/20 text-primary-light' : 'bg-primary/10 text-[var(--nc-primary)]'
                   }`}
                 >
                   <Fingerprint className="w-4 h-4" />
@@ -586,8 +543,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 disabled={!authUserId || !biometricSupport?.platformAuthenticatorAvailable}
                 className={`w-full p-3.5 rounded-2xl font-bold flex items-center justify-between transition-all cursor-pointer group border disabled:opacity-50 disabled:cursor-not-allowed ${
                   isDark
-                    ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 border-cyan-400 shadow-md shadow-cyan-500/20'
-                    : 'bg-[#0A4275] hover:bg-[#08365f] text-white border-[#0A4275] shadow-md shadow-[#0A4275]/20'
+                    ? 'bg-primary hover:bg-primary-light text-white border-primary-light shadow-md shadow-primary/20'
+                    : 'bg-[var(--nc-primary)] hover:bg-[#08365f] text-white border-[var(--nc-primary)] shadow-md shadow-[var(--nc-primary)]/20'
                 }`}
               >
                 <div className="flex items-center gap-2.5">
@@ -603,21 +560,21 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     )}
                   </div>
                   <div className="text-left">
-                    <h5 className="font-black text-xs sm:text-sm tracking-wide">
+                    <h5 className="font-semibold text-xs sm:text-sm tracking-wide">
                       {isBiometricRegistered
                         ? t.testBiometricBtn[language]
                         : isSwahili
                         ? 'Sajili Bayometriki'
                         : 'Register Biometric Login'}
                     </h5>
-                    <p className={`text-[11px] ${isDark ? 'text-slate-900/80 font-medium' : 'text-blue-100'}`}>
+                    <p className={`text-[11px] ${isDark ? 'text-slate-900/80 font-medium' : 'text-primary-light'}`}>
                       {t.testBiometricSubtext[language]}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-1">
-                  <span className="text-[11px] uppercase tracking-wider font-extrabold hidden xs:inline">
+                  <span className="text-[11px] uppercase tracking-wider font-semibold hidden xs:inline">
                     {activeBiometricTab === 'fingerprint' ? 'Touch ID' : 'Face ID'}
                   </span>
                   <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -632,8 +589,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
                     activeBiometricTab === 'fingerprint'
                       ? isDark
-                        ? 'bg-[#13253A] border-cyan-400 text-cyan-300'
-                        : 'bg-blue-50 border-[#0A4275] text-[#0A4275]'
+                        ? 'bg-[#13253A] border-primary-light text-primary-light'
+                        : 'bg-primary/5 border-[var(--nc-primary)] text-[var(--nc-primary)]'
                       : isDark
                       ? 'bg-[#08111D] border-slate-700 text-slate-400'
                       : 'bg-white border-slate-200 text-slate-600'
@@ -649,8 +606,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
                     activeBiometricTab === 'faceid'
                       ? isDark
-                        ? 'bg-[#13253A] border-cyan-400 text-cyan-300'
-                        : 'bg-blue-50 border-[#0A4275] text-[#0A4275]'
+                        ? 'bg-[#13253A] border-primary-light text-primary-light'
+                        : 'bg-primary/5 border-[var(--nc-primary)] text-[var(--nc-primary)]'
                       : isDark
                       ? 'bg-[#08111D] border-slate-700 text-slate-400'
                       : 'bg-white border-slate-200 text-slate-600'
@@ -667,7 +624,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             <div className="space-y-2.5 pt-1 border-t border-slate-200 dark:border-slate-800">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Fingerprint className="w-3.5 h-3.5 text-cyan-500" />
+                  <Fingerprint className="w-3.5 h-3.5 text-primary" />
                   <span className={`text-xs font-semibold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
                     {isSwahili ? 'Uthibitishaji wa Kibiolojia Umewashwa' : 'Biometric Login Enabled'}
                   </span>
@@ -677,7 +634,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   onClick={handleToggleBiometricEnabled}
                   disabled={!authUserId || isBiometricBusy || !biometricSupport?.platformAuthenticatorAvailable}
                   className={`w-11 h-6 rounded-full transition-colors cursor-pointer relative p-0.5 disabled:opacity-40 disabled:cursor-not-allowed ${
-                    isBiometricRegistered ? (isDark ? 'bg-cyan-500' : 'bg-[#0A4275]') : 'bg-slate-300 dark:bg-slate-700'
+                    isBiometricRegistered ? (isDark ? 'bg-primary' : 'bg-[var(--nc-primary)]') : 'bg-slate-300 dark:bg-slate-700'
                   }`}
                 >
                   <div
@@ -721,52 +678,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
           </div>
 
-          {/* SECTION 4: 2FA & HOME OTP DISPATCH SETTINGS */}
-          <div
-            className={`p-4 rounded-2xl border ${
-              isDark ? 'bg-[#0A1522] border-slate-800' : 'bg-[#F8FAFC] border-slate-200'
-            }`}
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <div
-                className={`w-7 h-7 rounded-lg flex items-center justify-center ${
-                  isDark ? 'bg-cyan-500/20 text-cyan-400' : 'bg-blue-100 text-[#0A4275]'
-                }`}
-              >
-                <Smartphone className="w-4 h-4" />
-              </div>
-              <h4 className={`font-bold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                {t.twoFactorSection[language]}
-              </h4>
-            </div>
-
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className={`text-xs font-bold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
-                    {t.smsOtpMethod[language]}
-                  </p>
-                  <p className={`text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    {t.directOtpDispatch[language]}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setDirectOtpEnabled(!directOtpEnabled)}
-                  className={`w-11 h-6 rounded-full transition-colors cursor-pointer relative p-0.5 ${
-                    directOtpEnabled ? (isDark ? 'bg-cyan-500' : 'bg-[#0A4275]') : 'bg-slate-300 dark:bg-slate-700'
-                  }`}
-                >
-                  <div
-                    className={`w-5 h-5 rounded-full bg-white transition-transform ${
-                      directOtpEnabled ? 'translate-x-5' : 'translate-x-0'
-                    }`}
-                  />
-                </button>
-              </div>
-            </div>
-          </div>
-
           {/* SECTION 5: DATA PRIVACY & PDPA COMPLIANCE */}
           <div
             className={`p-4 rounded-2xl border ${
@@ -804,12 +715,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               }}
               className={`w-full p-2.5 rounded-xl border text-xs font-bold flex items-center justify-between cursor-pointer transition-colors ${
                 isDark
-                  ? 'bg-[#08121E] border-slate-700 text-cyan-300 hover:bg-slate-800'
-                  : 'bg-white border-slate-200 text-[#0A4275] hover:bg-blue-50'
+                  ? 'bg-[#08121E] border-slate-700 text-primary-light hover:bg-slate-800'
+                  : 'bg-white border-slate-200 text-[var(--nc-primary)] hover:bg-primary/5'
               }`}
             >
               <div className="flex items-center gap-2">
-                <Shield className="w-3.5 h-3.5 text-cyan-500" />
+                <Shield className="w-3.5 h-3.5 text-primary" />
                 <span>{t.viewPdpaBtn[language]}</span>
               </div>
               <ChevronRight className="w-4 h-4" />
@@ -827,11 +738,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             id="btn-save-settings"
             type="button"
             onClick={onClose}
-            className={`w-full sm:w-auto px-6 py-2.5 rounded-xl font-bold text-xs sm:text-sm cursor-pointer transition-all shadow-md ${
-              isDark
-                ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950'
-                : 'bg-[#0A4275] hover:bg-[#08365f] text-white'
-            }`}
+            className="w-full sm:w-auto px-6 py-2.5 rounded-xl font-semibold text-xs sm:text-sm cursor-pointer transition-all shadow-md bg-primary hover:bg-primary-light text-white"
           >
             {t.saveChanges[language]}
           </button>

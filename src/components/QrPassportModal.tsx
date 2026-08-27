@@ -36,16 +36,16 @@ export const QrPassportModal: React.FC<QrPassportModalProps> = ({
           <X className="w-5 h-5" />
         </button>
 
-        <div className="w-12 h-12 rounded-2xl bg-cyan-500/20 text-cyan-400 mx-auto flex items-center justify-center mb-3">
+        <div className="w-12 h-12 rounded-2xl bg-primary/20 text-primary-light mx-auto flex items-center justify-center mb-3">
           <QrCode className="w-6 h-6" />
         </div>
 
-        <h3 className="text-base font-black tracking-tight mb-1">NiaCare Hospital QR Check-in</h3>
+        <h3 className="text-base font-semibold tracking-tight mb-1">NiaCare Hospital QR Check-in</h3>
         <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
           Onyesha msimbo huu kwenye kaunta ya mapokezi ya hospitali yoyote iliyosajiliwa.
         </p>
 
-        <div className="bg-white p-4 rounded-2xl shadow-inner inline-block border-2 border-dashed border-cyan-400 mb-4">
+        <div className="bg-white p-4 rounded-2xl shadow-inner inline-block border-2 border-dashed border-primary-light mb-4">
           <img
             src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=NIACARE_PATIENT_${patientId}_${primaryDocNumber}`}
             alt="Patient QR Code"
@@ -61,7 +61,7 @@ export const QrPassportModal: React.FC<QrPassportModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="w-full py-3 rounded-xl bg-[#0A4275] dark:bg-cyan-500 text-white dark:text-slate-950 font-bold text-xs cursor-pointer shadow-md"
+            className="w-full py-3 rounded-xl bg-[var(--nc-primary)] dark:bg-primary text-white font-bold text-xs cursor-pointer shadow-md"
           >
             Imekamilika / Funga
           </button>

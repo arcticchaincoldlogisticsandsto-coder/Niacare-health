@@ -55,7 +55,7 @@ export const PatientDetailModal: React.FC<PatientDetailModalProps> = ({
           <div className="flex items-center gap-3">
             <Avatar name={patientName} size="lg" />
             <div>
-              <h2 className="text-base font-black tracking-tight">{patientName}</h2>
+              <h2 className="text-base font-semibold tracking-tight">{patientName}</h2>
               {reason && <p className="text-xs text-slate-400">{reason}</p>}
             </div>
           </div>
@@ -80,7 +80,7 @@ export const PatientDetailModal: React.FC<PatientDetailModalProps> = ({
           )}
 
           <div className={`p-3 rounded-2xl border ${isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
-            <div className="flex items-center gap-2 mb-2 font-bold"><ClipboardList className="w-4 h-4 text-purple-500" /> Recent Diagnoses (with you)</div>
+            <div className="flex items-center gap-2 mb-2 font-bold"><ClipboardList className="w-4 h-4 text-primary" /> Recent Diagnoses (with you)</div>
             {diagnoses.length === 0 ? <p className="text-slate-400">No prior diagnoses recorded with you.</p> : (
               <div className="space-y-1.5">
                 {diagnoses.map((d) => (
@@ -108,7 +108,7 @@ export const PatientDetailModal: React.FC<PatientDetailModalProps> = ({
           </div>
 
           <div className={`p-3 rounded-2xl border ${isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
-            <div className="flex items-center gap-2 mb-2 font-bold"><FileText className="w-4 h-4 text-blue-500" /> Medical Records</div>
+            <div className="flex items-center gap-2 mb-2 font-bold"><FileText className="w-4 h-4 text-primary" /> Medical Records</div>
             {records.length === 0 ? <p className="text-slate-400">No medical records on file.</p> : (
               <div className="space-y-1.5">
                 {records.slice(0, 5).map((r) => (
@@ -138,7 +138,7 @@ export const PatientDetailModal: React.FC<PatientDetailModalProps> = ({
           <button
             type="button"
             onClick={onStartEncounter}
-            className="w-full py-3 rounded-2xl bg-[#0A4275] dark:bg-cyan-500 text-white dark:text-[#041D34] font-black text-sm flex items-center justify-center gap-2"
+            className="w-full py-3 rounded-2xl bg-[var(--nc-primary)] dark:bg-primary text-white dark:text-[#041D34] font-semibold text-sm flex items-center justify-center gap-2"
           >
             <ClipboardPlus className="w-4 h-4" /> Start Encounter
           </button>

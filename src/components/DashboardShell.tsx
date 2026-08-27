@@ -51,12 +51,12 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
           <div className="flex items-center gap-3 min-w-0">
             <Avatar name={title} size="lg" />
             <div className="min-w-0">
-              <p className={`text-xs font-semibold ${isDark ? 'text-cyan-300' : 'text-[#0A4275]'}`}>
+              <p className={`text-xs font-semibold ${isDark ? 'text-primary-light' : 'text-[var(--nc-primary)]'}`}>
                 {greeting}
               </p>
-              <h2 className="text-lg font-extrabold text-slate-900 dark:text-white truncate">{title}</h2>
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-white truncate">{title}</h2>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-blue-50 dark:bg-slate-800 text-[#0057B8] dark:text-slate-300">
+                <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-primary/5 dark:bg-slate-800 text-[var(--nc-primary)] dark:text-slate-300">
                   {roleLabel}
                 </span>
                 {subtitle && (
@@ -123,10 +123,10 @@ interface StatCardProps {
 export const StatCard: React.FC<StatCardProps> = ({ label, value, sub, Icon, colorClass, loading }) => (
   <div className="nc-card p-3">
     <div className="flex items-center gap-2 mb-2">
-      <Icon className={`w-4 h-4 ${colorClass || 'text-[#0A4275] dark:text-cyan-400'}`} />
+      <Icon className={`w-4 h-4 ${colorClass || 'text-[var(--nc-primary)] dark:text-primary-light'}`} />
       <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 truncate">{label}</span>
     </div>
-    <p className="text-2xl font-black text-slate-900 dark:text-white">{loading ? '—' : value}</p>
+    <p className="text-2xl font-semibold text-slate-900 dark:text-white">{loading ? '—' : value}</p>
     {sub && <p className="text-[10px] text-slate-400 mt-0.5">{sub}</p>}
   </div>
 );
@@ -152,7 +152,7 @@ export const SegmentedTabs: React.FC<SegmentedTabsProps> = ({ tabs, active, onCh
         onClick={() => onChange(key)}
         className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
           active === key
-            ? 'bg-[#0A4275] text-white dark:bg-cyan-500 dark:text-[#041D34]'
+            ? 'bg-[var(--nc-primary)] text-white dark:bg-primary dark:text-[#041D34]'
             : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
         }`}
       >

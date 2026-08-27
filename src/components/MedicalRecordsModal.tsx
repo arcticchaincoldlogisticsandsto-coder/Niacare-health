@@ -488,15 +488,15 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold shadow-inner">
+            <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary dark:text-primary-light flex items-center justify-center font-semibold shadow-inner">
               <FolderLock className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base sm:text-lg font-black tracking-tight">
+                <h3 className="text-base sm:text-lg font-semibold tracking-tight">
                   {isSwahili ? 'Rekodi za Matibabu & Faili Binafsi' : 'Medical Records & Personal Files Vault'}
                 </h3>
-                <span className="text-[10px] font-mono font-bold bg-purple-500/20 text-purple-600 dark:text-purple-300 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-mono font-bold bg-primary/10 text-primary dark:text-primary-light px-2 py-0.5 rounded-full">
                   {activeTab === 'records' ? `${filteredRecords.length} Reports` : `${filteredPersonalFiles.length} Stored Files`}
                 </span>
               </div>
@@ -512,8 +512,8 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
               onClick={handleExportCompletePassport}
               className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer shadow-xs ${
                 isDark
-                  ? 'bg-[#0A2647] border-cyan-500/40 text-cyan-300 hover:bg-[#0E3563]'
-                  : 'bg-blue-50 border-blue-200 text-[#0A4275] hover:bg-blue-100'
+                  ? 'bg-primary/10 border-primary/30 text-primary-light hover:bg-primary/15'
+                  : 'bg-primary/5 border-primary/20 text-primary hover:bg-primary/10'
               }`}
               title="Download Complete Health Passport PDF"
             >
@@ -537,11 +537,11 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
             <button
               type="button"
               onClick={() => setActiveTab('records')}
-              className={`flex-1 sm:flex-initial px-4 py-2 rounded-xl text-xs font-black flex items-center justify-center gap-2 cursor-pointer transition-all ${
+              className={`flex-1 sm:flex-initial px-4 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all ${
                 activeTab === 'records'
                   ? isDark
-                    ? 'bg-purple-600 text-white shadow-md'
-                    : 'bg-purple-700 text-white shadow-md'
+                    ? 'bg-primary text-white shadow-md'
+                    : 'bg-primary-dark text-white shadow-md'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
@@ -552,22 +552,22 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
             <button
               type="button"
               onClick={() => setActiveTab('personal_files')}
-              className={`flex-1 sm:flex-initial px-4 py-2 rounded-xl text-xs font-black flex items-center justify-center gap-2 cursor-pointer transition-all ${
+              className={`flex-1 sm:flex-initial px-4 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all ${
                 activeTab === 'personal_files'
                   ? isDark
-                    ? 'bg-cyan-500 text-slate-950 shadow-md'
-                    : 'bg-[#0A4275] text-white shadow-md'
+                    ? 'bg-primary text-white shadow-md'
+                    : 'bg-primary text-white shadow-md'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <FolderLock className="w-3.5 h-3.5" />
               <span>{isSwahili ? 'Faili Zangu Binafsi' : 'My Personal Files'}</span>
               <span
-                className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full font-black ${
+                className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full font-semibold ${
                   activeTab === 'personal_files'
                     ? isDark
-                      ? 'bg-slate-950 text-cyan-300'
-                      : 'bg-white text-[#0A4275]'
+                      ? 'bg-white/10 text-white'
+                      : 'bg-white text-primary'
                     : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
                 }`}
               >
@@ -580,7 +580,7 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
             <button
               type="button"
               onClick={() => setIsUploadOpen(true)}
-              className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs flex items-center gap-1.5 shadow-sm cursor-pointer transition-all flex-shrink-0"
+              className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs flex items-center gap-1.5 shadow-sm cursor-pointer transition-all flex-shrink-0"
             >
               <Upload className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">{isSwahili ? 'Weka Faili Jipya' : 'Add Document'}</span>
@@ -596,8 +596,8 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
               actionNotice.type === 'success'
                 ? 'bg-emerald-600 text-white'
                 : isDark
-                ? 'bg-cyan-900/90 text-cyan-100 border border-cyan-500/40'
-                : 'bg-blue-600 text-white'
+                ? 'bg-primary/15 text-primary-light border border-primary/30'
+                : 'bg-primary text-white'
             }`}
           >
             <div className="flex items-center gap-2">
@@ -625,8 +625,8 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className={`w-full pl-9 pr-3 py-2 rounded-xl text-xs border outline-none transition-all ${
                       isDark
-                        ? 'bg-slate-900 border-slate-700/80 text-white focus:border-purple-500'
-                        : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-purple-600'
+                        ? 'bg-slate-900 border-slate-700/80 text-white focus:border-primary'
+                        : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-primary'
                     }`}
                   />
                   {searchQuery && (
@@ -645,10 +645,10 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs scrollbar-none">
                 {[
                   { id: 'all', labelSw: 'Zote (All)', labelEn: 'All Records' },
-                  { id: 'lab', labelSw: '🧪 Maabara (Lab)', labelEn: '🧪 Lab Tests' },
-                  { id: 'radiology', labelSw: '🩻 Mionzi (Radiology)', labelEn: '🩻 Radiology' },
-                  { id: 'consultation', labelSw: '🩺 Daktari (Clinical)', labelEn: '🩺 Clinical' },
-                  { id: 'vaccine', labelSw: '💉 Chanjo (Vaccines)', labelEn: '💉 Vaccines' },
+                  { id: 'lab', labelSw: 'Maabara (Lab)', labelEn: 'Lab Tests' },
+                  { id: 'radiology', labelSw: 'Mionzi (Radiology)', labelEn: 'Radiology' },
+                  { id: 'consultation', labelSw: 'Daktari (Clinical)', labelEn: 'Clinical' },
+                  { id: 'vaccine', labelSw: 'Chanjo (Vaccines)', labelEn: 'Vaccines' },
                 ].map((cat) => (
                   <button
                     key={cat.id}
@@ -657,8 +657,8 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
                     className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap text-xs transition-all cursor-pointer ${
                       selectedCategory === cat.id
                         ? isDark
-                          ? 'bg-purple-600 text-white shadow-md'
-                          : 'bg-purple-700 text-white shadow-md'
+                          ? 'bg-primary text-white shadow-md'
+                          : 'bg-primary-dark text-white shadow-md'
                         : isDark
                         ? 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200'
                         : 'bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-900'
@@ -684,7 +684,7 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
                       setSelectedCategory('all');
                       setSearchQuery('');
                     }}
-                    className="text-xs text-purple-500 font-bold hover:underline cursor-pointer"
+                    className="text-xs text-primary font-semibold hover:underline cursor-pointer"
                   >
                     {isSwahili ? 'Onyesha Rekodi Zote' : 'Reset Filters'}
                   </button>
@@ -700,8 +700,8 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
                       className={`rounded-2xl border transition-all overflow-hidden ${
                         isExpanded
                           ? isDark
-                            ? 'bg-[#091422] border-purple-500/60 shadow-lg'
-                            : 'bg-purple-50/40 border-purple-300 shadow-md'
+                            ? 'bg-[#091422] border-primary/40 shadow-lg'
+                            : 'bg-primary/5 border-primary/30 shadow-md'
                           : isDark
                           ? 'bg-slate-900/90 border-slate-800 hover:border-slate-700'
                           : 'bg-slate-50 border-slate-200/80 hover:border-slate-300'
@@ -714,26 +714,26 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
                       >
                         <div className="space-y-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-600 dark:text-purple-300 font-mono">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary dark:text-primary-light font-mono">
                               {record.id}
                             </span>
                             <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1">
                               <Calendar className="w-3 h-3" />
                               <span>{record.date}</span>
                             </span>
-                            <span className="text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                            <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                               <ShieldCheck className="w-3 h-3" />
                               <span>{record.status === 'verified' ? 'Verified (MoH)' : 'Certified'}</span>
                             </span>
                             {isStoredInPersonalFiles && (
-                              <span className="text-[10px] font-bold bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 px-2 py-0.2 rounded-md flex items-center gap-1">
-                                <BookmarkCheck className="w-3 h-3 text-cyan-500" />
+                              <span className="text-[10px] font-bold bg-primary/10 text-primary dark:text-primary-light px-2 py-0.2 rounded-md flex items-center gap-1">
+                                <BookmarkCheck className="w-3 h-3 text-primary" />
                                 <span>{isSwahili ? 'Imehifadhiwa' : 'In Vault'}</span>
                               </span>
                             )}
                           </div>
 
-                          <h4 className="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white leading-tight">
+                          <h4 className="font-semibold text-xs sm:text-sm text-slate-900 dark:text-white leading-tight">
                             {record.title}
                           </h4>
 
@@ -744,7 +744,7 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
                         </div>
 
                         <div className="flex items-center gap-2 flex-shrink-0">
-                          <span className="text-[10px] font-bold px-2 py-1 rounded-xl bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-200 hidden sm:inline-block">
+                          <span className="text-[10px] font-bold px-2 py-1 rounded-xl bg-primary/10 dark:bg-primary/15 text-primary dark:text-primary-light hidden sm:inline-block">
                             {isSwahili ? record.categoryLabel.sw : record.categoryLabel.en}
                           </span>
                           <div className="p-1 rounded-full text-slate-400">
@@ -804,7 +804,7 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
                                     <span className="col-span-2 font-bold text-slate-900 dark:text-white">
                                       {param.name}
                                     </span>
-                                    <span className="font-extrabold text-emerald-600 dark:text-emerald-400">
+                                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">
                                       {param.value} {param.unit}
                                     </span>
                                     <span className="text-[10px] text-slate-500 dark:text-slate-400">
@@ -818,8 +818,8 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
 
                           {/* Radiology Findings if available */}
                           {record.details?.radiologyFindings && (
-                            <div className="p-2.5 rounded-xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 text-xs">
-                              <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase block mb-0.5">
+                            <div className="p-2.5 rounded-xl bg-primary/10 dark:bg-primary/15 border border-primary/20 dark:border-primary-dark text-xs">
+                              <span className="text-[10px] text-primary dark:text-primary-light font-bold uppercase block mb-0.5">
                                 {isSwahili ? 'Taarifa ya Mionzi (Radiologist Findings)' : 'Radiologist Findings'}
                               </span>
                               <p className="text-slate-700 dark:text-slate-300">
@@ -835,7 +835,7 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
                                 <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold uppercase block">
                                   {isSwahili ? 'Nambari ya Cheti cha Kimataifa' : 'Official Certificate No.'}
                                 </span>
-                                <span className="font-mono font-black text-slate-900 dark:text-white">
+                                <span className="font-mono font-semibold text-slate-900 dark:text-white">
                                   {record.details.certificateNumber}
                                 </span>
                               </div>
@@ -853,15 +853,15 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
                               onClick={() => handleSaveToPersonalFiles(record)}
                               className={`px-3.5 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all ${
                                 isStoredInPersonalFiles
-                                  ? 'bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-400/40'
+                                  ? 'bg-primary/10 text-primary dark:text-primary-light border border-primary/30'
                                   : isDark
-                                  ? 'bg-[#122740] text-cyan-300 hover:bg-[#1a385c] border border-cyan-600/40'
-                                  : 'bg-blue-50 text-[#0A4275] hover:bg-blue-100 border border-blue-200'
+                                  ? 'bg-primary/10 text-primary-light hover:bg-primary/15 border border-primary/30'
+                                  : 'bg-primary/5 text-primary hover:bg-primary/10 border border-primary/20'
                               }`}
                             >
                               {isStoredInPersonalFiles ? (
                                 <>
-                                  <BookmarkCheck className="w-3.5 h-3.5 text-cyan-500" />
+                                  <BookmarkCheck className="w-3.5 h-3.5 text-primary" />
                                   <span>{isSwahili ? 'Imehifadhiwa kwenye Faili Zangu' : 'Saved in Personal Files'}</span>
                                 </>
                               ) : (
@@ -876,7 +876,7 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
                             <button
                               type="button"
                               onClick={() => handleDownloadPdf(record)}
-                              className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-xs active:scale-95"
+                              className="px-3.5 py-2 rounded-xl bg-primary hover:bg-primary-light text-white font-semibold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-xs"
                             >
                               <Download className="w-3.5 h-3.5" />
                               <span>{isSwahili ? 'Pakua Ripoti (PDF)' : 'Download PDF'}</span>
@@ -909,8 +909,8 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
                     onChange={(e) => setPersonalFileSearch(e.target.value)}
                     className={`w-full pl-9 pr-3 py-2 rounded-xl text-xs border outline-none transition-all ${
                       isDark
-                        ? 'bg-slate-900 border-slate-700/80 text-white focus:border-cyan-400'
-                        : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-[#0A4275]'
+                        ? 'bg-slate-900 border-slate-700/80 text-white focus:border-primary-light'
+                        : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-primary'
                     }`}
                   />
                   {personalFileSearch && (
@@ -930,9 +930,9 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
                 {[
                   { id: 'all', labelSw: 'Faili Zote', labelEn: 'All Files' },
                   { id: 'hospital_report', labelSw: '📋 Ripoti za Daktari', labelEn: '📋 Clinical Reports' },
-                  { id: 'lab_result', labelSw: '🧪 Vipimo vya Damu', labelEn: '🧪 Lab Results' },
-                  { id: 'vaccine_cert', labelSw: '💉 Vyeti vya Chanjo', labelEn: '💉 Vaccine Passports' },
-                  { id: 'scan_image', labelSw: '🩻 Picha za Mionzi', labelEn: '🩻 Scans / X-Ray' },
+                  { id: 'lab_result', labelSw: 'Vipimo vya Damu', labelEn: 'Lab Results' },
+                  { id: 'vaccine_cert', labelSw: 'Vyeti vya Chanjo', labelEn: 'Vaccine Passports' },
+                  { id: 'scan_image', labelSw: 'Picha za Mionzi', labelEn: 'Scans / X-Ray' },
                   { id: 'custom_upload', labelSw: '📁 Nyaraka Nilizoweka', labelEn: '📁 My Uploads' },
                 ].map((cat) => (
                   <button
@@ -942,8 +942,8 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
                     className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap text-xs transition-all cursor-pointer ${
                       personalFileCategory === cat.id
                         ? isDark
-                          ? 'bg-cyan-500 text-slate-950 shadow-md'
-                          : 'bg-[#0A4275] text-white shadow-md'
+                          ? 'bg-primary text-white shadow-md'
+                          : 'bg-primary text-white shadow-md'
                         : isDark
                         ? 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200'
                         : 'bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-900'
@@ -968,7 +968,7 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setIsUploadOpen(true)}
-                    className="px-4 py-2 rounded-xl bg-cyan-500 text-slate-950 text-xs font-bold inline-flex items-center gap-1.5 shadow-sm cursor-pointer"
+                    className="px-4 py-2 rounded-xl bg-primary text-white text-xs font-semibold inline-flex items-center gap-1.5 shadow-sm cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>{isSwahili ? 'Weka Faili au Picha Sasa' : 'Upload Medical Document Now'}</span>
@@ -980,12 +980,12 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
                     key={file.id}
                     className={`p-3.5 rounded-2xl border transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
                       isDark
-                        ? 'bg-[#091422] border-slate-800/90 hover:border-cyan-500/50'
-                        : 'bg-slate-50 border-slate-200 hover:border-[#0A4275]/40'
+                        ? 'bg-[#091422] border-slate-800/90 hover:border-primary/50'
+                        : 'bg-slate-50 border-slate-200 hover:border-primary/40'
                     }`}
                   >
                     <div className="flex items-start gap-3 min-w-0 flex-1">
-                      <div className="w-10 h-10 rounded-xl bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary dark:text-primary-light flex items-center justify-center flex-shrink-0 mt-0.5">
                         <FileText className="w-5 h-5" />
                       </div>
 
@@ -1036,7 +1036,7 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
                       <button
                         type="button"
                         onClick={() => handleDownloadPersonalFile(file)}
-                        className="px-3 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-xs active:scale-95"
+                        className="px-3 py-2 rounded-xl bg-primary hover:bg-primary-light text-white font-semibold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-xs"
                         title="Download this PDF to local storage"
                       >
                         <Download className="w-3.5 h-3.5" />
@@ -1067,13 +1067,13 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
           <div className="absolute inset-0 z-20 bg-black/80 backdrop-blur-xs rounded-2xl p-4 sm:p-6 flex flex-col justify-center animate-in fade-in">
             <div
               className={`w-full max-w-lg mx-auto rounded-2xl p-5 sm:p-6 border space-y-4 shadow-2xl ${
-                isDark ? 'bg-[#0F2238] border-cyan-500/40 text-white' : 'bg-white border-slate-200 text-slate-900'
+                isDark ? 'bg-[#0F2238] border-primary/30 text-white' : 'bg-white border-slate-200 text-slate-900'
               }`}
             >
               <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
                 <div className="flex items-center gap-2">
                   <Upload className="w-5 h-5 text-emerald-500" />
-                  <h4 className="font-black text-sm sm:text-base">
+                  <h4 className="font-semibold text-sm sm:text-base">
                     {isSwahili ? 'Hifadhi Nyaraka Kwenye Faili Binafsi' : 'Upload Document to Personal Vault'}
                   </h4>
                 </div>
@@ -1110,11 +1110,11 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
                     onClick={() => fileInputRef.current?.click()}
                     className={`border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-all ${
                       isDark
-                        ? 'border-slate-700 bg-slate-900/60 hover:border-cyan-400'
-                        : 'border-slate-300 bg-slate-50 hover:border-[#0A4275]'
+                        ? 'border-slate-700 bg-slate-900/60 hover:border-primary-light'
+                        : 'border-slate-300 bg-slate-50 hover:border-primary'
                     }`}
                   >
-                    <Upload className="w-6 h-6 mx-auto text-cyan-500 mb-1" />
+                    <Upload className="w-6 h-6 mx-auto text-primary mb-1" />
                     <p className="font-bold">
                       {selectedFileName ? `✓ ${selectedFileName}` : isSwahili ? 'Bofya au Vuta Faili Hapa' : 'Click to browse or drop file here'}
                     </p>
@@ -1219,7 +1219,7 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
                   type="button"
                   onClick={handleSaveUpload}
                   disabled={!uploadTitle.trim() || !selectedFile || isUploading}
-                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-black text-xs cursor-pointer shadow-md"
+                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold text-xs cursor-pointer shadow-md"
                 >
                   {isUploading
                     ? isSwahili
@@ -1245,7 +1245,7 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
             <button
               type="button"
               onClick={handleExportCompletePassport}
-              className="px-3 py-2 rounded-xl bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer hover:bg-cyan-500/30 transition-all sm:hidden"
+              className="px-3 py-2 rounded-xl bg-primary/10 text-primary dark:text-primary-light font-semibold text-xs flex items-center gap-1.5 cursor-pointer hover:bg-primary/15 transition-all sm:hidden"
             >
               <Download className="w-3.5 h-3.5" />
               <span>PDF</span>

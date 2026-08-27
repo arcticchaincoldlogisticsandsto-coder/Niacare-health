@@ -36,7 +36,7 @@ export const PdpaConsentModal: React.FC<PdpaConsentModalProps> = ({
               <h3 className="text-base sm:text-lg font-bold">
                 {t.title[language]}
               </h3>
-              <p className="text-xs text-blue-200">
+              <p className="text-xs text-primary-light">
                 {t.subtitle[language]}
               </p>
             </div>
@@ -52,7 +52,7 @@ export const PdpaConsentModal: React.FC<PdpaConsentModalProps> = ({
 
         {/* Modal Body */}
         <div className="p-6 overflow-y-auto space-y-4 text-xs text-slate-700 leading-relaxed">
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-start gap-2.5">
+          <div className="bg-primary/5 border border-primary-light rounded-xl p-3 flex items-start gap-2.5">
             <ShieldCheck className="w-5 h-5 text-[#0F4C81] flex-shrink-0 mt-0.5" />
             <p className="text-slate-800">
               {t.intro[language]}

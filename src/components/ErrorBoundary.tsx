@@ -37,7 +37,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M12 2a10 10 0 100 20 10 10 0 000-20z" />
               </svg>
             </div>
-            <h1 className="text-lg font-black text-slate-900 dark:text-white">Something went wrong</h1>
+            <h1 className="text-lg font-semibold text-slate-900 dark:text-white">Something went wrong</h1>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               NiaCare ran into an unexpected issue. Please refresh the page or try again.
             </p>

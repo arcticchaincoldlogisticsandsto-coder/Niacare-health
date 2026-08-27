@@ -51,7 +51,7 @@ export const PrescriptionsModal: React.FC<PrescriptionsModalProps> = ({
 
         <div className="flex items-center gap-2 mb-3">
           <Pill className="w-5 h-5 text-emerald-500" />
-          <h3 className="text-base font-black">{isSwahili ? 'Dawa Zangu & Kumbusho' : 'My Prescriptions & Reminders'}</h3>
+          <h3 className="text-base font-semibold">{isSwahili ? 'Dawa Zangu & Kumbusho' : 'My Prescriptions & Reminders'}</h3>
         </div>
 
         <div className="space-y-3">
@@ -126,7 +126,7 @@ export const PrescriptionsModal: React.FC<PrescriptionsModalProps> = ({
             <button
               type="button"
               onClick={onOpenCheckout}
-              className="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs cursor-pointer flex items-center justify-center gap-1.5 shadow-md"
+              className="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs cursor-pointer flex items-center justify-center gap-1.5 shadow-md"
             >
               <Banknote className="w-4 h-4" />
               <span>{isSwahili ? 'Lipa Dawa / Checkout' : 'Pay for Medication / Checkout'}</span>

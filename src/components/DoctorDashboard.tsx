@@ -46,7 +46,7 @@ const DoctorCalendarPanel: React.FC<{ isSw: boolean; doctorProfileId: string }> 
     <div className="nc-card p-4">
       <div className="flex items-center justify-between mb-3 gap-2">
         <div className="flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-blue-500" />
+          <Calendar className="w-4 h-4 text-primary" />
           <h3 className="text-sm font-bold text-slate-900 dark:text-white">{isSw ? 'Ratiba Yangu' : 'My Calendar'}</h3>
         </div>
         <input type="date" value={date} min={todayIso()} onChange={(e) => setDate(e.target.value)} className="nc-input px-2.5 py-1.5 text-xs" />
@@ -63,7 +63,7 @@ const DoctorCalendarPanel: React.FC<{ isSw: boolean; doctorProfileId: string }> 
             key={s.id}
             className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold ${
               s.is_booked
-                ? 'bg-blue-50 text-[#0A4275] dark:bg-cyan-950 dark:text-cyan-300'
+                ? 'bg-primary/5 text-[var(--nc-primary)] dark:bg-primary/10 dark:text-primary-light'
                 : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
             }`}
           >
@@ -95,7 +95,7 @@ const DoctorCalendarPanel: React.FC<{ isSw: boolean; doctorProfileId: string }> 
               type="button"
               disabled={busyId === t}
               onClick={() => handleAddSlot(t)}
-              className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:border-[#0A4275] dark:hover:border-cyan-500 disabled:opacity-40 flex items-center gap-1"
+              className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:border-[var(--nc-primary)] dark:hover:border-primary disabled:opacity-40 flex items-center gap-1"
             >
               <Plus className="w-3 h-3" /> {t}
             </button>
@@ -107,7 +107,7 @@ const DoctorCalendarPanel: React.FC<{ isSw: boolean; doctorProfileId: string }> 
 };
 
 const LAB_STATUS_STYLES: Record<string, string> = {
-  ordered: 'bg-blue-50 text-[#0A4275] dark:bg-cyan-950 dark:text-cyan-300',
+  ordered: 'bg-primary/5 text-[var(--nc-primary)] dark:bg-primary/10 dark:text-primary-light',
   collected: 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
   processing: 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
   completed: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
@@ -211,7 +211,7 @@ const DoctorLabsPanel: React.FC<{
     <div className="space-y-4">
       <div className="nc-card p-4">
         <div className="flex items-center gap-2 mb-3">
-          <FlaskConical className="w-4 h-4 text-purple-500" />
+          <FlaskConical className="w-4 h-4 text-primary" />
           <h3 className="text-sm font-bold text-slate-900 dark:text-white">{isSw ? 'Agiza Kipimo' : 'Order a Lab Test'}</h3>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
@@ -226,7 +226,7 @@ const DoctorLabsPanel: React.FC<{
           type="button"
           onClick={handleOrder}
           disabled={ordering || !testName.trim() || !patientId}
-          className="mt-2 flex items-center gap-1.5 rounded-lg bg-[#0A4275] dark:bg-cyan-500 text-white dark:text-[#041D34] px-3 py-1.5 text-xs font-bold disabled:opacity-50"
+          className="mt-2 flex items-center gap-1.5 rounded-lg bg-[var(--nc-primary)] dark:bg-primary text-white dark:text-[#041D34] px-3 py-1.5 text-xs font-bold disabled:opacity-50"
         >
           <Plus className="w-3.5 h-3.5" /> {isSw ? 'Agiza' : 'Order Test'}
         </button>
@@ -234,7 +234,7 @@ const DoctorLabsPanel: React.FC<{
 
       <div className="nc-card p-4">
         <div className="flex items-center gap-2 mb-3">
-          <FlaskConical className="w-4 h-4 text-purple-500" />
+          <FlaskConical className="w-4 h-4 text-primary" />
           <h3 className="text-sm font-bold text-slate-900 dark:text-white">{isSw ? 'Vipimo Vilivyoagizwa' : 'Ordered Tests'}</h3>
         </div>
         {error && <p className="text-xs text-rose-600 mb-2">{error}</p>}
@@ -287,7 +287,7 @@ interface AppointmentRow {
 }
 
 const STATUS_STYLES: Record<string, string> = {
-  confirmed: 'bg-blue-50 text-[#0A4275] dark:bg-cyan-950 dark:text-cyan-300',
+  confirmed: 'bg-primary/5 text-[var(--nc-primary)] dark:bg-primary/10 dark:text-primary-light',
   in_queue: 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
   completed: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
   cancelled: 'bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300',
@@ -349,7 +349,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
   }, [appointments]);
 
   const statCards = [
-    { label: isSw ? 'Wagonjwa wa Leo' : "Today's Patients", value: todaysPatients.length, Icon: Users, colour: 'text-cyan-600 dark:text-cyan-400' },
+    { label: isSw ? 'Wagonjwa wa Leo' : "Today's Patients", value: todaysPatients.length, Icon: Users, colour: 'text-primary dark:text-primary-light' },
     { label: isSw ? 'Ziara Zilizobaki' : 'Upcoming Visits', value: upcomingVisits.length, Icon: Calendar, colour: 'text-emerald-600 dark:text-emerald-400' },
     { label: isSw ? 'Wanaosubiri' : 'In Queue', value: inQueue.length, Icon: Clock, colour: 'text-amber-600 dark:text-amber-400' },
     {
@@ -366,7 +366,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
       <div className="flex items-center justify-between mb-5">
         <div>
           <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">{isSw ? 'Daktari' : 'Doctor Portal'}</p>
-          <h2 className="text-lg font-black text-slate-900 dark:text-white">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
             {profile ? profile.specialty : isSw ? 'Jukwaa la Daktari' : 'Doctor Dashboard'}
           </h2>
           {profile?.sub_specialty && <p className="text-[11px] text-slate-500 dark:text-slate-400">{profile.sub_specialty}</p>}
@@ -405,7 +405,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
               <Icon className={`w-4 h-4 ${colour}`} />
               <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{label}</span>
             </div>
-            <p className="text-2xl font-black text-slate-900 dark:text-white">{loading ? '—' : value}</p>
+            <p className="text-2xl font-semibold text-slate-900 dark:text-white">{loading ? '—' : value}</p>
             {sub && <p className="text-[10px] text-slate-400 mt-0.5">{sub}</p>}
           </div>
         ))}
@@ -424,7 +424,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
             onClick={() => setSection(key)}
             className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
               section === key
-                ? 'bg-[#0A4275] text-white dark:bg-cyan-500 dark:text-[#041D34]'
+                ? 'bg-[var(--nc-primary)] text-white dark:bg-primary dark:text-[#041D34]'
                 : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
@@ -460,7 +460,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
                 onClick={() => setQueueTab(key)}
                 className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition-colors ${
                   queueTab === key
-                    ? 'bg-[#0A4275] text-white dark:bg-cyan-500 dark:text-[#041D34]'
+                    ? 'bg-[var(--nc-primary)] text-white dark:bg-primary dark:text-[#041D34]'
                     : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
               >
@@ -493,14 +493,14 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
                   type="button"
                   key={apt.id}
                   onClick={() => setDetailTarget(apt)}
-                  className="w-full flex items-center justify-between rounded-xl border border-slate-100 dark:border-slate-800 p-3 text-xs text-left hover:border-[#0A4275] dark:hover:border-cyan-500 transition-colors"
+                  className="w-full flex items-center justify-between rounded-xl border border-slate-100 dark:border-slate-800 p-3 text-xs text-left hover:border-[var(--nc-primary)] dark:hover:border-primary transition-colors"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <Avatar name={apt.patient_name || 'Patient'} size="md" />
                     <div className="min-w-0">
                       <p className="font-bold text-slate-900 dark:text-white truncate flex items-center gap-1">
                         {apt.patient_name || 'Patient'}
-                        {apt.consultation_type === 'telehealth' && <Video className="w-3 h-3 text-cyan-500 flex-shrink-0" />}
+                        {apt.consultation_type === 'telehealth' && <Video className="w-3 h-3 text-primary flex-shrink-0" />}
                       </p>
                       <p className="text-slate-500 dark:text-slate-400 truncate">{apt.time_slot} {apt.reason ? `• ${apt.reason}` : ''}</p>
                     </div>
@@ -515,7 +515,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
                         tabIndex={0}
                         onClick={(e) => { e.stopPropagation(); setEncounterTarget(apt); }}
                         onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); setEncounterTarget(apt); } }}
-                        className="rounded-lg bg-[#0A4275] dark:bg-cyan-500 text-white dark:text-[#041D34] px-2 py-1 font-bold flex items-center gap-1"
+                        className="rounded-lg bg-[var(--nc-primary)] dark:bg-primary text-white dark:text-[#041D34] px-2 py-1 font-bold flex items-center gap-1"
                         title={isSw ? 'Anza Mkutano' : 'Start Encounter'}
                       >
                         <ClipboardPlus className="w-3.5 h-3.5" />

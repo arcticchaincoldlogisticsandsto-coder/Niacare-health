@@ -60,13 +60,13 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({
 
         <div className="flex items-center gap-2 mb-3">
           <CreditCard className="w-5 h-5 text-amber-500" />
-          <h3 className="text-base font-black">Hali ya Bima & Madai (Coverage)</h3>
+          <h3 className="text-base font-semibold">Hali ya Bima & Madai (Coverage)</h3>
         </div>
 
         <div className="space-y-3 text-xs">
-          <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-900 to-[#0A4275] text-white">
-            <span className="text-[10px] text-cyan-200 uppercase font-bold block">MPANGO WA BIMA</span>
-            <h4 className="text-sm font-extrabold">{insuranceProviderName}</h4>
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-primary-dark to-[var(--nc-primary)] text-white">
+            <span className="text-[10px] text-primary-light uppercase font-bold block">MPANGO WA BIMA</span>
+            <h4 className="text-sm font-semibold">{insuranceProviderName}</h4>
             <div className="mt-3 flex items-center gap-1.5 text-[11px] pt-2 border-t border-white/20">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-300" />
               <span>Hali: Inatumika (Active)</span>
@@ -103,7 +103,7 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({
             <button
               type="button"
               onClick={onOpenCheckout}
-              className="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs cursor-pointer flex items-center justify-center gap-1.5 shadow-md"
+              className="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs cursor-pointer flex items-center justify-center gap-1.5 shadow-md"
             >
               <Banknote className="w-4 h-4" />
               <span>Taratibu za Malipo (Checkout)</span>

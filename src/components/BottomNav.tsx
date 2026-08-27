@@ -33,7 +33,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ active, onChange, language
                 onClick={() => onChange(key)}
                 className={`flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-lg min-w-[3.25rem] transition-colors ${
                   selected
-                    ? 'bg-[#0A4275] text-white dark:bg-cyan-500 dark:text-[#041D34]'
+                    ? 'bg-[var(--nc-primary)] text-white dark:bg-primary dark:text-[#041D34]'
                     : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
               >

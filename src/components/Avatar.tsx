@@ -1,6 +1,6 @@
 import React from 'react';
 
-const AVATAR_COLORS = ['bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-purple-500', 'bg-cyan-500'];
+const AVATAR_COLORS = ['bg-primary', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-primary', 'bg-primary'];
 
 const avatarColor = (seed: string) => {
   let hash = 0;
@@ -25,7 +25,7 @@ interface AvatarProps {
 /** Colored initials circle — the same person-row style used across every
  * role's dashboard (Admin/Doctor/Provider), matching the reference design. */
 export const Avatar: React.FC<AvatarProps> = ({ name, size = 'sm' }) => (
-  <div className={`flex shrink-0 items-center justify-center rounded-full font-black text-white ${avatarColor(name)} ${SIZE_CLASSES[size]}`}>
+  <div className={`flex shrink-0 items-center justify-center rounded-full font-semibold text-white ${avatarColor(name)} ${SIZE_CLASSES[size]}`}>
     {initials(name)}
   </div>
 );

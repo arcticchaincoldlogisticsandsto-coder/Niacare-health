@@ -31,7 +31,7 @@ export const FacilitiesModal: React.FC<FacilitiesModalProps> = ({ isOpen, onClos
 
         <div className="flex items-center gap-2 mb-3">
           <MapPin className="w-5 h-5 text-rose-500" />
-          <h3 className="text-base font-black">Hospitali & Vituo vya Afya Vilivyosajiliwa</h3>
+          <h3 className="text-base font-semibold">Hospitali & Vituo vya Afya Vilivyosajiliwa</h3>
         </div>
 
         <div className="space-y-2.5 text-xs">
@@ -64,7 +64,7 @@ export const FacilitiesModal: React.FC<FacilitiesModalProps> = ({ isOpen, onClos
           <button
             type="button"
             onClick={onClose}
-            className="w-full py-3 rounded-xl bg-[#0A4275] dark:bg-cyan-500 text-white dark:text-slate-950 font-bold text-xs cursor-pointer"
+            className="w-full py-3 rounded-xl bg-[var(--nc-primary)] dark:bg-primary text-white font-bold text-xs cursor-pointer"
           >
             Funga Orodha
           </button>

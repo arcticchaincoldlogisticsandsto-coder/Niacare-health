@@ -153,19 +153,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ language, authUs
       <header className="border-b nc-border" style={{ backgroundColor: 'var(--nc-surface)' }}>
         <div className="mx-auto flex max-w-[1400px] items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#0A4275] dark:bg-cyan-500">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--nc-primary)] dark:bg-primary">
               <ShieldCheck className="h-5 w-5 text-white dark:text-[#041D34]" />
             </div>
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wide nc-text-muted">NiaCare</p>
-              <h1 className="text-base font-black leading-tight">{isSw ? 'Jopo la Usimamizi' : 'Admin console'}</h1>
+              <h1 className="text-base font-semibold leading-tight">{isSw ? 'Jopo la Usimamizi' : 'Admin console'}</h1>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setIsInviteOpen(true)}
-              className="flex items-center gap-1.5 rounded-lg bg-[#0A4275] px-3 py-2 text-xs font-bold text-white hover:opacity-90 dark:bg-cyan-500 dark:text-[#041D34]"
+              className="flex items-center gap-1.5 rounded-lg bg-[var(--nc-primary)] px-3 py-2 text-xs font-bold text-white hover:opacity-90 dark:bg-primary dark:text-[#041D34]"
             >
               <UserPlus className="h-3.5 w-3.5" /> {isSw ? 'Alika Mfanyakazi' : 'Invite staff'}
             </button>
@@ -189,7 +189,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ language, authUs
               onClick={() => setSection(key)}
               className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
                 section === key
-                  ? 'bg-[#0A4275] text-white dark:bg-cyan-500 dark:text-[#041D34]'
+                  ? 'bg-[var(--nc-primary)] text-white dark:bg-primary dark:text-[#041D34]'
                   : 'nc-text-secondary hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
@@ -215,7 +215,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ language, authUs
                     onClick={() => setRoleFilter(key)}
                     className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
                       roleFilter === key
-                        ? 'bg-[#0A4275] text-white dark:bg-cyan-500 dark:text-[#041D34]'
+                        ? 'bg-[var(--nc-primary)] text-white dark:bg-primary dark:text-[#041D34]'
                         : 'nc-text-secondary hover:bg-slate-100 dark:hover:bg-slate-800'
                     }`}
                   >
@@ -356,9 +356,9 @@ const DashboardPanel: React.FC<{ isSw: boolean; profiles: Profile[]; metrics: Me
   const doctors = profiles.filter((p) => p.role === 'doctor').length;
 
   const overviewStats = [
-    { label: isSw ? 'Watumiaji' : 'Users', value: profiles.length, Icon: Users, accent: 'bg-cyan-500' },
-    { label: isSw ? 'Wagonjwa' : 'Patients', value: patients, Icon: Users, accent: 'bg-blue-500' },
-    { label: isSw ? 'Madaktari' : 'Doctors', value: doctors, Icon: Stethoscope, accent: 'bg-purple-500' },
+    { label: isSw ? 'Watumiaji' : 'Users', value: profiles.length, Icon: Users, accent: 'bg-primary' },
+    { label: isSw ? 'Wagonjwa' : 'Patients', value: patients, Icon: Users, accent: 'bg-primary' },
+    { label: isSw ? 'Madaktari' : 'Doctors', value: doctors, Icon: Stethoscope, accent: 'bg-primary' },
     { label: isSw ? 'Vituo' : 'Facilities', value: metrics.providers, Icon: Building2, accent: 'bg-emerald-500' },
     { label: isSw ? 'Miadi' : 'Appointments', value: metrics.appointments, Icon: CalendarDays, accent: 'bg-amber-500' },
     { label: isSw ? 'Mapato' : 'Revenue', value: `${billTotals.revenue.toLocaleString()} TZS`, Icon: DollarSign, accent: 'bg-emerald-600' },
@@ -385,7 +385,7 @@ const DashboardPanel: React.FC<{ isSw: boolean; profiles: Profile[]; metrics: Me
               <Icon className="h-5 w-5 text-white" />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-xl font-black leading-none">{loading ? '—' : value}</p>
+              <p className="truncate text-xl font-semibold leading-none">{loading ? '—' : value}</p>
               <p className="mt-1 text-[11px] font-semibold nc-text-muted">{label}</p>
             </div>
           </div>
@@ -394,11 +394,11 @@ const DashboardPanel: React.FC<{ isSw: boolean; profiles: Profile[]; metrics: Me
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <div className={`p-4 ${cardCls}`} style={{ backgroundColor: 'var(--nc-surface)' }}>
-          <h3 className="mb-3 text-xs font-black uppercase tracking-wide nc-text-muted">{isSw ? 'Ukuaji wa Wagonjwa' : 'Patient Growth'}</h3>
-          <MiniBarChart data={patientGrowth} color="#0A4275" />
+          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide nc-text-muted">{isSw ? 'Ukuaji wa Wagonjwa' : 'Patient Growth'}</h3>
+          <MiniBarChart data={patientGrowth} color="var(--nc-primary)" />
         </div>
         <div className={`p-4 ${cardCls}`} style={{ backgroundColor: 'var(--nc-surface)' }}>
-          <h3 className="mb-3 text-xs font-black uppercase tracking-wide nc-text-muted">{isSw ? 'Miadi (Siku 7)' : 'Appointments (Last 7 Days)'}</h3>
+          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide nc-text-muted">{isSw ? 'Miadi (Siku 7)' : 'Appointments (Last 7 Days)'}</h3>
           <MiniBarChart data={appointmentsTrend} color="#06B6D4" />
         </div>
       </div>
@@ -418,7 +418,7 @@ const OperationsPanel: React.FC<{ isSw: boolean }> = ({ isSw }) => {
             onClick={() => setTab(key)}
             className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
               tab === key
-                ? 'bg-[#0A4275] text-white dark:bg-cyan-500 dark:text-[#041D34]'
+                ? 'bg-[var(--nc-primary)] text-white dark:bg-primary dark:text-[#041D34]'
                 : 'nc-text-secondary hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
@@ -558,7 +558,7 @@ const FacilityAdminPanel: React.FC<{ isSw: boolean }> = ({ isSw }) => {
       <div className={`overflow-hidden ${cardCls}`} style={{ backgroundColor: 'var(--nc-surface)' }}>
         <div className="flex items-center justify-between border-b nc-border p-4">
           <div>
-            <h3 className="text-sm font-black">{isSw ? 'Vituo na Watoa Huduma' : 'Facilities & Providers'}</h3>
+            <h3 className="text-sm font-semibold">{isSw ? 'Vituo na Watoa Huduma' : 'Facilities & Providers'}</h3>
             <p className="mt-0.5 text-[11px] font-semibold nc-text-muted">
               {isSw ? 'Dhibiti hospitali, kliniki na timu zake.' : 'Manage facilities and their doctors/staff.'}
             </p>
@@ -567,7 +567,7 @@ const FacilityAdminPanel: React.FC<{ isSw: boolean }> = ({ isSw }) => {
             <button type="button" onClick={load} className="rounded-md border nc-border p-2 nc-text-muted hover:bg-slate-50 dark:hover:bg-slate-800" title="Refresh">
               <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
             </button>
-            <button type="button" onClick={startCreate} className="flex items-center gap-1.5 rounded-md bg-[#075FD6] px-3 py-2 text-xs font-black text-white">
+            <button type="button" onClick={startCreate} className="flex items-center gap-1.5 rounded-md bg-[var(--nc-primary)] px-3 py-2 text-xs font-semibold text-white">
               <Plus className="h-3.5 w-3.5" /> {isSw ? 'Ongeza' : 'Add'}
             </button>
           </div>
@@ -583,22 +583,22 @@ const FacilityAdminPanel: React.FC<{ isSw: boolean }> = ({ isSw }) => {
               onClick={() => setSelectedId(provider.id)}
               className={`mb-2 w-full rounded-md border p-3 text-left transition-colors ${
                 selectedId === provider.id
-                  ? 'border-[#075FD6] bg-blue-50/70 dark:border-cyan-500 dark:bg-cyan-950/20'
+                  ? 'border-[var(--nc-primary)] bg-primary/10 dark:border-primary dark:bg-primary/15'
                   : 'border-slate-200 bg-white hover:border-[#B8D4F5] dark:border-slate-800 dark:bg-[#101F31]'
               }`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-black">{provider.name}</p>
+                  <p className="truncate text-sm font-semibold">{provider.name}</p>
                   <p className="mt-1 truncate text-[11px] font-semibold nc-text-muted">{provider.region}</p>
                 </div>
-                <span className={`rounded-md px-2 py-1 text-[10px] font-black ${provider.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+                <span className={`rounded-md px-2 py-1 text-[10px] font-semibold ${provider.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
                   {provider.is_active ? 'Active' : 'Suspended'}
                 </span>
               </div>
               <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] font-bold nc-text-secondary">
                 <span className="rounded-md bg-slate-100 px-2 py-1 dark:bg-slate-800">{provider.type}</span>
-                {provider.nhif_enabled && <span className="rounded-md bg-blue-50 px-2 py-1 text-[#075FD6] dark:bg-cyan-950 dark:text-cyan-300">NHIF</span>}
+                {provider.nhif_enabled && <span className="rounded-md bg-primary/5 px-2 py-1 text-[var(--nc-primary)] dark:bg-primary/10 dark:text-primary-light">NHIF</span>}
               </div>
             </button>
           ))}
@@ -611,7 +611,7 @@ const FacilityAdminPanel: React.FC<{ isSw: boolean }> = ({ isSw }) => {
           <div className={`p-4 ${cardCls}`} style={{ backgroundColor: 'var(--nc-surface)' }}>
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-black">{editingId === 'new' ? (isSw ? 'Ongeza Kituo' : 'Add Facility') : (isSw ? 'Hariri Kituo' : 'Edit Facility')}</h3>
+                <h3 className="text-sm font-semibold">{editingId === 'new' ? (isSw ? 'Ongeza Kituo' : 'Add Facility') : (isSw ? 'Hariri Kituo' : 'Edit Facility')}</h3>
                 <p className="mt-0.5 text-[11px] font-semibold nc-text-muted">
                   {isSw ? 'Taarifa hizi hutumika kwenye miadi na uendeshaji.' : 'These details drive bookings and provider operations.'}
                 </p>
@@ -651,16 +651,16 @@ const FacilityAdminPanel: React.FC<{ isSw: boolean }> = ({ isSw }) => {
                 <input type="email" value={form.email || ''} onChange={(e) => updateForm('email', e.target.value)} className="nc-input px-3 py-2" />
               </label>
               <label className="flex items-center gap-2 font-bold nc-text-secondary">
-                <input type="checkbox" checked={form.nhif_enabled} onChange={(e) => updateForm('nhif_enabled', e.target.checked)} className="h-4 w-4 accent-[#075FD6]" />
+                <input type="checkbox" checked={form.nhif_enabled} onChange={(e) => updateForm('nhif_enabled', e.target.checked)} className="h-4 w-4 accent-[var(--nc-primary)]" />
                 NHIF enabled
               </label>
               <label className="flex items-center gap-2 font-bold nc-text-secondary">
-                <input type="checkbox" checked={form.is_active} onChange={(e) => updateForm('is_active', e.target.checked)} className="h-4 w-4 accent-[#075FD6]" />
+                <input type="checkbox" checked={form.is_active} onChange={(e) => updateForm('is_active', e.target.checked)} className="h-4 w-4 accent-[var(--nc-primary)]" />
                 Active
               </label>
               <div className="flex justify-end gap-2 sm:col-span-2">
                 <button type="button" onClick={closeForm} className="rounded-md border nc-border px-3 py-2 font-bold nc-text-secondary">Cancel</button>
-                <button type="submit" disabled={saving} className="flex items-center gap-1.5 rounded-md bg-[#075FD6] px-3 py-2 font-black text-white disabled:opacity-60">
+                <button type="submit" disabled={saving} className="flex items-center gap-1.5 rounded-md bg-[var(--nc-primary)] px-3 py-2 font-semibold text-white disabled:opacity-60">
                   <Save className="h-3.5 w-3.5" /> {saving ? 'Saving...' : 'Save facility'}
                 </button>
               </div>
@@ -671,21 +671,21 @@ const FacilityAdminPanel: React.FC<{ isSw: boolean }> = ({ isSw }) => {
             <div className={`p-4 ${cardCls}`} style={{ backgroundColor: 'var(--nc-surface)' }}>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <p className="text-[11px] font-black nc-text-muted">Selected facility</p>
-                  <h3 className="mt-1 text-lg font-black">{selected.name}</h3>
+                  <p className="text-[11px] font-semibold nc-text-muted">Selected facility</p>
+                  <h3 className="mt-1 text-lg font-semibold">{selected.name}</h3>
                   <p className="mt-1 text-xs font-semibold nc-text-secondary">{selected.type} - {selected.region}</p>
                   <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
-                    {selected.address && <p className="flex items-center gap-2 nc-text-secondary"><MapPin className="h-3.5 w-3.5 text-[#075FD6]" /> {selected.address}</p>}
-                    {selected.phone && <p className="flex items-center gap-2 nc-text-secondary"><Phone className="h-3.5 w-3.5 text-[#075FD6]" /> {selected.phone}</p>}
-                    {selected.email && <p className="flex items-center gap-2 nc-text-secondary"><Mail className="h-3.5 w-3.5 text-[#075FD6]" /> {selected.email}</p>}
+                    {selected.address && <p className="flex items-center gap-2 nc-text-secondary"><MapPin className="h-3.5 w-3.5 text-[var(--nc-primary)]" /> {selected.address}</p>}
+                    {selected.phone && <p className="flex items-center gap-2 nc-text-secondary"><Phone className="h-3.5 w-3.5 text-[var(--nc-primary)]" /> {selected.phone}</p>}
+                    {selected.email && <p className="flex items-center gap-2 nc-text-secondary"><Mail className="h-3.5 w-3.5 text-[var(--nc-primary)]" /> {selected.email}</p>}
                     {selected.emergency_phone && <p className="flex items-center gap-2 nc-text-secondary"><Siren className="h-3.5 w-3.5 text-rose-500" /> {selected.emergency_phone}</p>}
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <button type="button" onClick={() => startEdit(selected)} className="flex items-center gap-1.5 rounded-md border nc-border px-3 py-2 text-xs font-black nc-text-secondary hover:bg-slate-50 dark:hover:bg-slate-800">
+                  <button type="button" onClick={() => startEdit(selected)} className="flex items-center gap-1.5 rounded-md border nc-border px-3 py-2 text-xs font-semibold nc-text-secondary hover:bg-slate-50 dark:hover:bg-slate-800">
                     <Edit3 className="h-3.5 w-3.5" /> Edit
                   </button>
-                  <button type="button" disabled={savingId === selected.id} onClick={() => toggle(selected)} className="rounded-md border nc-border px-3 py-2 text-xs font-black nc-text-secondary hover:bg-slate-50 disabled:opacity-50 dark:hover:bg-slate-800">
+                  <button type="button" disabled={savingId === selected.id} onClick={() => toggle(selected)} className="rounded-md border nc-border px-3 py-2 text-xs font-semibold nc-text-secondary hover:bg-slate-50 disabled:opacity-50 dark:hover:bg-slate-800">
                     {selected.is_active ? 'Suspend' : 'Activate'}
                   </button>
                 </div>
@@ -694,7 +694,7 @@ const FacilityAdminPanel: React.FC<{ isSw: boolean }> = ({ isSw }) => {
 
             <div className="grid gap-4 xl:grid-cols-2">
               <TeamList
-                icon={<Stethoscope className="h-4 w-4 text-[#075FD6]" />}
+                icon={<Stethoscope className="h-4 w-4 text-[var(--nc-primary)]" />}
                 title={isSw ? 'Madaktari wa Kituo' : 'Facility Doctors'}
                 empty={isSw ? 'Hakuna madaktari bado.' : 'No doctors attached yet.'}
                 loading={directoryLoading}
@@ -706,7 +706,7 @@ const FacilityAdminPanel: React.FC<{ isSw: boolean }> = ({ isSw }) => {
                 }))}
               />
               <TeamList
-                icon={<UserCog className="h-4 w-4 text-[#075FD6]" />}
+                icon={<UserCog className="h-4 w-4 text-[var(--nc-primary)]" />}
                 title={isSw ? 'Wafanyakazi wa Kituo' : 'Provider Staff'}
                 empty={isSw ? 'Hakuna wafanyakazi bado.' : 'No provider staff attached yet.'}
                 loading={directoryLoading}
@@ -736,9 +736,9 @@ const TeamList: React.FC<{
     <div className="flex items-center justify-between border-b nc-border p-4">
       <div className="flex items-center gap-2">
         {icon}
-        <h3 className="text-sm font-black">{title}</h3>
+        <h3 className="text-sm font-semibold">{title}</h3>
       </div>
-      <span className="rounded-md bg-blue-50 px-2 py-1 text-[10px] font-black text-[#075FD6] dark:bg-cyan-950 dark:text-cyan-300">
+      <span className="rounded-md bg-primary/5 px-2 py-1 text-[10px] font-semibold text-[var(--nc-primary)] dark:bg-primary/10 dark:text-primary-light">
         {rows.length}
       </span>
     </div>
@@ -749,10 +749,10 @@ const TeamList: React.FC<{
         rows.map((row) => (
           <div key={row.id} className="flex items-center justify-between gap-3 rounded-md border border-slate-100 p-3 text-xs dark:border-slate-800">
             <div className="min-w-0">
-              <p className="truncate font-black">{row.name}</p>
+              <p className="truncate font-semibold">{row.name}</p>
               <p className="mt-0.5 truncate nc-text-muted">{row.meta || '-'}</p>
             </div>
-            <span className={`rounded-md px-2 py-1 text-[10px] font-black ${row.status === 'Inactive' ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'}`}>
+            <span className={`rounded-md px-2 py-1 text-[10px] font-semibold ${row.status === 'Inactive' ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'}`}>
               {row.status}
             </span>
           </div>
@@ -789,7 +789,7 @@ const ProvidersPanel: React.FC<{ isSw: boolean }> = ({ isSw }) => {
   return (
     <div className={`overflow-hidden ${cardCls}`} style={{ backgroundColor: 'var(--nc-surface)' }}>
       <div className="flex items-center justify-between border-b nc-border p-4">
-        <h3 className="text-sm font-black">{isSw ? 'Vituo vya Afya' : 'Facilities'}</h3>
+        <h3 className="text-sm font-semibold">{isSw ? 'Vituo vya Afya' : 'Facilities'}</h3>
         <button type="button" onClick={load} className="text-xs font-bold nc-text-muted hover:underline">{isSw ? 'Onyesha upya' : 'Refresh'}</button>
       </div>
       {error && <p className="p-4 text-xs font-medium text-red-700">{error}</p>}
@@ -835,7 +835,7 @@ const ProvidersPanel: React.FC<{ isSw: boolean }> = ({ isSw }) => {
 const BILL_STATUS_STYLES: Record<string, string> = {
   pending: 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
   settled: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
-  processing: 'bg-blue-50 text-[#0A4275] dark:bg-cyan-950 dark:text-cyan-300',
+  processing: 'bg-primary/5 text-[var(--nc-primary)] dark:bg-primary/10 dark:text-primary-light',
 };
 
 const BillingPanel: React.FC<{ isSw: boolean }> = ({ isSw }) => {
@@ -865,15 +865,15 @@ const BillingPanel: React.FC<{ isSw: boolean }> = ({ isSw }) => {
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         <div className={`p-4 ${cardCls}`} style={{ backgroundColor: 'var(--nc-surface)' }}>
           <p className="text-[11px] font-semibold nc-text-muted">{isSw ? 'Mapato Yaliyokusanywa' : 'Revenue collected'}</p>
-          <p className="text-xl font-black">{totals.revenue.toLocaleString()} TZS</p>
+          <p className="text-xl font-semibold">{totals.revenue.toLocaleString()} TZS</p>
         </div>
         <div className={`p-4 ${cardCls}`} style={{ backgroundColor: 'var(--nc-surface)' }}>
           <p className="text-[11px] font-semibold nc-text-muted">{isSw ? 'Inasubiri' : 'Pending'}</p>
-          <p className="text-xl font-black">{totals.pending.toLocaleString()} TZS</p>
+          <p className="text-xl font-semibold">{totals.pending.toLocaleString()} TZS</p>
         </div>
         <div className={`p-4 ${cardCls}`} style={{ backgroundColor: 'var(--nc-surface)' }}>
           <p className="text-[11px] font-semibold nc-text-muted">{isSw ? 'Bili Zilizolipwa' : 'Bills settled'}</p>
-          <p className="text-xl font-black">{totals.settled}</p>
+          <p className="text-xl font-semibold">{totals.settled}</p>
         </div>
       </div>
 
@@ -936,7 +936,7 @@ const EmergencyPanel: React.FC<{ isSw: boolean }> = ({ isSw }) => {
   return (
     <div className={`overflow-hidden ${cardCls}`} style={{ backgroundColor: 'var(--nc-surface)' }}>
       <div className="flex items-center justify-between border-b nc-border p-4">
-        <h3 className="text-sm font-black">{isSw ? 'Uendeshaji wa Dharura' : 'Emergency operations'}</h3>
+        <h3 className="text-sm font-semibold">{isSw ? 'Uendeshaji wa Dharura' : 'Emergency operations'}</h3>
         <button type="button" onClick={load} className="text-xs font-bold nc-text-muted hover:underline">{isSw ? 'Onyesha upya' : 'Refresh'}</button>
       </div>
       {error && <p className="p-4 text-xs font-medium text-red-700">{error}</p>}
@@ -1005,7 +1005,7 @@ const AuditPanel: React.FC<{ isSw: boolean }> = ({ isSw }) => {
   return (
     <div className={`overflow-hidden ${cardCls}`} style={{ backgroundColor: 'var(--nc-surface)' }}>
       <div className="flex flex-col gap-3 border-b nc-border p-4 sm:flex-row sm:items-center sm:justify-between">
-        <h3 className="text-sm font-black">{isSw ? 'Kumbukumbu za Usalama' : 'Audit logs'}</h3>
+        <h3 className="text-sm font-semibold">{isSw ? 'Kumbukumbu za Usalama' : 'Audit logs'}</h3>
         <div className="relative w-full sm:w-64">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 nc-text-muted" />
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={isSw ? 'Tafuta kitendo...' : 'Search action, resource, actor'} className="nc-input w-full py-2 pl-8 pr-3 text-xs" />
@@ -1028,7 +1028,7 @@ const AuditPanel: React.FC<{ isSw: boolean }> = ({ isSw }) => {
               <tr key={l.id} className="border-b nc-border last:border-0">
                 <td className="px-4 py-3 nc-text-muted whitespace-nowrap">{new Date(l.created_at).toLocaleString()}</td>
                 <td className="px-4 py-3 font-bold">{l.actorName}</td>
-                <td className="px-4 py-3"><span className="rounded-md bg-blue-50 px-2 py-1 font-bold text-[#0A4275] dark:bg-cyan-950 dark:text-cyan-300">{l.action}</span></td>
+                <td className="px-4 py-3"><span className="rounded-md bg-primary/5 px-2 py-1 font-bold text-[var(--nc-primary)] dark:bg-primary/10 dark:text-primary-light">{l.action}</span></td>
                 <td className="px-4 py-3 nc-text-secondary">{l.resource_type}</td>
                 <td className="px-4 py-3 nc-text-secondary">{l.patientName || '—'}</td>
               </tr>

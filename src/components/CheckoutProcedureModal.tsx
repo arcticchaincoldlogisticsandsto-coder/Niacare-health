@@ -27,6 +27,7 @@ import { Language, Theme, UserCategory, LocalFormData, InternationalFormData } f
 import { TANZANIA_INSURANCE_PROVIDERS } from '../data/insurance';
 import { fetchBills, settleBill } from '../lib/bills';
 import { insertMedicalRecord } from '../lib/records';
+import { generateReceiptPdf } from '../utils/pdfGenerator';
 
 const secureNumericCode = (digits: number): string => {
   const min = 10 ** (digits - 1);
@@ -252,7 +253,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
         {/* ========================================================================= */}
         <div
           className={`p-4 sm:p-5 border-b flex items-center justify-between flex-shrink-0 ${
-            isDark ? 'bg-[#0E1F33] border-slate-800' : 'bg-gradient-to-r from-blue-50 via-slate-50 to-emerald-50 border-slate-200'
+            isDark ? 'bg-[#0E1F33] border-slate-800' : 'bg-gradient-to-r from-primary-light via-slate-50 to-emerald-50 border-slate-200'
           }`}
         >
           <div className="flex items-center gap-3">
@@ -261,7 +262,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base sm:text-lg font-black tracking-tight">
+                <h2 className="text-base sm:text-lg font-semibold tracking-tight">
                   {isSwahili
                     ? 'Taratibu za Malipo ya Hospitali (Checkout)'
                     : isFrench
@@ -307,7 +308,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
             }}
             className={`py-2.5 px-4 border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'checkout'
-                ? 'border-emerald-500 text-emerald-500 font-black'
+                ? 'border-emerald-500 text-emerald-500 font-semibold'
                 : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
             }`}
           >
@@ -321,7 +322,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
             onClick={() => setActiveTab('procedures_guide')}
             className={`py-2.5 px-4 border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'procedures_guide'
-                ? 'border-emerald-500 text-emerald-500 font-black'
+                ? 'border-emerald-500 text-emerald-500 font-semibold'
                 : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
             }`}
           >
@@ -335,7 +336,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
             onClick={() => setActiveTab('history')}
             className={`py-2.5 px-4 border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'history'
-                ? 'border-emerald-500 text-emerald-500 font-black'
+                ? 'border-emerald-500 text-emerald-500 font-semibold'
                 : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
             }`}
           >
@@ -381,12 +382,12 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
                     <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
                       {isSwahili ? 'HATUA YA 1: CHAGUA ANKARA YA MATIBABU' : 'STEP 1: SELECT MEDICAL INVOICE'}
                     </span>
-                    <h3 className="text-sm font-black text-slate-900 dark:text-white">
+                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
                       {isSwahili ? 'Ankara za Hospitali Zisizolipwa' : 'Pending Hospital Invoices'}
                     </h3>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-blue-500/15 text-blue-600 dark:text-cyan-300">
+                    <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-primary/15 text-primary dark:text-primary-light">
                       Mgonjwa: {patientName}
                     </span>
                   </div>
@@ -411,7 +412,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
                         } ${isSettled ? 'opacity-60 cursor-not-allowed' : ''}`}
                       >
                         <div className="flex items-start justify-between gap-2 mb-1.5">
-                          <span className="text-xs font-black font-mono text-slate-900 dark:text-white">
+                          <span className="text-xs font-semibold font-mono text-slate-900 dark:text-white">
                             {b.invoiceNumber}
                           </span>
                           <span
@@ -432,7 +433,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
 
                         <div className="mt-2 pt-2 border-t border-slate-700/40 flex items-center justify-between text-xs">
                           <span className="text-slate-400 text-[11px]">{b.date}</span>
-                          <span className="font-mono font-black text-sm text-emerald-600 dark:text-emerald-400">
+                          <span className="font-mono font-semibold text-sm text-emerald-600 dark:text-emerald-400">
                             TZS {b.totalTzs.toLocaleString()} <span className="text-[10px] font-normal text-slate-400">(${b.totalUsd})</span>
                           </span>
                         </div>
@@ -449,7 +450,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
                 }`}
               >
                 <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-400">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                     {isSwahili ? 'Mchanganuo wa Huduma za Matibabu' : 'Itemized Medical Breakdown'} ({currentBill.items.length} items)
                   </h4>
                   <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
@@ -466,7 +467,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
                       }`}
                     >
                       <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-cyan-400" />
+                        <div className="w-2 h-2 rounded-full bg-primary/30" />
                         <div>
                           <span className="font-bold text-slate-900 dark:text-white block">{item.name}</span>
                           <span className="text-[10px] text-slate-400 font-medium">{item.category}</span>
@@ -485,7 +486,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
                     Jumla Kuu ya Ankara (Total Bill):
                   </span>
                   <div className="text-right">
-                    <span className="font-mono font-black text-base sm:text-lg text-emerald-500 dark:text-emerald-400">
+                    <span className="font-mono font-semibold text-base sm:text-lg text-emerald-500 dark:text-emerald-400">
                       TZS {currentBill.totalTzs.toLocaleString()}
                     </span>
                     <span className="text-xs text-slate-400 block font-mono">(${currentBill.totalUsd} USD)</span>
@@ -502,7 +503,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
                 <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider mb-1">
                   {isSwahili ? 'HATUA YA 2: CHAGUA UTARATIBU WA MALIPO' : 'STEP 2: CHOOSE CHECKOUT PROCEDURE'}
                 </span>
-                <h3 className="text-sm font-black text-slate-900 dark:text-white mb-3">
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">
                   {isSwahili ? 'Je, unalipia kwa Bima ya Afya au Pesa Taslimu / Simu?' : 'Select Payment Procedure'}
                 </h3>
 
@@ -516,21 +517,21 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
                     className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
                       checkoutMode === 'insurance'
                         ? isDark
-                          ? 'bg-gradient-to-br from-[#0E2F48] to-[#124063] border-cyan-400 shadow-md ring-2 ring-cyan-400/40'
-                          : 'bg-gradient-to-br from-blue-50 to-cyan-50 border-[#0A4275] shadow-md ring-2 ring-[#0A4275]/20'
+                          ? 'bg-gradient-to-br from-[#0E2F48] to-[#124063] border-primary-light shadow-md ring-2 ring-primary/40'
+                          : 'bg-gradient-to-br from-primary-light to-primary-light border-[var(--nc-primary)] shadow-md ring-2 ring-[var(--nc-primary)]/20'
                         : isDark
                         ? 'bg-[#091422] border-slate-800 hover:border-slate-700'
                         : 'bg-white border-slate-200 hover:border-slate-300'
                     }`}
                   >
                     <div className="flex items-start justify-between mb-2">
-                      <div className="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-500 dark:text-cyan-400 flex items-center justify-center font-bold">
+                      <div className="w-10 h-10 rounded-xl bg-primary/20 text-primary dark:text-primary-light flex items-center justify-center font-bold">
                         <Shield className="w-5 h-5" />
                       </div>
                       <span
                         className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                           checkoutMode === 'insurance'
-                            ? 'bg-cyan-400 text-slate-950 font-black'
+                            ? 'bg-primary text-white font-semibold'
                             : 'bg-slate-700 text-slate-300'
                         }`}
                       >
@@ -539,7 +540,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
                     </div>
 
                     <div>
-                      <h4 className="text-sm font-black text-slate-900 dark:text-white mb-1">
+                      <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-1">
                         1. {isSwahili ? 'Utaratibu wa Bima (Insurance Direct)' : 'Insurance Pre-Auth Settlement'}
                       </h4>
                       <p className="text-xs text-slate-500 dark:text-slate-300 leading-relaxed">
@@ -559,7 +560,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
                       checkoutMode === 'cash'
                         ? isDark
                           ? 'bg-gradient-to-br from-[#12382B] to-[#164E3D] border-emerald-400 shadow-md ring-2 ring-emerald-400/40'
-                          : 'bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-600 shadow-md ring-2 ring-emerald-600/20'
+                          : 'bg-gradient-to-br from-emerald-50 to-primary-light border-emerald-600 shadow-md ring-2 ring-emerald-600/20'
                         : isDark
                         ? 'bg-[#091422] border-slate-800 hover:border-slate-700'
                         : 'bg-white border-slate-200 hover:border-slate-300'
@@ -572,7 +573,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
                       <span
                         className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                           checkoutMode === 'cash'
-                            ? 'bg-emerald-500 text-white font-black'
+                            ? 'bg-emerald-500 text-white font-semibold'
                             : 'bg-slate-700 text-slate-300'
                         }`}
                       >
@@ -581,7 +582,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
                     </div>
 
                     <div>
-                      <h4 className="text-sm font-black text-slate-900 dark:text-white mb-1">
+                      <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-1">
                         2. {isSwahili ? 'Utaratibu wa Pesa Taslimu (Direct Pay)' : 'Cash & Mobile Money Settlement'}
                       </h4>
                       <p className="text-xs text-slate-500 dark:text-slate-300 leading-relaxed">
@@ -597,11 +598,11 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
                 {/* SUB-FLOW 1: INSURANCE CHECKOUT PROCEDURE FORM */}
                 {/* ========================================================================= */}
                 {checkoutMode === 'insurance' && (
-                  <div className="p-4 rounded-2xl bg-cyan-950/30 border border-cyan-500/30 space-y-4 animate-in fade-in">
-                    <div className="flex items-center justify-between border-b border-cyan-500/20 pb-3">
+                  <div className="p-4 rounded-2xl bg-primary/30 border border-primary/30 space-y-4 animate-in fade-in">
+                    <div className="flex items-center justify-between border-b border-primary/20 pb-3">
                       <div className="flex items-center gap-2">
-                        <Shield className="w-5 h-5 text-cyan-400" />
-                        <h4 className="text-xs font-black text-cyan-300 uppercase tracking-wider">
+                        <Shield className="w-5 h-5 text-primary-light" />
+                        <h4 className="text-xs font-semibold text-primary-light uppercase tracking-wider">
                           Uthibitisho wa Bima ya Afya & Idhini ya Madai (Claim Authorization)
                         </h4>
                       </div>
@@ -658,11 +659,11 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
                     <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-700/60 text-xs space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-slate-400">Namba ya Kibali (Pre-Authorization Code):</span>
-                        <span className="font-mono font-bold text-cyan-300">{insurancePreAuthCode}</span>
+                        <span className="font-mono font-bold text-primary-light">{insurancePreAuthCode}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-slate-400">Kiwango Kinachofunikwa na Bima (100%):</span>
-                        <span className="font-mono font-black text-emerald-400">
+                        <span className="font-mono font-semibold text-emerald-400">
                           TZS {insuranceCoveredAmountTzs.toLocaleString()}
                         </span>
                       </div>
@@ -680,7 +681,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
                       id="btn-confirm-insurance-claim"
                       onClick={handleAuthorizeInsuranceCheckout}
                       disabled={isProcessingPayment}
-                      className="w-full py-3.5 px-4 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20 cursor-pointer transition-all active:scale-98 disabled:opacity-50"
+                      className="w-full py-3.5 px-4 rounded-2xl bg-primary hover:bg-primary-light text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary/20 cursor-pointer transition-all active:scale-98 disabled:opacity-50"
                     >
                       {isProcessingPayment ? (
                         <>
@@ -709,7 +710,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
                     <div className="flex items-center justify-between border-b border-emerald-500/20 pb-3">
                       <div className="flex items-center gap-2">
                         <Banknote className="w-5 h-5 text-emerald-400" />
-                        <h4 className="text-xs font-black text-emerald-300 uppercase tracking-wider">
+                        <h4 className="text-xs font-semibold text-emerald-300 uppercase tracking-wider">
                           Chagua Njia ya Kulipa Taslimu au Simu ya Mkononi
                         </h4>
                       </div>
@@ -782,7 +783,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
                                   onClick={() => setMobileNetwork(net)}
                                   className={`py-2 px-1 rounded-lg border text-center font-mono text-[11px] uppercase transition-all cursor-pointer ${
                                     mobileNetwork === net
-                                      ? 'bg-emerald-500 text-white border-emerald-400 font-black'
+                                      ? 'bg-emerald-500 text-white border-emerald-400 font-semibold'
                                       : isDark
                                       ? 'bg-slate-900 border-slate-700 text-slate-300'
                                       : 'bg-white border-slate-200 text-slate-700'
@@ -813,11 +814,11 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
                         <div className="p-3 rounded-xl bg-slate-900/90 border border-emerald-500/30 text-xs flex items-center justify-between">
                           <div>
                             <span className="text-slate-400 block text-[11px]">Lipa Namba ya Hospitali:</span>
-                            <span className="font-mono font-black text-amber-400">552100 (Muhimbili Pay)</span>
+                            <span className="font-mono font-semibold text-amber-400">552100 (Muhimbili Pay)</span>
                           </div>
                           <div className="text-right">
                             <span className="text-slate-400 block text-[11px]">Kiasi cha Kulipa:</span>
-                            <span className="font-mono font-black text-emerald-400 text-sm">
+                            <span className="font-mono font-semibold text-emerald-400 text-sm">
                               TZS {currentBill.totalTzs.toLocaleString()}
                             </span>
                           </div>
@@ -828,7 +829,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
                     {cashPaymentMethod === 'cash_counter' && (
                       <div className="space-y-3 pt-2">
                         <div className="p-3.5 rounded-2xl bg-amber-950/30 border border-amber-500/40 text-amber-200 text-xs space-y-2">
-                          <div className="flex items-center gap-2 font-black text-amber-400">
+                          <div className="flex items-center gap-2 font-semibold text-amber-400">
                             <AlertCircle className="w-4 h-4" />
                             <span>Utaratibu wa Kulipa Dirishani / Kaunta ya Mapokezi:</span>
                           </div>
@@ -839,7 +840,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
                             <span className="text-[10px] uppercase tracking-wider text-slate-400 font-mono block">
                               ELECTRONIC CONTROL NUMBER (GePG)
                             </span>
-                            <span className="font-mono font-black text-lg text-amber-400 tracking-wider">
+                            <span className="font-mono font-semibold text-lg text-amber-400 tracking-wider">
                               {controlNumber}
                             </span>
                           </div>
@@ -882,7 +883,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
                       id="btn-confirm-cash-payment"
                       onClick={handleAuthorizeCashCheckout}
                       disabled={isProcessingPayment}
-                      className="w-full py-3.5 px-4 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 cursor-pointer transition-all active:scale-98 disabled:opacity-50"
+                      className="w-full py-3.5 px-4 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 cursor-pointer transition-all active:scale-98 disabled:opacity-50"
                     >
                       {isProcessingPayment ? (
                         <>
@@ -915,7 +916,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
                 <div className="w-14 h-14 rounded-2xl bg-emerald-500 text-white mx-auto flex items-center justify-center shadow-lg shadow-emerald-500/30">
                   <Check className="w-8 h-8" />
                 </div>
-                <h3 className="text-lg font-black text-slate-900 dark:text-white">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
                   {isSwahili ? 'Malipo Yamekamilika na Kuthibitishwa!' : 'Payment Successfully Settled & Verified!'}
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-300 max-w-md mx-auto">
@@ -932,12 +933,12 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
                     <span className="text-[10px] uppercase font-mono tracking-wider text-emerald-400 font-bold block">
                       OFFICIAL ELECTRONIC RECEIPT
                     </span>
-                    <span className="font-mono font-black text-lg text-white">
+                    <span className="font-mono font-semibold text-lg text-white">
                       {settlementReceipt.receiptNo}
                     </span>
                   </div>
                   <div className="text-right">
-                    <span className="text-[10px] uppercase font-mono tracking-wider text-cyan-300 font-bold block">
+                    <span className="text-[10px] uppercase font-mono tracking-wider text-primary-light font-bold block">
                       STATUS
                     </span>
                     <span className="font-bold text-xs text-emerald-400 px-2 py-0.5 rounded bg-emerald-950 border border-emerald-800">
@@ -959,12 +960,12 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 block font-semibold">Njia ya Malipo (Method):</span>
-                    <p className="font-bold text-cyan-300 text-xs">{settlementReceipt.methodTitle}</p>
+                    <p className="font-bold text-primary-light text-xs">{settlementReceipt.methodTitle}</p>
                     <p className="text-[10px] text-slate-400 font-mono">Ref: {settlementReceipt.authRef}</p>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 block font-semibold">Kiasi Kilicholipwa (Amount):</span>
-                    <p className="font-mono font-black text-emerald-400 text-sm">
+                    <p className="font-mono font-semibold text-emerald-400 text-sm">
                       TZS {settlementReceipt.amountPaidTzs.toLocaleString()}
                     </p>
                     <span className="text-[10px] text-slate-400">(${settlementReceipt.amountPaidUsd} USD)</span>
@@ -983,7 +984,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
                       />
                     </div>
                     <div>
-                      <span className="text-[10px] font-bold text-cyan-300 block uppercase">
+                      <span className="text-[10px] font-bold text-primary-light block uppercase">
                         KIBALI CHA LANGONI NA DAWA
                       </span>
                       <p className="text-xs text-slate-300">
@@ -995,8 +996,13 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
                   <div className="flex items-center gap-2 w-full sm:w-auto">
                     <button
                       type="button"
-                      onClick={() => alert(`Risiti ${settlementReceipt.receiptNo} imepakuliwa kama PDF.`)}
-                      className="flex-1 sm:flex-none px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center justify-center gap-1 cursor-pointer"
+                      onClick={() =>
+                        generateReceiptPdf(settlementReceipt, {
+                          name: patientName,
+                          id: authUserId ? `NC-${authUserId.slice(0, 8).toUpperCase()}` : 'NC-GUEST',
+                        })
+                      }
+                      className="flex-1 sm:flex-none px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs flex items-center justify-center gap-1 cursor-pointer"
                     >
                       <Download className="w-3.5 h-3.5" />
                       <span>Pakua PDF</span>
@@ -1004,7 +1010,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
                     <button
                       type="button"
                       onClick={handleResetForNewCheckout}
-                      className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1 cursor-pointer"
+                      className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-primary hover:bg-primary-light text-white font-bold text-xs flex items-center justify-center gap-1 cursor-pointer"
                     >
                       <span>Malipo Mengine</span>
                     </button>
@@ -1018,7 +1024,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
           {activeTab === 'procedures_guide' && (
             <div className="space-y-5 animate-in fade-in">
               <div className="text-center max-w-lg mx-auto space-y-1">
-                <h3 className="text-base font-black text-slate-900 dark:text-white">
+                <h3 className="text-base font-semibold text-slate-900 dark:text-white">
                   {isSwahili ? 'Miongozo ya Taratibu za Malipo ya Hospitali' : 'Hospital Billing & Checkout Procedures'}
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -1033,18 +1039,18 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
                 {/* Guide 1: Insurance Procedure */}
                 <div
                   className={`p-4 sm:p-5 rounded-2xl border ${
-                    isDark ? 'bg-[#0E1F33] border-cyan-500/30' : 'bg-blue-50/70 border-blue-200'
+                    isDark ? 'bg-[#0E1F33] border-primary/30' : 'bg-primary/5 border-primary/20'
                   }`}
                 >
                   <div className="flex items-center gap-2.5 mb-3">
-                    <div className="w-9 h-9 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center">
+                    <div className="w-9 h-9 rounded-xl bg-primary/20 text-primary-light flex items-center justify-center">
                       <Shield className="w-5 h-5" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-black text-slate-900 dark:text-white">
+                      <h4 className="text-sm font-semibold text-slate-900 dark:text-white">
                         {isSwahili ? '1. Utaratibu wa Bima ya Afya (NHIF / Binafsi)' : '1. Insurance Settlement Workflow'}
                       </h4>
-                      <span className="text-[10px] text-cyan-600 dark:text-cyan-300 font-bold block">
+                      <span className="text-[10px] text-primary dark:text-primary-light font-bold block">
                         Uhakiki wa Kidijitali kupitia NIDA & Bima ID
                       </span>
                     </div>
@@ -1053,7 +1059,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
                   <div className="space-y-3 text-xs">
                     {/* Step 1 */}
                     <div className="flex items-start gap-2.5">
-                      <div className="w-6 h-6 rounded-full bg-cyan-500 text-slate-950 font-black text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <div className="w-6 h-6 rounded-full bg-primary text-white font-semibold text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
                         1
                       </div>
                       <div>
@@ -1066,7 +1072,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
 
                     {/* Step 2 */}
                     <div className="flex items-start gap-2.5">
-                      <div className="w-6 h-6 rounded-full bg-cyan-500 text-slate-950 font-black text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <div className="w-6 h-6 rounded-full bg-primary text-white font-semibold text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
                         2
                       </div>
                       <div>
@@ -1079,7 +1085,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
 
                     {/* Step 3 */}
                     <div className="flex items-start gap-2.5">
-                      <div className="w-6 h-6 rounded-full bg-cyan-500 text-slate-950 font-black text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <div className="w-6 h-6 rounded-full bg-primary text-white font-semibold text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
                         3
                       </div>
                       <div>
@@ -1092,7 +1098,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
 
                     {/* Step 4 */}
                     <div className="flex items-start gap-2.5">
-                      <div className="w-6 h-6 rounded-full bg-cyan-500 text-slate-950 font-black text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <div className="w-6 h-6 rounded-full bg-primary text-white font-semibold text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
                         4
                       </div>
                       <div>
@@ -1116,7 +1122,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
                       <Banknote className="w-5 h-5" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-black text-slate-900 dark:text-white">
+                      <h4 className="text-sm font-semibold text-slate-900 dark:text-white">
                         {isSwahili ? '2. Utaratibu wa Pesa Taslimu (Direct Pay)' : '2. Cash & Mobile Payment Workflow'}
                       </h4>
                       <span className="text-[10px] text-emerald-600 dark:text-emerald-300 font-bold block">
@@ -1128,7 +1134,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
                   <div className="space-y-3 text-xs">
                     {/* Step 1 */}
                     <div className="flex items-start gap-2.5">
-                      <div className="w-6 h-6 rounded-full bg-emerald-500 text-white font-black text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <div className="w-6 h-6 rounded-full bg-emerald-500 text-white font-semibold text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
                         1
                       </div>
                       <div>
@@ -1141,7 +1147,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
 
                     {/* Step 2 */}
                     <div className="flex items-start gap-2.5">
-                      <div className="w-6 h-6 rounded-full bg-emerald-500 text-white font-black text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <div className="w-6 h-6 rounded-full bg-emerald-500 text-white font-semibold text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
                         2
                       </div>
                       <div>
@@ -1154,7 +1160,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
 
                     {/* Step 3 */}
                     <div className="flex items-start gap-2.5">
-                      <div className="w-6 h-6 rounded-full bg-emerald-500 text-white font-black text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <div className="w-6 h-6 rounded-full bg-emerald-500 text-white font-semibold text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
                         3
                       </div>
                       <div>
@@ -1167,7 +1173,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
 
                     {/* Step 4 */}
                     <div className="flex items-start gap-2.5">
-                      <div className="w-6 h-6 rounded-full bg-emerald-500 text-white font-black text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <div className="w-6 h-6 rounded-full bg-emerald-500 text-white font-semibold text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
                         4
                       </div>
                       <div>
@@ -1186,7 +1192,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setActiveTab('checkout')}
-                  className="px-6 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-white font-black text-xs inline-flex items-center gap-2 cursor-pointer shadow-lg transition-all"
+                  className="px-6 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-white font-semibold text-xs inline-flex items-center gap-2 cursor-pointer shadow-lg transition-all"
                 >
                   <CreditCard className="w-4 h-4" />
                   <span>{isSwahili ? 'Anza Kulipa Ankara Sasa (Proceed to Checkout)' : 'Proceed to Settle Bill'}</span>
@@ -1200,7 +1206,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
           {activeTab === 'history' && (
             <div className="space-y-4 animate-in fade-in">
               <div className="flex items-center justify-between">
-                <h4 className="text-xs font-black uppercase tracking-wider text-slate-400">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                   {isSwahili ? 'Historia ya Risiti & Vibali vya Kutoka' : 'Settlement History & Clearance Passes'}
                 </h4>
                 <span className="text-[11px] font-bold text-emerald-400">
@@ -1249,7 +1255,7 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
 
                         <div className="flex items-center gap-3 justify-between sm:justify-end">
                           <div className="text-right">
-                            <span className="font-mono font-black text-xs text-emerald-400">
+                            <span className="font-mono font-semibold text-xs text-emerald-400">
                               TZS {b.totalTzs.toLocaleString()}
                             </span>
                           </div>

@@ -35,7 +35,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
       >
         <div
           className={`p-5 flex items-center justify-between ${
-            isDark ? 'bg-[#0A1420] text-white border-b border-slate-800' : 'bg-[#0A4275] text-white'
+            isDark ? 'bg-[#0A1420] text-white border-b border-slate-800' : 'bg-[var(--nc-primary)] text-white'
           }`}
         >
           <div className="flex items-center gap-3">
@@ -46,7 +46,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
               <h3 className="text-base sm:text-lg font-bold">
                 {t.title[language]}
               </h3>
-              <p className="text-xs text-blue-200">
+              <p className="text-xs text-primary-light">
                 {t.subtitle[language]}
               </p>
             </div>
@@ -74,8 +74,8 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
               }}
               className={`w-full text-left p-4 rounded-2xl border-2 transition-all flex items-center justify-between group cursor-pointer ${
                 isDark
-                  ? 'bg-[#0A1522] border-slate-700 hover:border-cyan-400 text-white'
-                  : 'bg-white border-slate-200 hover:border-[#0A4275] hover:bg-blue-50/50 text-slate-900'
+                  ? 'bg-[#0A1522] border-slate-700 hover:border-primary-light text-white'
+                  : 'bg-white border-slate-200 hover:border-[var(--nc-primary)] hover:bg-primary/5 text-slate-900'
               }`}
             >
               <div className="flex items-center gap-3">
@@ -83,7 +83,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                 <div>
                   <h4
                     className={`font-bold text-sm transition-colors ${
-                      isDark ? 'text-white group-hover:text-cyan-300' : 'text-slate-900 group-hover:text-[#0A4275]'
+                      isDark ? 'text-white group-hover:text-primary-light' : 'text-slate-900 group-hover:text-[var(--nc-primary)]'
                     }`}
                   >
                     {t.localTitle[language]}
@@ -93,7 +93,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                   </p>
                 </div>
               </div>
-              <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-cyan-400 transition-transform group-hover:translate-x-1" />
+              <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-primary-light transition-transform group-hover:translate-x-1" />
             </button>
 
             <button
@@ -104,14 +104,14 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
               }}
               className={`w-full text-left p-4 rounded-2xl border-2 transition-all flex items-center justify-between group cursor-pointer ${
                 isDark
-                  ? 'bg-[#0A1522] border-slate-700 hover:border-cyan-400 text-white'
-                  : 'bg-white border-slate-200 hover:border-[#0A4275] hover:bg-blue-50/50 text-slate-900'
+                  ? 'bg-[#0A1522] border-slate-700 hover:border-primary-light text-white'
+                  : 'bg-white border-slate-200 hover:border-[var(--nc-primary)] hover:bg-primary/5 text-slate-900'
               }`}
             >
               <div className="flex items-center gap-3">
                 <div
                   className={`w-9 h-9 rounded-full flex items-center justify-center ${
-                    isDark ? 'bg-cyan-950 text-cyan-400' : 'bg-blue-100 text-[#0A4275]'
+                    isDark ? 'bg-primary/10 text-primary-light' : 'bg-primary/10 text-[var(--nc-primary)]'
                   }`}
                 >
                   <Globe className="w-5 h-5" />
@@ -119,7 +119,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                 <div>
                   <h4
                     className={`font-bold text-sm transition-colors ${
-                      isDark ? 'text-white group-hover:text-cyan-300' : 'text-slate-900 group-hover:text-[#0A4275]'
+                      isDark ? 'text-white group-hover:text-primary-light' : 'text-slate-900 group-hover:text-[var(--nc-primary)]'
                     }`}
                   >
                     {t.intlTitle[language]}
@@ -129,7 +129,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                   </p>
                 </div>
               </div>
-              <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-cyan-400 transition-transform group-hover:translate-x-1" />
+              <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-primary-light transition-transform group-hover:translate-x-1" />
             </button>
           </div>
 

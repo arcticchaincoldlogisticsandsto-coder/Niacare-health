@@ -111,15 +111,15 @@ export const QuickLogin: React.FC<QuickLoginProps> = ({
   ];
 
   return (
-    <section className={`min-h-screen w-full p-0 sm:p-3 ${isDark ? 'bg-[#07111D]' : 'bg-[#EAF3FC]'}`}>
+    <section className={`min-h-screen w-full p-0 sm:p-3 ${isDark ? 'bg-[#080E17]' : 'bg-[#F7FAFE]'}`}>
       <div
-        className={`mx-auto flex min-h-screen w-full max-w-[1180px] flex-col overflow-hidden border shadow-[0_24px_80px_rgba(13,58,112,0.12)] sm:min-h-[calc(100vh-1.5rem)] sm:rounded-xl ${
-          isDark ? 'border-slate-800 bg-[#0B1522]' : 'border-white bg-white'
+        className={`mx-auto flex min-h-screen w-full max-w-[1180px] flex-col overflow-hidden border shadow-[0_24px_80px_rgba(15,45,80,0.08)] sm:min-h-[calc(100vh-1.5rem)] sm:rounded-xl ${
+          isDark ? 'border-slate-800 bg-[#0B1522]' : 'border-[#E4EBF4] bg-white'
         }`}
       >
         <div className="grid flex-1 lg:grid-cols-[1.08fr_0.92fr]">
-          <div className="relative min-h-[360px] overflow-hidden bg-[#EAF3FC] sm:min-h-[470px] lg:min-h-[640px]">
-            <div className="absolute inset-0 bg-[linear-gradient(120deg,#F8FCFF_0%,#F0F7FE_30%,#E0EFFB_100%)]" />
+          <div className="relative min-h-[360px] overflow-hidden bg-surface-elevated sm:min-h-[470px] lg:min-h-[640px]">
+            <div className="absolute inset-0 bg-[linear-gradient(120deg,#F8FCFF_0%,#F0F7FE_30%,#E1F4F1_100%)]" />
             {!imageMissing && (
               <img
                 src={familyImage}
@@ -128,7 +128,7 @@ export const QuickLogin: React.FC<QuickLoginProps> = ({
                 onError={() => setImageMissing(true)}
               />
             )}
-            <div className="absolute inset-y-0 left-0 w-[62%] bg-gradient-to-r from-white via-white/90 to-white/0 sm:w-[50%] lg:w-[46%]" />
+            <div className="absolute inset-y-0 left-0 w-[78%] bg-gradient-to-r from-white via-white/95 to-white/0 sm:w-[60%] lg:w-[46%]" />
             <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/25 to-transparent" />
 
             <div className="relative z-10 flex min-h-[360px] flex-col justify-between p-5 sm:min-h-[470px] sm:p-8 lg:min-h-[640px]">
@@ -140,21 +140,21 @@ export const QuickLogin: React.FC<QuickLoginProps> = ({
                     className="h-8 w-8 rounded-lg object-contain"
                   />
                   <div>
-                    <h1 className="text-2xl font-black leading-none text-[#0B4F9E]">
-                      Nia<span className="text-[#12A8B7]">Care</span>
+                    <h1 className="text-xl font-semibold leading-none text-[#0B1220]">
+                      Nia<span className="text-primary">Care</span>
                     </h1>
-                    <p className="mt-1 text-[11px] font-bold text-[#0B63D1]">
+                    <p className="mt-1 text-caption font-medium text-[#526073]">
                       {isSw ? 'Huduma ya Afya kwa Kila Mtu' : 'Healthcare For Everyone'}
                     </p>
                   </div>
                 </div>
 
                 <div className="max-w-[245px]">
-                  <h2 className="text-[27px] font-black leading-[1.08] text-[#0A2548] sm:text-[31px]">
+                  <h2 className="text-[26px] font-semibold leading-[1.15] text-[#0B1220] sm:text-[30px]">
                     {isSw ? 'Afya Yako.' : 'Your Health.'}
-                    <span className="block text-[#075FD6]">{isSw ? 'Kipaumbele Chetu' : 'Our Priority'}</span>
+                    <span className="block text-primary">{isSw ? 'Kipaumbele Chetu' : 'Our Priority'}</span>
                   </h2>
-                  <p className="mt-4 text-xs font-medium leading-6 text-[#344A65] sm:mt-5 sm:text-sm sm:leading-7">
+                  <p className="mt-4 text-body-sm leading-6 text-[#405266] sm:mt-5 sm:text-body sm:leading-7">
                     {isSw
                       ? 'Huduma bora ya afya kwako na wapendwa wako, wakati wowote, mahali popote.'
                       : 'Quality healthcare for you and your loved ones, anytime, anywhere.'}
@@ -164,21 +164,20 @@ export const QuickLogin: React.FC<QuickLoginProps> = ({
                 <div className="mt-5 grid gap-3 sm:mt-7 sm:max-w-[510px] sm:grid-cols-2 lg:block lg:max-w-none lg:space-y-4">
                   {features.map(({ Icon, title, desc }) => (
                     <div key={title} className="flex max-w-[250px] items-start gap-3">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[#BBD8FA] bg-white/85 text-[#075FD6] shadow-sm">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white/90 text-primary shadow-sm">
                         <Icon className="h-4 w-4" />
                       </div>
                       <div>
-                        <h3 className="text-xs font-black text-[#0A2548]">{title}</h3>
-                        <p className="mt-0.5 text-[10px] font-medium leading-snug text-[#425A76]">{desc}</p>
+                        <h3 className="text-body-sm font-semibold text-[#0B1220]">{title}</h3>
+                        <p className="mt-0.5 text-caption leading-snug text-[#526073]">{desc}</p>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="mt-6 max-w-[250px] rounded-lg bg-[#0754AE]/95 px-5 py-4 text-white shadow-[0_16px_35px_rgba(5,50,106,0.35)] backdrop-blur sm:ml-[30%] lg:mt-0">
-                <div className="text-3xl font-black leading-5 text-[#69B7FF]">"</div>
-                <p className="text-xs font-semibold leading-5">
+              <div className="mt-6 max-w-[250px] rounded-lg bg-[#0B1220]/90 px-5 py-4 text-white shadow-[0_16px_35px_rgba(11,18,32,0.35)] backdrop-blur sm:ml-[30%] lg:mt-0">
+                <p className="text-body-sm font-medium leading-5">
                   {isSw ? 'Afya bora huanza na huduma sahihi.' : 'Better health starts with the right care.'}
                 </p>
               </div>
@@ -190,28 +189,28 @@ export const QuickLogin: React.FC<QuickLoginProps> = ({
               <button
                 type="button"
                 onClick={onOpenLanguageSelector}
-                className={`inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-bold ${
-                  isDark ? 'border-slate-700 bg-[#101F31] text-slate-200' : 'border-[#D9E4F2] bg-white text-[#243A56]'
+                className={`inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-semibold ${
+                  isDark ? 'border-slate-700 bg-[#101F31] text-slate-200' : 'border-border bg-white text-[#243A56]'
                 }`}
               >
-                <Globe2 className="h-4 w-4 text-[#075FD6]" />
+                <Globe2 className="h-4 w-4 text-primary" />
                 {languageLabel}
                 <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
               </button>
             </div>
 
             <div className="mx-auto mt-8 w-full max-w-[382px] lg:mt-16">
-              <h2 className={`text-3xl font-black leading-tight ${isDark ? 'text-white' : 'text-[#0A2548]'}`}>
+              <h2 className={`text-heading-lg font-semibold leading-tight ${isDark ? 'text-white' : 'text-[#0B1220]'}`}>
                 {isSw ? 'Karibu Tena' : 'Welcome Back'}
               </h2>
-              <p className="mt-2 text-sm font-medium text-[#60738F]">
+              <p className="mt-2 text-body-sm text-text-secondary">
                 {isSw ? 'Ingia ili kuendelea na akaunti yako' : 'Sign in to continue to your account'}
               </p>
 
               <div className="mt-8 space-y-5">
                 <div>
                   <div className="mb-2 flex items-center justify-between">
-                    <label className={`text-xs font-black ${isDark ? 'text-slate-200' : 'text-[#1E3451]'}`}>
+                    <label className={`text-xs font-semibold ${isDark ? 'text-slate-200' : 'text-[#1E3451]'}`}>
                       {isSw ? 'Barua pepe au Namba ya Simu' : 'Email or Phone Number'}
                     </label>
                     <button
@@ -221,7 +220,7 @@ export const QuickLogin: React.FC<QuickLoginProps> = ({
                         setTarget('');
                         setError('');
                       }}
-                      className="text-[11px] font-black text-[#075FD6]"
+                      className="text-[11px] font-semibold text-primary"
                     >
                       {channel === 'email' ? 'Use SMS' : 'Use Email'}
                     </button>
@@ -237,17 +236,17 @@ export const QuickLogin: React.FC<QuickLoginProps> = ({
                       value={target}
                       onChange={(event) => setTarget(event.target.value)}
                       placeholder={channel === 'email' ? 'Enter your email address' : '+255754829140'}
-                      className={`h-12 w-full rounded-lg border pl-11 pr-4 text-sm font-semibold outline-none transition focus:border-[#075FD6] focus:ring-4 focus:ring-blue-100 ${
+                      className={`h-12 w-full rounded-lg border pl-11 pr-4 text-sm font-medium outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 ${
                         isDark
                           ? 'border-slate-700 bg-[#101F31] text-white placeholder:text-slate-500'
-                          : 'border-[#D8E3F0] bg-white text-[#10233E] placeholder:text-[#8BA0B8]'
+                          : 'border-border-strong bg-white text-text placeholder:text-placeholder'
                       }`}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className={`mb-2 block text-xs font-black ${isDark ? 'text-slate-200' : 'text-[#1E3451]'}`}>
+                  <label className={`mb-2 block text-xs font-semibold ${isDark ? 'text-slate-200' : 'text-[#1E3451]'}`}>
                     {isSw ? 'Nenosiri' : 'Password'}
                   </label>
                   <div className="relative">
@@ -255,10 +254,10 @@ export const QuickLogin: React.FC<QuickLoginProps> = ({
                     <input
                       type={showPassword ? 'text' : 'password'}
                       placeholder={isSw ? 'Utatumiwa kodi ya uhakiki' : 'Secure code will be sent'}
-                      className={`h-12 w-full rounded-lg border pl-11 pr-11 text-sm font-semibold outline-none transition focus:border-[#075FD6] focus:ring-4 focus:ring-blue-100 ${
+                      className={`h-12 w-full rounded-lg border pl-11 pr-11 text-sm font-medium outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 ${
                         isDark
                           ? 'border-slate-700 bg-[#101F31] text-white placeholder:text-slate-500'
-                          : 'border-[#D8E3F0] bg-white text-[#10233E] placeholder:text-[#8BA0B8]'
+                          : 'border-border-strong bg-white text-text placeholder:text-placeholder'
                       }`}
                     />
                     <button
@@ -273,22 +272,22 @@ export const QuickLogin: React.FC<QuickLoginProps> = ({
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <label className="flex items-center gap-2 text-xs font-bold text-[#506783]">
+                  <label className="flex items-center gap-2 text-xs font-medium text-text-secondary">
                     <input
                       type="checkbox"
                       checked={remember}
                       onChange={(event) => setRemember(event.target.checked)}
-                      className="h-4 w-4 rounded border-[#B9CCE4] accent-[#075FD6]"
+                      className="h-4 w-4 rounded border-border-strong accent-primary"
                     />
                     {isSw ? 'Nikumbuke' : 'Remember me'}
                   </label>
-                  <button type="button" className="text-xs font-black text-[#075FD6]">
+                  <button type="button" className="text-xs font-semibold text-primary">
                     {isSw ? 'Umesahau?' : 'Forgot Password?'}
                   </button>
                 </div>
 
                 {error && (
-                  <p className="flex gap-2 text-xs font-semibold text-red-600">
+                  <p className="flex gap-2 text-xs font-medium text-danger">
                     <AlertCircle className="h-4 w-4 shrink-0" />
                     {error}
                   </p>
@@ -298,33 +297,33 @@ export const QuickLogin: React.FC<QuickLoginProps> = ({
                   type="button"
                   onClick={send}
                   disabled={sending}
-                  className="flex h-12 w-full items-center justify-center rounded-lg bg-[#075FD6] text-sm font-black text-white shadow-[0_12px_24px_rgba(7,95,214,0.24)] transition hover:bg-[#064FB4] disabled:opacity-60"
+                  className="flex h-12 w-full items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white shadow-[0_12px_24px_rgba(13,148,136,0.24)] transition hover:bg-primary-light disabled:opacity-60"
                 >
                   {sending ? (isSw ? 'Inatuma...' : 'Sending...') : isSw ? 'Ingia' : 'Sign In'}
                 </button>
 
                 <div className="flex items-center gap-4 py-1">
-                  <div className="h-px flex-1 bg-[#E3EBF5]" />
-                  <span className="text-[11px] font-bold text-[#7A8EA8]">OR</span>
-                  <div className="h-px flex-1 bg-[#E3EBF5]" />
+                  <div className="h-px flex-1 bg-border" />
+                  <span className="text-[11px] font-semibold text-text-muted">OR</span>
+                  <div className="h-px flex-1 bg-border" />
                 </div>
 
                 <button
                   type="button"
                   onClick={() => setError('Passkey sign-in is available after first OTP verification on this device.')}
-                  className={`flex h-12 w-full items-center justify-center gap-2 rounded-lg border text-sm font-black transition ${
+                  className={`flex h-12 w-full items-center justify-center gap-2 rounded-lg border text-sm font-semibold transition ${
                     isDark
                       ? 'border-slate-700 bg-[#101F31] text-slate-100 hover:bg-[#16273C]'
-                      : 'border-[#D8E3F0] bg-white text-[#15304F] hover:bg-[#F6FAFF]'
+                      : 'border-border bg-white text-[#0B1220] hover:bg-surface-elevated'
                   }`}
                 >
-                  <Fingerprint className="h-4 w-4 text-[#075FD6]" />
+                  <Fingerprint className="h-4 w-4 text-primary" />
                   {isSw ? 'Endelea na Passkey' : 'Continue with Passkey'}
                 </button>
 
-                <p className="text-center text-sm font-semibold text-[#566D89]">
+                <p className="text-center text-sm font-medium text-text-secondary">
                   {isSw ? 'Huna akaunti?' : "Don't have an account?"}{' '}
-                  <button type="button" onClick={onRegister} className="font-black text-[#075FD6]">
+                  <button type="button" onClick={onRegister} className="font-semibold text-primary">
                     {isSw ? 'Fungua Akaunti' : 'Create Account'}
                   </button>
                 </p>
@@ -333,16 +332,16 @@ export const QuickLogin: React.FC<QuickLoginProps> = ({
           </div>
         </div>
 
-        <footer className={`border-t px-5 py-5 sm:px-7 sm:py-6 ${isDark ? 'border-slate-800 bg-[#081625]' : 'border-[#DCEAF8] bg-[#EFF7FF]'}`}>
+        <footer className={`border-t px-5 py-5 sm:px-7 sm:py-6 ${isDark ? 'border-slate-800 bg-[#081625]' : 'border-border bg-surface-elevated'}`}>
           <div className="mx-auto grid max-w-[930px] gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {trustItems.map(({ Icon, title, desc }) => (
               <div key={title} className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-[#075FD6]">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-primary">
                   <Icon className="h-7 w-7" />
                 </div>
                 <div>
-                  <h3 className={`text-xs font-black ${isDark ? 'text-white' : 'text-[#075FD6]'}`}>{title}</h3>
-                  <p className={`mt-0.5 text-[11px] font-medium leading-snug ${isDark ? 'text-slate-400' : 'text-[#405975]'}`}>
+                  <h3 className={`text-body-sm font-semibold ${isDark ? 'text-white' : 'text-[#0B1220]'}`}>{title}</h3>
+                  <p className={`mt-0.5 text-caption leading-snug ${isDark ? 'text-slate-400' : 'text-text-secondary'}`}>
                     {desc}
                   </p>
                 </div>

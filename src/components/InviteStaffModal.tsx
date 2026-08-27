@@ -98,10 +98,10 @@ export const InviteStaffModal: React.FC<InviteStaffModalProps> = ({ isOpen, onCl
         </button>
 
         <div className="flex items-center gap-2 mb-4">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0A4275] dark:bg-cyan-500">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--nc-primary)] dark:bg-primary">
             <UserPlus className="h-4 w-4 text-white dark:text-[#041D34]" />
           </div>
-          <h3 className="text-sm font-black">Invite staff or doctor</h3>
+          <h3 className="text-sm font-semibold">Invite staff or doctor</h3>
         </div>
 
         {success ? (
@@ -114,7 +114,7 @@ export const InviteStaffModal: React.FC<InviteStaffModalProps> = ({ isOpen, onCl
             <button
               type="button"
               onClick={handleClose}
-              className="mt-4 rounded-lg bg-[#0A4275] px-4 py-2 text-xs font-bold text-white dark:bg-cyan-500 dark:text-[#041D34]"
+              className="mt-4 rounded-lg bg-[var(--nc-primary)] px-4 py-2 text-xs font-bold text-white dark:bg-primary dark:text-[#041D34]"
             >
               Done
             </button>
@@ -171,7 +171,7 @@ export const InviteStaffModal: React.FC<InviteStaffModalProps> = ({ isOpen, onCl
             <button
               type="submit"
               disabled={submitting}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#0A4275] py-2.5 font-black text-white disabled:opacity-60 dark:bg-cyan-500 dark:text-[#041D34]"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--nc-primary)] py-2.5 font-semibold text-white disabled:opacity-60 dark:bg-primary dark:text-[#041D34]"
             >
               {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
               {submitting ? 'Sending invite…' : 'Send invite'}

@@ -41,8 +41,8 @@ export const SmsNotificationBanner: React.FC<SmsNotificationBannerProps> = ({
       <div
         className={`w-full rounded-2xl p-3.5 shadow-xl border backdrop-blur-md transition-all ${
           isDark
-            ? 'bg-[#0E1F33]/95 border-cyan-500/40 text-white shadow-[0_10px_25px_rgba(0,0,0,0.6)]'
-            : 'bg-white/95 border-blue-200/90 text-slate-900 shadow-lg'
+            ? 'bg-[#0E1F33]/95 border-primary/40 text-white shadow-[0_10px_25px_rgba(0,0,0,0.6)]'
+            : 'bg-white/95 border-primary/90 text-slate-900 shadow-lg'
         }`}
       >
         <div className="flex items-start justify-between gap-2.5">
@@ -50,8 +50,8 @@ export const SmsNotificationBanner: React.FC<SmsNotificationBannerProps> = ({
             <div
               className={`w-8 h-8 rounded-xl text-white flex items-center justify-center flex-shrink-0 shadow-xs ${
                 isEmail
-                  ? 'bg-gradient-to-br from-indigo-600 to-purple-600'
-                  : 'bg-gradient-to-br from-[#0A4275] to-cyan-500'
+                  ? 'bg-gradient-to-br from-primary to-primary'
+                  : 'bg-gradient-to-br from-[var(--nc-primary)] to-primary'
               }`}
             >
               {isEmail ? <Mail className="w-4 h-4" /> : <MessageSquare className="w-4 h-4" />}
@@ -60,8 +60,8 @@ export const SmsNotificationBanner: React.FC<SmsNotificationBannerProps> = ({
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <span
-                  className={`text-[10px] font-extrabold uppercase tracking-wider ${
-                    isEmail ? 'text-indigo-500 dark:text-indigo-400' : 'text-cyan-600 dark:text-cyan-400'
+                  className={`text-[10px] font-semibold uppercase tracking-wider ${
+                    isEmail ? 'text-primary dark:text-primary-light' : 'text-primary dark:text-primary-light'
                   }`}
                 >
                   {isEmail ? t.emailNotificationHeader[language] : t.smsNotificationHeader[language]}
@@ -82,8 +82,8 @@ export const SmsNotificationBanner: React.FC<SmsNotificationBannerProps> = ({
                   onClick={() => onAutoFill(code)}
                   className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all ${
                     isDark
-                      ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold shadow-sm'
-                      : 'bg-[#0A4275] hover:bg-[#08365f] text-white shadow-xs'
+                      ? 'bg-primary hover:bg-primary-light text-white font-semibold shadow-sm'
+                      : 'bg-[var(--nc-primary)] hover:bg-[#08365f] text-white shadow-xs'
                   }`}
                 >
                   <Sparkles className="w-3.5 h-3.5" />

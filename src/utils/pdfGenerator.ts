@@ -31,7 +31,7 @@ export function generateMedicalRecordPdf(
   const isFrench = language === 'fr';
 
   // --- Theme Colors ---
-  const primaryNavy = [10, 66, 117]; // #0A4275
+  const primaryNavy = [13, 148, 136]; // #0D9488 (NiaCare teal)
   const darkSlate = [15, 23, 42]; // #0F172A
   const accentTeal = [13, 148, 136]; // #0D9488
   const lightBg = [248, 250, 252]; // #F8FAFC
@@ -319,7 +319,7 @@ export function generateCompiledMedicalPassportPdf(
     format: 'a4',
   });
 
-  const primaryNavy = [10, 66, 117];
+  const primaryNavy = [13, 148, 136]; // #0D9488 (NiaCare teal)
   const darkSlate = [15, 23, 42];
   const lightBg = [248, 250, 252];
   const borderGray = [226, 232, 240];
@@ -422,4 +422,117 @@ export function generateCompiledMedicalPassportPdf(
   );
 
   doc.save(`NiaCare_Complete_Health_Passport_${patient.id}.pdf`);
+}
+
+export interface ReceiptForPdf {
+  receiptNo: string;
+  mode: 'insurance' | 'cash';
+  methodTitle: string;
+  authRef: string;
+  amountPaidTzs: number;
+  amountPaidUsd: number;
+  facility: string;
+  timestamp: string;
+}
+
+/**
+ * Generates a payment receipt PDF for a settled bill and triggers download.
+ */
+export function generateReceiptPdf(receipt: ReceiptForPdf, patient: PatientInfoForPdf): void {
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+  const primaryTeal = [13, 148, 136]; // #0D9488
+  const darkSlate = [15, 23, 42]; // #0F172A
+  const lightBg = [248, 250, 252]; // #F8FAFC
+  const borderGray = [226, 232, 240]; // #E2E8F0
+  const textMuted = [100, 116, 139]; // #64748B
+  const successGreen = [16, 185, 129]; // #10B981
+
+  doc.setFillColor(primaryTeal[0], primaryTeal[1], primaryTeal[2]);
+  doc.rect(0, 0, 210, 28, 'F');
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.text('NIACARE HEALTH', 105, 12, { align: 'center' });
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.text('OFFICIAL PAYMENT RECEIPT', 105, 20, { align: 'center' });
+
+  let y = 38;
+
+  doc.setTextColor(darkSlate[0], darkSlate[1], darkSlate[2]);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.text(receipt.facility, 15, y);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
+  doc.text(`Payment Method: ${receipt.methodTitle}`, 15, y + 6);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(primaryTeal[0], primaryTeal[1], primaryTeal[2]);
+  doc.text(`RECEIPT NO: ${receipt.receiptNo}`, 195, y, { align: 'right' });
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
+  doc.text(`Date: ${receipt.timestamp}`, 195, y + 6, { align: 'right' });
+
+  y += 14;
+  doc.setDrawColor(borderGray[0], borderGray[1], borderGray[2]);
+  doc.setLineWidth(0.5);
+  doc.line(15, y, 195, y);
+
+  // Patient box
+  y += 6;
+  doc.setFillColor(lightBg[0], lightBg[1], lightBg[2]);
+  doc.roundedRect(15, y, 180, 22, 2, 2, 'F');
+  doc.rect(15, y, 180, 22, 'S');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(primaryTeal[0], primaryTeal[1], primaryTeal[2]);
+  doc.text('PATIENT & AUTHORIZATION', 18, y + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  doc.setTextColor(darkSlate[0], darkSlate[1], darkSlate[2]);
+  doc.text(`Name: ${patient.name}`, 18, y + 11);
+  doc.text(`Patient ID: ${patient.id}`, 18, y + 16);
+  doc.text(`Authorization Ref: ${receipt.authRef}`, 105, y + 11);
+  doc.text(`Settlement Type: ${receipt.mode === 'insurance' ? 'Insurance Claim' : 'Direct Payment'}`, 105, y + 16);
+
+  // Amount box
+  y += 32;
+  doc.setFillColor(successGreen[0], successGreen[1], successGreen[2]);
+  doc.roundedRect(15, y, 180, 24, 2, 2, 'F');
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.text('AMOUNT PAID', 20, y + 9);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.text(`TZS ${receipt.amountPaidTzs.toLocaleString()}`, 20, y + 18);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.text(`(approx. USD ${receipt.amountPaidUsd.toFixed(2)})`, 190, y + 18, { align: 'right' });
+
+  y += 34;
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(8);
+  doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
+  doc.text('This receipt confirms settlement of the above bill in the NiaCare system.', 15, y);
+
+  doc.setFillColor(primaryTeal[0], primaryTeal[1], primaryTeal[2]);
+  doc.rect(0, 287, 210, 10, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.text(`NiaCare Health Payment Receipt • ${patient.id}`, 105, 293, { align: 'center' });
+
+  doc.save(`NiaCare_Receipt_${receipt.receiptNo}.pdf`);
 }

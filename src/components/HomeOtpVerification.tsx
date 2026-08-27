@@ -191,8 +191,8 @@ export const HomeOtpVerification: React.FC<HomeOtpVerificationProps> = ({
           <button
             type="button"
             onClick={onBackToCredentials}
-            className={`flex min-w-0 items-center gap-1.5 rounded-md px-2 py-1 text-left text-xs font-bold transition-colors ${
-              isDark ? 'text-cyan-300 hover:bg-slate-800' : 'text-[#0A4275] hover:bg-blue-50'
+            className={`flex min-w-0 items-center gap-1.5 rounded-md px-2 py-1 text-left text-xs font-semibold transition-colors ${
+              isDark ? 'text-primary-light hover:bg-slate-800' : 'text-primary hover:bg-primary/5'
             }`}
           >
             <ArrowLeft className="h-3.5 w-3.5 flex-shrink-0" />
@@ -202,7 +202,7 @@ export const HomeOtpVerification: React.FC<HomeOtpVerificationProps> = ({
           </button>
 
           <span
-            className={`inline-flex flex-shrink-0 items-center gap-1 rounded-md border px-2.5 py-1 text-[11px] font-extrabold ${
+            className={`inline-flex flex-shrink-0 items-center gap-1 rounded-md border px-2.5 py-1 text-[11px] font-semibold ${
               isDark
                 ? 'border-emerald-800/80 bg-emerald-950/50 text-emerald-300'
                 : 'border-emerald-200 bg-emerald-50 text-emerald-700'
@@ -216,37 +216,37 @@ export const HomeOtpVerification: React.FC<HomeOtpVerificationProps> = ({
         <div className="mb-4 text-center">
           <div
             className={`mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-md border ${
-              isDark ? 'border-slate-700 bg-[#0A1420] text-cyan-300' : 'border-[#D8E3F0] bg-[#F5F9FE] text-[#0A4275]'
+              isDark ? 'border-slate-700 bg-[#0A1420] text-primary-light' : 'border-border bg-primary/5 text-primary'
             }`}
           >
             <KeyRound className="h-4 w-4" />
           </div>
 
-          <h2 className={`text-lg font-black leading-tight ${isDark ? 'text-white' : 'text-[#0A2548]'}`}>
+          <h2 className={`text-heading-sm font-semibold leading-tight ${isDark ? 'text-white' : 'text-[#0B1220]'}`}>
             {pageTitle}
           </h2>
 
           {userName && !isLogin && (
-            <p className={`mt-1 text-xs font-bold ${isDark ? 'text-cyan-300' : 'text-[#0A4275]'}`}>
+            <p className={`mt-1 text-xs font-semibold ${isDark ? 'text-primary-light' : 'text-primary'}`}>
               {userCategory === 'internationals' ? 'International patient' : 'Local patient'}: {userName}
             </p>
           )}
 
-          <p className={`mx-auto mt-1 max-w-xs text-xs font-medium leading-5 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+          <p className={`mx-auto mt-1 max-w-xs text-xs font-medium leading-5 ${isDark ? 'text-slate-300' : 'text-text-secondary'}`}>
             {pageCopy}
           </p>
 
           <div
             className={`mx-auto mt-3 inline-flex max-w-full items-center gap-2 rounded-md border px-3 py-2 text-xs font-semibold ${
-              isDark ? 'border-slate-700 bg-[#0A1522] text-slate-200' : 'border-blue-100 bg-[#F0F5FA] text-slate-800'
+              isDark ? 'border-slate-700 bg-[#0A1522] text-slate-200' : 'border-border bg-surface-elevated text-text'
             }`}
           >
-            {isEmail ? <Mail className="h-3.5 w-3.5 text-blue-500" /> : <Smartphone className="h-3.5 w-3.5 text-cyan-500" />}
-            <span className="min-w-0 truncate font-mono font-bold">{displayTarget}</span>
+            {isEmail ? <Mail className="h-3.5 w-3.5 text-primary" /> : <Smartphone className="h-3.5 w-3.5 text-primary" />}
+            <span className="min-w-0 truncate font-mono font-semibold">{displayTarget}</span>
             <button
               type="button"
               onClick={onBackToCredentials}
-              className={`ml-1 text-[11px] font-bold underline ${isDark ? 'text-cyan-300' : 'text-[#0A4275]'}`}
+              className={`ml-1 text-[11px] font-semibold underline ${isDark ? 'text-primary-light' : 'text-primary'}`}
             >
               {t.changeNumber[language]}
             </button>
@@ -270,12 +270,12 @@ export const HomeOtpVerification: React.FC<HomeOtpVerificationProps> = ({
                 onChange={(event) => handleDigitChange(index, event.target.value)}
                 onKeyDown={(event) => handleKeyDown(index, event)}
                 onPaste={handlePaste}
-                className={`h-12 w-full rounded-md border text-center font-mono text-lg font-black outline-none transition-all ${
-                  digit ? 'border-[#0A4275] bg-white font-extrabold' : ''
+                className={`h-12 w-full rounded-md border text-center font-mono text-lg font-semibold outline-none transition-all ${
+                  digit ? 'border-primary bg-white font-bold' : ''
                 } ${
                   isDark
-                    ? 'border-slate-700 bg-[#0A1420] text-white focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20'
-                    : 'border-[#C9D6E5] bg-[#F8FAFD] text-slate-900 focus:border-[#0A4275] focus:bg-white focus:ring-2 focus:ring-[#0A4275]/15'
+                    ? 'border-slate-700 bg-[#0A1420] text-white focus:border-primary-light focus:ring-2 focus:ring-primary-light/20'
+                    : 'border-border-strong bg-surface-elevated text-text focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/15'
                 }`}
               />
             ))}
@@ -312,24 +312,24 @@ export const HomeOtpVerification: React.FC<HomeOtpVerificationProps> = ({
             <button
               type="button"
               onClick={handlePasteFromClipboard}
-              className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 font-bold ${
-                isDark ? 'border-cyan-800 bg-cyan-950/40 text-cyan-300' : 'border-blue-200 bg-blue-50 text-[#0A4275]'
+              className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 font-semibold ${
+                isDark ? 'border-primary/40 bg-primary/10 text-primary-light' : 'border-primary/20 bg-primary/5 text-primary'
               }`}
               title="Paste OTP code from clipboard"
             >
-              <Sparkles className="h-3.5 w-3.5 text-cyan-500" />
+              <Sparkles className="h-3.5 w-3.5 text-primary" />
               <span>{t.autoFillHelper[language]}</span>
             </button>
 
             {timerSeconds > 0 ? (
-              <span className={`font-mono font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                {t.resendIn[language]} <span className="font-bold text-[#0A4275] dark:text-cyan-300">{timerSeconds}s</span>
+              <span className={`font-mono font-medium ${isDark ? 'text-slate-400' : 'text-text-muted'}`}>
+                {t.resendIn[language]} <span className="font-semibold text-primary">{timerSeconds}s</span>
               </span>
             ) : (
               <button
                 type="button"
                 onClick={() => handleResend()}
-                className={`flex items-center gap-1 font-bold ${isDark ? 'text-cyan-300' : 'text-[#0A4275]'}`}
+                className="flex items-center gap-1 font-semibold text-primary"
               >
                 <RefreshCw className="h-3 w-3" />
                 <span>{t.resendNow[language]}</span>
@@ -342,9 +342,7 @@ export const HomeOtpVerification: React.FC<HomeOtpVerificationProps> = ({
             type="button"
             onClick={handleVerify}
             disabled={isVerifying}
-            className={`flex w-full items-center justify-center gap-2 rounded-md px-4 py-3 text-sm font-black transition-colors disabled:opacity-60 ${
-              isDark ? 'bg-cyan-500 text-slate-950 hover:bg-cyan-400' : 'bg-[#075FD6] text-white hover:bg-[#064FB4]'
-            }`}
+            className="flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-light disabled:opacity-60"
           >
             {isVerifying ? <RefreshCw className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
             <span>{isLogin ? (language === 'sw' ? 'THIBITISHA NA UINGIE' : 'VERIFY & SIGN IN') : t.verifyBtn[language]}</span>

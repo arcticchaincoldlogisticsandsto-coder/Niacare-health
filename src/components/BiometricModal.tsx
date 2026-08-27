@@ -88,9 +88,9 @@ export const BiometricModal: React.FC<BiometricModalProps> = ({
       id="modal-biometric-auth"
       className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
     >
-      <div className="bg-[#0B1A2C] text-white w-full max-w-sm rounded-2xl p-6 shadow-2xl border border-blue-500/30 text-center relative overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="bg-[#0B1A2C] text-white w-full max-w-sm rounded-2xl p-6 shadow-2xl border border-primary/30 text-center relative overflow-hidden animate-in zoom-in-95 duration-200">
         {/* Ambient background glow */}
-        <div className="absolute -top-16 -left-16 w-32 h-32 bg-blue-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute -top-16 -left-16 w-32 h-32 bg-primary/20 rounded-full blur-3xl"></div>
         <div className="absolute -bottom-16 -right-16 w-32 h-32 bg-emerald-500/20 rounded-full blur-3xl"></div>
 
         <button
@@ -109,7 +109,7 @@ export const BiometricModal: React.FC<BiometricModalProps> = ({
                 ? 'border-emerald-400 bg-emerald-500/10 shadow-[0_0_30px_rgba(16,185,129,0.4)]'
                 : status === 'error'
                 ? 'border-rose-400 bg-rose-500/10 shadow-[0_0_30px_rgba(244,63,94,0.3)]'
-                : 'border-blue-400/50 bg-blue-500/10 shadow-[0_0_30px_rgba(15,76,129,0.3)]'
+                : 'border-primary/40 bg-primary/10 shadow-[0_0_30px_rgba(13,148,136,0.3)]'
             }`}
           >
             {status === 'success' ? (
@@ -117,9 +117,9 @@ export const BiometricModal: React.FC<BiometricModalProps> = ({
             ) : status === 'error' ? (
               <AlertCircle className="w-16 h-16 text-rose-400 animate-in zoom-in duration-200" />
             ) : mode === 'fingerprint' ? (
-              <Fingerprint className="w-16 h-16 text-blue-400 animate-pulse" />
+              <Fingerprint className="w-16 h-16 text-primary animate-pulse" />
             ) : (
-              <Scan className="w-16 h-16 text-blue-400 animate-pulse" />
+              <Scan className="w-16 h-16 text-primary animate-pulse" />
             )}
           </div>
         </div>
@@ -130,10 +130,10 @@ export const BiometricModal: React.FC<BiometricModalProps> = ({
             className={`inline-flex items-center gap-1 text-[11px] font-mono px-2.5 py-0.5 rounded-full border ${
               status === 'error'
                 ? 'bg-rose-500/20 text-rose-300 border-rose-400/30'
-                : 'bg-blue-500/20 text-blue-300 border-blue-400/30'
+                : 'bg-primary/10 text-primary-light border-primary/30'
             }`}
           >
-            <Sparkles className="w-3 h-3 text-cyan-300" />
+            <Sparkles className="w-3 h-3 text-primary-light" />
             <span>
               {status === 'success'
                 ? `${t.verifiedIn[language]} ${authLatency}`

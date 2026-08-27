@@ -35,7 +35,7 @@ export const BloodTypeSelector: React.FC<BloodTypeSelectorProps> = ({
     <div
       id="blood-type-selector"
       className={`rounded-2xl p-3 sm:p-3.5 border transition-all ${
-        isDark ? 'bg-[#08121E] border-slate-700/80' : 'bg-[#F6F9FD] border-blue-100/90'
+        isDark ? 'bg-[#08121E] border-slate-700/80' : 'bg-[#F6F9FD] border-primary/90'
       }`}
     >
       <div className="flex items-center justify-between gap-2 mb-2">
@@ -54,7 +54,7 @@ export const BloodTypeSelector: React.FC<BloodTypeSelectorProps> = ({
 
         {value ? (
           <span
-            className={`text-[11px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 border ${
+            className={`text-[11px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 border ${
               value === 'unknown'
                 ? isDark
                   ? 'bg-slate-800 border-slate-700 text-slate-300'
@@ -89,8 +89,8 @@ export const BloodTypeSelector: React.FC<BloodTypeSelectorProps> = ({
               className={`py-1.5 px-1 rounded-xl text-xs font-mono font-bold flex flex-col items-center justify-center transition-all cursor-pointer border ${
                 isSelected
                   ? isDark
-                    ? 'bg-rose-600 border-rose-500 text-white shadow-md shadow-rose-900/30 scale-102'
-                    : 'bg-rose-600 border-rose-600 text-white shadow-md shadow-rose-500/20 scale-102'
+                    ? 'bg-rose-600 border-rose-500 text-white shadow-md shadow-rose-900/30'
+                    : 'bg-rose-600 border-rose-600 text-white shadow-md shadow-rose-500/20'
                   : isDark
                   ? 'bg-[#0E1F33] border-slate-700/80 text-slate-300 hover:border-slate-500 hover:text-white'
                   : 'bg-white border-slate-200 text-slate-700 hover:border-rose-300 hover:text-rose-600'

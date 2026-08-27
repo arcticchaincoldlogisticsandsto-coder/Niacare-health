@@ -67,10 +67,10 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({ language, theme, o
   ];
 
   return (
-    <section className={`min-h-screen w-full p-0 sm:p-3 ${isDark ? 'bg-[#07111D]' : 'bg-[#EAF3FC]'}`}>
+    <section className={`min-h-screen w-full p-0 sm:p-3 ${isDark ? 'bg-[#080E17]' : 'bg-[#F7FAFE]'}`}>
       <div
-        className={`mx-auto flex min-h-screen w-full max-w-[1180px] flex-col overflow-hidden border shadow-[0_24px_80px_rgba(13,58,112,0.12)] sm:min-h-[calc(100vh-1.5rem)] sm:rounded-xl ${
-          isDark ? 'border-slate-800 bg-[#0B1522]' : 'border-white bg-white'
+        className={`mx-auto flex min-h-screen w-full max-w-[1180px] flex-col overflow-hidden border shadow-[0_24px_80px_rgba(15,45,80,0.08)] sm:min-h-[calc(100vh-1.5rem)] sm:rounded-xl ${
+          isDark ? 'border-slate-800 bg-[#0B1522]' : 'border-[#E4EBF4] bg-white'
         }`}
       >
         <div className="grid flex-1 lg:grid-cols-[0.96fr_1.04fr]">
@@ -79,21 +79,21 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({ language, theme, o
               <div className="mb-8 flex items-center gap-2 lg:mb-12">
                 <img src={logoImage} alt="NiaCare logo" className="h-9 w-9 rounded-lg object-contain" />
                 <div>
-                  <h1 className="text-2xl font-black leading-none text-[#0B4F9E]">
-                    Nia<span className="text-[#12A8B7]">Care</span>
+                  <h1 className={`text-xl font-semibold leading-none ${isDark ? 'text-white' : 'text-[#0B1220]'}`}>
+                    Nia<span className="text-primary">Care</span>
                   </h1>
-                  <p className="mt-1 text-[11px] font-bold text-[#0B63D1]">
+                  <p className="mt-1 text-caption font-medium text-text-muted">
                     {isSw ? 'Huduma ya Afya kwa Kila Mtu' : 'Healthcare For Everyone'}
                   </p>
                 </div>
               </div>
 
               <div className="max-w-xl">
-                <h2 className={`text-[34px] font-black leading-[1.05] sm:text-5xl lg:text-[56px] ${isDark ? 'text-white' : 'text-[#0A2548]'}`}>
+                <h2 className={`text-heading-lg font-semibold leading-[1.1] sm:text-4xl lg:text-[44px] ${isDark ? 'text-white' : 'text-[#0B1220]'}`}>
                   {isSw ? 'Afya Yako.' : 'Your Health.'}
-                  <span className="block text-[#075FD6]">{isSw ? 'Kipaumbele Chetu' : 'Our Priority'}</span>
+                  <span className="block text-primary">{isSw ? 'Kipaumbele Chetu' : 'Our Priority'}</span>
                 </h2>
-                <p className={`mt-5 max-w-md text-sm font-medium leading-7 sm:text-base ${isDark ? 'text-slate-300' : 'text-[#405975]'}`}>
+                <p className={`mt-5 max-w-md text-body leading-7 ${isDark ? 'text-slate-300' : 'text-text-secondary'}`}>
                   {isSw
                     ? 'Huduma bora ya afya kwako na wapendwa wako, wakati wowote, mahali popote.'
                     : 'Quality healthcare for you and your loved ones, anytime, anywhere.'}
@@ -105,14 +105,14 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({ language, theme, o
                   <div
                     key={title}
                     className={`rounded-lg border p-3.5 ${
-                      isDark ? 'border-slate-800 bg-[#101F31]' : 'border-[#D8E6F5] bg-white'
+                      isDark ? 'border-slate-800 bg-[#101F31]' : 'border-border bg-white'
                     }`}
                   >
-                    <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-md border border-[#BBD8FA] bg-blue-50 text-[#075FD6]">
+                    <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary">
                       <Icon className="h-4 w-4" />
                     </div>
-                    <h3 className={`text-xs font-black ${isDark ? 'text-white' : 'text-[#0A2548]'}`}>{title}</h3>
-                    <p className={`mt-1 text-[11px] font-medium leading-snug ${isDark ? 'text-slate-400' : 'text-[#425A76]'}`}>
+                    <h3 className={`text-body-sm font-semibold ${isDark ? 'text-white' : 'text-[#0B1220]'}`}>{title}</h3>
+                    <p className={`mt-1 text-caption leading-snug ${isDark ? 'text-slate-400' : 'text-text-secondary'}`}>
                       {desc}
                     </p>
                   </div>
@@ -123,7 +123,7 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({ language, theme, o
                 <button
                   type="button"
                   onClick={onGetStarted}
-                  className="flex h-12 flex-1 items-center justify-center gap-2 rounded-lg bg-[#075FD6] px-5 text-sm font-black text-white shadow-[0_12px_24px_rgba(7,95,214,0.24)] transition hover:bg-[#064FB4]"
+                  className="flex h-12 flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(13,148,136,0.24)] transition hover:bg-primary-light"
                 >
                   {isSw ? 'Anza' : 'Get Started'}
                   <ArrowRight className="h-4 w-4" />
@@ -131,10 +131,10 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({ language, theme, o
                 <button
                   type="button"
                   onClick={onSignIn}
-                  className={`h-12 flex-1 rounded-lg border px-5 text-sm font-black transition ${
+                  className={`h-12 flex-1 rounded-lg border px-5 text-sm font-semibold transition ${
                     isDark
                       ? 'border-slate-700 bg-[#101F31] text-slate-100 hover:bg-[#16273C]'
-                      : 'border-[#D8E3F0] bg-white text-[#15304F] hover:bg-[#F6FAFF]'
+                      : 'border-border bg-white text-[#0B1220] hover:bg-surface-elevated'
                   }`}
                 >
                   {isSw ? 'Ingia' : 'Sign In'}
@@ -145,10 +145,10 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({ language, theme, o
             <div className="mt-8 grid gap-4 sm:grid-cols-3">
               {trustItems.map(({ Icon, title, desc }) => (
                 <div key={title} className="flex items-start gap-3">
-                  <Icon className="mt-0.5 h-5 w-5 shrink-0 text-[#075FD6]" />
+                  <Icon className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                   <div>
-                    <h3 className={`text-xs font-black ${isDark ? 'text-white' : 'text-[#075FD6]'}`}>{title}</h3>
-                    <p className={`mt-0.5 text-[11px] font-medium leading-snug ${isDark ? 'text-slate-400' : 'text-[#405975]'}`}>
+                    <h3 className={`text-body-sm font-semibold ${isDark ? 'text-white' : 'text-[#0B1220]'}`}>{title}</h3>
+                    <p className={`mt-0.5 text-caption leading-snug ${isDark ? 'text-slate-400' : 'text-text-secondary'}`}>
                       {desc}
                     </p>
                   </div>
@@ -157,8 +157,8 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({ language, theme, o
             </div>
           </div>
 
-          <div className="relative order-1 min-h-[330px] overflow-hidden bg-[#EAF3FC] sm:min-h-[440px] lg:order-2 lg:min-h-[680px]">
-            <div className="absolute inset-0 bg-[linear-gradient(120deg,#F8FCFF_0%,#F0F7FE_35%,#DBECFB_100%)]" />
+          <div className="relative order-1 min-h-[330px] overflow-hidden bg-surface-elevated sm:min-h-[440px] lg:order-2 lg:min-h-[680px]">
+            <div className="absolute inset-0 bg-[linear-gradient(120deg,#F8FCFF_0%,#F0F7FE_35%,#E1F4F1_100%)]" />
             {!imageMissing && (
               <img
                 src={familyImage}
@@ -167,16 +167,15 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({ language, theme, o
                 onError={() => setImageMissing(true)}
               />
             )}
-            <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-[#072B5A]/35 to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-[#0B1220]/35 to-transparent" />
             <div className="absolute inset-y-0 left-0 hidden w-[35%] bg-gradient-to-r from-white/80 to-transparent lg:block" />
             {imageMissing && (
               <div className="absolute inset-8 flex items-center justify-center rounded-xl bg-white shadow-inner">
-                <HeartHandshake className="h-20 w-20 text-[#075FD6]" />
+                <HeartHandshake className="h-20 w-20 text-primary" />
               </div>
             )}
-            <div className="absolute bottom-6 left-5 right-5 max-w-[300px] rounded-lg bg-[#0754AE]/95 px-5 py-4 text-white shadow-[0_16px_35px_rgba(5,50,106,0.35)] backdrop-blur sm:left-8">
-              <div className="text-3xl font-black leading-5 text-[#69B7FF]">"</div>
-              <p className="text-xs font-semibold leading-5">
+            <div className="absolute bottom-6 left-5 right-5 max-w-[300px] rounded-lg bg-[#0B1220]/90 px-5 py-4 text-white shadow-[0_16px_35px_rgba(11,18,32,0.35)] backdrop-blur sm:left-8">
+              <p className="text-body-sm font-medium leading-5">
                 {isSw ? 'Afya bora huanza na huduma sahihi.' : 'Better health starts with the right care.'}
               </p>
             </div>

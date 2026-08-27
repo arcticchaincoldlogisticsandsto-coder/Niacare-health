@@ -125,13 +125,13 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
         <div className="flex items-center justify-center gap-2 mb-1">
           <div
             className={`w-8 h-8 rounded-full flex items-center justify-center ${
-              isDark ? 'bg-cyan-500/20 text-cyan-400' : 'bg-[#0A4275]/10 text-[#0A4275]'
+              isDark ? 'bg-primary/10 text-primary' : 'bg-primary/10 text-primary'
             }`}
           >
             <Shield className="w-5 h-5 fill-current opacity-80" />
           </div>
           <h2
-            className={`text-xl sm:text-2xl font-black tracking-tight ${
+            className={`text-xl sm:text-2xl font-semibold tracking-tight ${
               isDark ? 'text-white' : 'text-slate-900'
             }`}
           >
@@ -149,8 +149,8 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
             onClick={handleAutoFillDemo}
             className={`absolute right-0 top-0 text-[11px] px-2 py-1 rounded-lg border font-bold flex items-center gap-1 cursor-pointer transition-all ${
               isDark
-                ? 'text-cyan-300 bg-cyan-950/60 hover:bg-cyan-900/60 border-cyan-800'
-                : 'text-[#0A4275] hover:text-[#062847] bg-blue-50 hover:bg-blue-100 border-blue-200'
+                ? 'text-primary-light bg-primary/10 hover:bg-primary/15 border-primary/30'
+                : 'text-primary hover:text-primary-dark bg-primary/5 hover:bg-primary/10 border-primary/20'
             }`}
             title="Auto-fill realistic test data"
           >
@@ -172,8 +172,8 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
             className={`flex-1 rounded-lg py-2 px-3 text-xs font-bold transition-colors ${
               authMode === 'register'
                 ? isDark
-                  ? 'bg-cyan-500 text-[#041D34]'
-                  : 'bg-[#0A4275] text-white'
+                  ? 'bg-primary text-white'
+                  : 'bg-primary text-white'
                 : isDark
                 ? 'text-slate-400 hover:bg-slate-800'
                 : 'text-slate-600 hover:bg-slate-100'
@@ -188,8 +188,8 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
             className={`flex-1 rounded-lg py-2 px-3 text-xs font-bold transition-colors ${
               authMode === 'login'
                 ? isDark
-                  ? 'bg-cyan-500 text-[#041D34]'
-                  : 'bg-[#0A4275] text-white'
+                  ? 'bg-primary text-white'
+                  : 'bg-primary text-white'
                 : isDark
                 ? 'text-slate-400 hover:bg-slate-800'
                 : 'text-slate-600 hover:bg-slate-100'
@@ -209,8 +209,8 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
           className={`flex-1 rounded-lg py-2 px-3 text-xs sm:text-sm font-bold transition-colors ${
             userCategory === 'locals'
               ? isDark
-                ? 'bg-cyan-500 text-[#041D34]'
-                : 'bg-[#0A4275] text-white'
+                ? 'bg-primary text-white'
+                : 'bg-primary text-white'
               : isDark
               ? 'text-slate-400 hover:bg-slate-800'
               : 'text-slate-600 hover:bg-slate-100'
@@ -225,8 +225,8 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
           className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 px-3 text-xs sm:text-sm font-bold transition-colors ${
             userCategory === 'internationals'
               ? isDark
-                ? 'bg-cyan-500 text-[#041D34]'
-                : 'bg-[#0A4275] text-white'
+                ? 'bg-primary text-white'
+                : 'bg-primary text-white'
               : isDark
               ? 'text-slate-400 hover:bg-slate-800'
               : 'text-slate-600 hover:bg-slate-100'
@@ -241,8 +241,8 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
       <div
         className={`rounded-xl p-2.5 sm:p-3 mb-4 flex items-center gap-2.5 text-xs ${
           isDark
-            ? 'bg-cyan-950/40 border border-cyan-900/50 text-cyan-200'
-            : 'bg-[#EBF3FC] border border-[#D0E3F7] text-[#0A4275]'
+            ? 'bg-primary/10 border border-primary/20 text-primary-light'
+            : 'bg-primary/5 border border-primary/15 text-primary'
         }`}
       >
         <Info className="w-4 h-4 flex-shrink-0" />
@@ -254,7 +254,7 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
       {/* SECTION 1: Taarifa Binafsi (Personal Details) */}
       <div className="mb-4">
         <div className="flex items-center gap-2 mb-3">
-          <User className={`w-4 h-4 ${isDark ? 'text-cyan-400' : 'text-slate-800'}`} />
+          <User className={`w-4 h-4 ${isDark ? 'text-primary-light' : 'text-slate-800'}`} />
           <h3 className={`text-sm font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
             {t.personalInfoTitle[language]}
           </h3>
@@ -276,8 +276,8 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
                 onChange={(e) => setLocalData({ ...localData, fullName: e.target.value })}
                 className={`w-full text-sm rounded-xl pl-10 pr-3.5 py-3 border outline-none transition-all ${
                   isDark
-                    ? 'bg-[#091422] text-white border-slate-700 placeholder:text-slate-500 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400'
-                    : 'bg-white text-slate-900 border-slate-200 placeholder:text-slate-400 focus:border-[#0A4275] focus:ring-2 focus:ring-[#0A4275]/15'
+                    ? 'bg-[#091422] text-white border-slate-700 placeholder:text-slate-500 focus:border-primary-light focus:ring-1 focus:ring-primary-light'
+                    : 'bg-white text-slate-900 border-slate-200 placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/15'
                 }`}
               />
             </div>
@@ -325,8 +325,8 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
                 onChange={(e) => setLocalData({ ...localData, phone: e.target.value })}
                 className={`w-full text-sm rounded-xl pl-10 pr-28 py-3 border outline-none transition-all placeholder:text-slate-400 font-mono ${
                   isDark
-                    ? 'bg-[#091422] text-white border-slate-700 placeholder:text-slate-500 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400'
-                    : 'bg-white text-slate-900 border-slate-200 focus:border-[#0A4275] focus:ring-2 focus:ring-[#0A4275]/15'
+                    ? 'bg-[#091422] text-white border-slate-700 placeholder:text-slate-500 focus:border-primary-light focus:ring-1 focus:ring-primary-light'
+                    : 'bg-white text-slate-900 border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/15'
                 }`}
               />
               {/* Flag and prefix badge */}
@@ -363,8 +363,8 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
                   className={`py-2 px-1.5 rounded-xl text-center flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer ${
                     selectedDocType === 'nida'
                       ? isDark
-                        ? 'bg-cyan-500 text-[#041D34] font-bold'
-                        : 'bg-[#0A4275] text-white font-bold'
+                        ? 'bg-primary text-white font-bold'
+                        : 'bg-primary text-white font-bold'
                       : isDark
                       ? 'text-slate-400 hover:text-white bg-transparent'
                       : 'text-slate-600 hover:text-slate-900 bg-transparent'
@@ -372,7 +372,7 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
                 >
                   <div className="flex items-center gap-1">
                     <CreditCard className="w-3.5 h-3.5" />
-                    <span className="text-[11px] sm:text-xs font-extrabold">{t.docNida[language]}</span>
+                    <span className="text-[11px] sm:text-xs font-semibold">{t.docNida[language]}</span>
                   </div>
                   <span className="text-[9px] opacity-80 leading-none">{t.docNidaSub[language]}</span>
                 </button>
@@ -385,8 +385,8 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
                   className={`py-2 px-1.5 rounded-xl text-center flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer ${
                     selectedDocType === 'insurance'
                       ? isDark
-                        ? 'bg-cyan-500 text-[#041D34] font-bold'
-                        : 'bg-[#0A4275] text-white font-bold'
+                        ? 'bg-primary text-white font-bold'
+                        : 'bg-primary text-white font-bold'
                       : isDark
                       ? 'text-slate-400 hover:text-white bg-transparent'
                       : 'text-slate-600 hover:text-slate-900 bg-transparent'
@@ -394,7 +394,7 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
                 >
                   <div className="flex items-center gap-1">
                     <Shield className="w-3.5 h-3.5" />
-                    <span className="text-[11px] sm:text-xs font-extrabold">{t.docInsurance[language]}</span>
+                    <span className="text-[11px] sm:text-xs font-semibold">{t.docInsurance[language]}</span>
                   </div>
                   <span className="text-[9px] opacity-80 leading-none">{t.docInsuranceSub[language]}</span>
                 </button>
@@ -407,8 +407,8 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
                   className={`py-2 px-1.5 rounded-xl text-center flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer ${
                     selectedDocType === 'birth_cert'
                       ? isDark
-                        ? 'bg-cyan-500 text-[#041D34] font-bold'
-                        : 'bg-[#0A4275] text-white font-bold'
+                        ? 'bg-primary text-white font-bold'
+                        : 'bg-primary text-white font-bold'
                       : isDark
                       ? 'text-slate-400 hover:text-white bg-transparent'
                       : 'text-slate-600 hover:text-slate-900 bg-transparent'
@@ -416,7 +416,7 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
                 >
                   <div className="flex items-center gap-1">
                     <FileText className="w-3.5 h-3.5" />
-                    <span className="text-[11px] sm:text-xs font-extrabold">{t.docBirthCert[language]}</span>
+                    <span className="text-[11px] sm:text-xs font-semibold">{t.docBirthCert[language]}</span>
                   </div>
                   <span className="text-[9px] opacity-80 leading-none">{t.docBirthCertSub[language]}</span>
                 </button>
@@ -425,7 +425,7 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
               {/* Dynamic Credential Input Block based on Selected Doc Type */}
               <div
                 className={`p-3 rounded-2xl border transition-all ${
-                  isDark ? 'bg-[#0A1624] border-slate-700/80' : 'bg-[#F9FBFE] border-blue-100'
+                  isDark ? 'bg-[#0A1624] border-slate-700/80' : 'bg-[#F9FBFE] border-primary-light'
                 }`}
               >
                 {/* 1. NIDA Option Form */}
@@ -433,7 +433,7 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
                   <div className="space-y-2 animate-in fade-in duration-200">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5 text-xs font-bold">
-                        <CreditCard className={`w-3.5 h-3.5 ${isDark ? 'text-cyan-400' : 'text-[#0A4275]'}`} />
+                        <CreditCard className={`w-3.5 h-3.5 ${isDark ? 'text-primary-light' : 'text-primary'}`} />
                         <span className={isDark ? 'text-white' : 'text-slate-800'}>{t.docNida[language]}</span>
                       </div>
                       <span
@@ -462,8 +462,8 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
                         onChange={(e) => handleNidaChange(e.target.value)}
                         className={`w-full text-sm font-mono tracking-wider rounded-xl pl-10 pr-3.5 py-3 border outline-none transition-all ${
                           isDark
-                            ? 'bg-[#091422] text-white border-slate-700 placeholder:text-slate-500 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400'
-                            : 'bg-white text-slate-900 border-slate-200 placeholder:text-slate-400 focus:border-[#0A4275] focus:ring-2 focus:ring-[#0A4275]/15'
+                            ? 'bg-[#091422] text-white border-slate-700 placeholder:text-slate-500 focus:border-primary-light focus:ring-1 focus:ring-primary-light'
+                            : 'bg-white text-slate-900 border-slate-200 placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/15'
                         }`}
                       />
                     </div>
@@ -488,8 +488,8 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
                                   ? 'bg-emerald-950/40 border-emerald-800 text-emerald-300'
                                   : 'bg-emerald-50 border-emerald-200 text-emerald-800'
                                 : isDark
-                                ? 'bg-cyan-950/60 border-cyan-800 text-cyan-200'
-                                : 'bg-blue-50 border-blue-200 text-[#0A4275]'
+                                ? 'bg-primary/10 border-primary/30 text-primary-light'
+                                : 'bg-primary/5 border-primary/20 text-primary'
                             }`}
                           >
                             <div className="flex items-center gap-1.5 min-w-0">
@@ -517,7 +517,7 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
                                     dob: `${detected.year}-${detected.month}-${detected.day}`,
                                   }));
                                 }}
-                                className="px-2.5 py-1 rounded-lg text-[10px] font-black bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition-colors shrink-0 cursor-pointer shadow-2xs"
+                                className="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-primary text-white hover:bg-primary-light transition-colors shrink-0 cursor-pointer shadow-2xs"
                               >
                                 {t.applyNidaDob?.[language] || 'Sawazisha'}
                               </button>
@@ -543,7 +543,7 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
                 {selectedDocType === 'insurance' && (
                   <div className="space-y-2.5 animate-in fade-in duration-200">
                     <div className="flex items-center gap-1.5 text-xs font-bold">
-                      <Shield className={`w-3.5 h-3.5 ${isDark ? 'text-cyan-400' : 'text-[#0A4275]'}`} />
+                      <Shield className={`w-3.5 h-3.5 ${isDark ? 'text-primary-light' : 'text-primary'}`} />
                       <span className={isDark ? 'text-white' : 'text-slate-800'}>{t.insuranceProviderLabel[language]}</span>
                     </div>
 
@@ -558,8 +558,8 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
                         onChange={(e) => setLocalData({ ...localData, insuranceProvider: e.target.value })}
                         className={`w-full text-xs sm:text-sm rounded-xl pl-10 pr-10 py-3 border outline-none transition-all appearance-none cursor-pointer font-medium ${
                           isDark
-                            ? 'bg-[#091422] text-white border-slate-700 focus:border-cyan-400'
-                            : 'bg-white text-slate-900 border-slate-200 focus:border-[#0A4275] focus:ring-2 focus:ring-[#0A4275]/15'
+                            ? 'bg-[#091422] text-white border-slate-700 focus:border-primary-light'
+                            : 'bg-white text-slate-900 border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/15'
                         }`}
                       >
                         {TANZANIA_INSURANCE_PROVIDERS.map((provider) => (
@@ -586,8 +586,8 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
                         onChange={(e) => setLocalData({ ...localData, insuranceNumber: e.target.value.toUpperCase() })}
                         className={`w-full text-sm font-mono rounded-xl pl-10 pr-3.5 py-3 border outline-none transition-all uppercase ${
                           isDark
-                            ? 'bg-[#091422] text-white border-slate-700 placeholder:text-slate-500 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400'
-                            : 'bg-white text-slate-900 border-slate-200 placeholder:text-slate-400 focus:border-[#0A4275] focus:ring-2 focus:ring-[#0A4275]/15'
+                            ? 'bg-[#091422] text-white border-slate-700 placeholder:text-slate-500 focus:border-primary-light focus:ring-1 focus:ring-primary-light'
+                            : 'bg-white text-slate-900 border-slate-200 placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/15'
                         }`}
                       />
                     </div>
@@ -602,7 +602,7 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
                 {selectedDocType === 'birth_cert' && (
                   <div className="space-y-2 animate-in fade-in duration-200">
                     <div className="flex items-center gap-1.5 text-xs font-bold">
-                      <FileText className={`w-3.5 h-3.5 ${isDark ? 'text-cyan-400' : 'text-[#0A4275]'}`} />
+                      <FileText className={`w-3.5 h-3.5 ${isDark ? 'text-primary-light' : 'text-primary'}`} />
                       <span className={isDark ? 'text-white' : 'text-slate-800'}>{t.docBirthCert[language]}</span>
                     </div>
 
@@ -618,8 +618,8 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
                         onChange={(e) => setLocalData({ ...localData, birthCertId: e.target.value.toUpperCase() })}
                         className={`w-full text-sm font-mono rounded-xl pl-10 pr-3.5 py-3 border outline-none transition-all uppercase ${
                           isDark
-                            ? 'bg-[#091422] text-white border-slate-700 placeholder:text-slate-500 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400'
-                            : 'bg-white text-slate-900 border-slate-200 placeholder:text-slate-400 focus:border-[#0A4275] focus:ring-2 focus:ring-[#0A4275]/15'
+                            ? 'bg-[#091422] text-white border-slate-700 placeholder:text-slate-500 focus:border-primary-light focus:ring-1 focus:ring-primary-light'
+                            : 'bg-white text-slate-900 border-slate-200 placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/15'
                         }`}
                       />
                     </div>
@@ -647,8 +647,8 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
                 onChange={(e) => setIntlData({ ...intlData, fullName: e.target.value })}
                 className={`w-full text-sm rounded-xl pl-10 pr-3.5 py-3 border outline-none transition-all ${
                   isDark
-                    ? 'bg-[#091422] text-white border-slate-700 placeholder:text-slate-500 focus:border-cyan-400'
-                    : 'bg-white text-slate-900 border-slate-200 placeholder:text-slate-400 focus:border-[#0A4275] focus:ring-2 focus:ring-[#0A4275]/15'
+                    ? 'bg-[#091422] text-white border-slate-700 placeholder:text-slate-500 focus:border-primary-light'
+                    : 'bg-white text-slate-900 border-slate-200 placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/15'
                 }`}
               />
             </div>
@@ -696,8 +696,8 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
                 onChange={(e) => setIntlData({ ...intlData, passportNumber: e.target.value.toUpperCase() })}
                 className={`w-full text-sm font-mono rounded-xl pl-10 pr-3.5 py-3 border outline-none transition-all uppercase ${
                   isDark
-                    ? 'bg-[#091422] text-white border-slate-700 placeholder:text-slate-500 focus:border-cyan-400'
-                    : 'bg-white text-slate-900 border-slate-200 placeholder:text-slate-400 focus:border-[#0A4275] focus:ring-2 focus:ring-[#0A4275]/15'
+                    ? 'bg-[#091422] text-white border-slate-700 placeholder:text-slate-500 focus:border-primary-light'
+                    : 'bg-white text-slate-900 border-slate-200 placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/15'
                 }`}
               />
             </div>
@@ -720,8 +720,8 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
                 }}
                 className={`w-full text-sm rounded-xl pl-10 pr-10 py-3 border outline-none transition-all appearance-none cursor-pointer ${
                   isDark
-                    ? 'bg-[#091422] text-white border-slate-700 focus:border-cyan-400'
-                    : 'bg-white text-slate-900 border-slate-200 focus:border-[#0A4275] focus:ring-2 focus:ring-[#0A4275]/15'
+                    ? 'bg-[#091422] text-white border-slate-700 focus:border-primary-light'
+                    : 'bg-white text-slate-900 border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/15'
                 }`}
               >
                 <option value="">{t.nationalitySelect[language]}</option>
@@ -756,8 +756,8 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
                     className={`px-3 py-1 text-xs font-bold rounded-md transition-all cursor-pointer ${
                       intlContactMode === 'phone'
                         ? isDark
-                          ? 'bg-cyan-500 text-slate-950 shadow-2xs font-extrabold'
-                          : 'bg-[#0A4275] text-white shadow-2xs'
+                          ? 'bg-primary text-white shadow-2xs font-semibold'
+                          : 'bg-primary text-white shadow-2xs'
                         : isDark
                         ? 'text-slate-400 hover:text-white'
                         : 'text-slate-600 hover:text-slate-900'
@@ -771,8 +771,8 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
                     className={`px-3 py-1 text-xs font-bold rounded-md transition-all cursor-pointer ${
                       intlContactMode === 'email'
                         ? isDark
-                          ? 'bg-cyan-500 text-slate-950 shadow-2xs font-extrabold'
-                          : 'bg-[#0A4275] text-white shadow-2xs'
+                          ? 'bg-primary text-white shadow-2xs font-semibold'
+                          : 'bg-primary text-white shadow-2xs'
                         : isDark
                         ? 'text-slate-400 hover:text-white'
                         : 'text-slate-600 hover:text-slate-900'
@@ -792,8 +792,8 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
                       onChange={(e) => setIntlData({ ...intlData, countryCode: e.target.value })}
                       className={`w-full text-xs font-mono font-bold rounded-xl px-2.5 py-3 border outline-none appearance-none cursor-pointer ${
                         isDark
-                          ? 'bg-[#091422] text-white border-slate-700 focus:border-cyan-400'
-                          : 'bg-white text-slate-900 border-slate-200 focus:border-[#0A4275]'
+                          ? 'bg-[#091422] text-white border-slate-700 focus:border-primary-light'
+                          : 'bg-white text-slate-900 border-slate-200 focus:border-primary'
                       }`}
                     >
                       {COUNTRIES_LIST.map((c) => (
@@ -816,8 +816,8 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
                       onChange={(e) => setIntlData({ ...intlData, phone: e.target.value })}
                       className={`w-full text-sm font-mono rounded-xl px-3.5 py-3 border outline-none transition-all placeholder:text-slate-400 ${
                         isDark
-                          ? 'bg-[#091422] text-white border-slate-700 focus:border-cyan-400'
-                          : 'bg-white text-slate-900 border-slate-200 focus:border-[#0A4275] focus:ring-2 focus:ring-[#0A4275]/15'
+                          ? 'bg-[#091422] text-white border-slate-700 focus:border-primary-light'
+                          : 'bg-white text-slate-900 border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/15'
                       }`}
                     />
                   </div>
@@ -836,8 +836,8 @@ export const IdentityCard: React.FC<IdentityCardProps> = ({
                     onChange={(e) => setIntlData({ ...intlData, email: e.target.value })}
                     className={`w-full text-sm rounded-xl pl-10 pr-3.5 py-3 border outline-none transition-all placeholder:text-slate-400 ${
                       isDark
-                        ? 'bg-[#091422] text-white border-slate-700 focus:border-cyan-400'
-                        : 'bg-white text-slate-900 border-slate-200 focus:border-[#0A4275] focus:ring-2 focus:ring-[#0A4275]/15'
+                        ? 'bg-[#091422] text-white border-slate-700 focus:border-primary-light'
+                        : 'bg-white text-slate-900 border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/15'
                     }`}
                   />
                 </div>

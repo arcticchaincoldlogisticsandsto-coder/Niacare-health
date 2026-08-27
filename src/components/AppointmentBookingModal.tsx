@@ -35,6 +35,7 @@ import { insertAppointment, updateAppointmentStatus } from '../lib/appointments'
 import { fetchBookableDoctors, fetchAvailableSlots } from '../lib/realDoctors';
 import { insertBill } from '../lib/bills';
 import { requestVideoRoom } from '../lib/video';
+import { generateAppointmentIcs } from '../utils/calendarExport';
 import DailyIframe, { DailyCall } from '@daily-co/daily-js';
 
 // Real doctor names don't reliably follow the static directory's "Dr. X"
@@ -413,12 +414,12 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
           }`}
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center flex-shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-primary/20 text-primary-light flex items-center justify-center flex-shrink-0">
               <CalendarCheck className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base sm:text-lg font-black tracking-tight">
+                <h2 className="text-base sm:text-lg font-semibold tracking-tight">
                   {isSwahili ? 'Weka Miadi ya Daktari & Hospitali' : isFrench ? 'Prendre Rendez-vous Médical' : 'Book Medical Appointment'}
                 </h2>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
@@ -455,9 +456,9 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                 setActiveTab('browse');
                 setConfirmedAppointment(null);
               }}
-              className={`pb-3 px-3 text-xs font-black border-b-2 flex items-center gap-1.5 transition-all cursor-pointer ${
+              className={`pb-3 px-3 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-all cursor-pointer ${
                 activeTab === 'browse'
-                  ? 'border-cyan-500 text-cyan-400'
+                  ? 'border-primary text-primary-light'
                   : 'border-transparent text-slate-400 hover:text-slate-200'
               }`}
             >
@@ -471,15 +472,15 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                 setActiveTab('my_appointments');
                 setConfirmedAppointment(null);
               }}
-              className={`pb-3 px-3 text-xs font-black border-b-2 flex items-center gap-1.5 transition-all cursor-pointer ${
+              className={`pb-3 px-3 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-all cursor-pointer ${
                 activeTab === 'my_appointments'
-                  ? 'border-cyan-500 text-cyan-400'
+                  ? 'border-primary text-primary-light'
                   : 'border-transparent text-slate-400 hover:text-slate-200'
               }`}
             >
               <CalendarIcon className="w-4 h-4" />
               <span>{isSwahili ? 'Miadi Yangu' : 'My Appointments'}</span>
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-cyan-500/20 text-cyan-300">
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-primary/20 text-primary-light">
                 {appointmentsList.filter((a) => a.status !== 'cancelled').length}
               </span>
             </button>
@@ -487,7 +488,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
 
           <div className="hidden sm:flex items-center gap-1 text-[11px] text-slate-400">
             <span>{patientName}</span>
-            <span className="text-cyan-400 font-mono font-bold">• NHIF</span>
+            <span className="text-primary-light font-mono font-bold">• NHIF</span>
           </div>
         </div>
 
@@ -497,7 +498,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
         <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4">
           {/* VIEW 1: TELEHEALTH VIDEO ROOM (real Daily.co WebRTC call) */}
           {activeVideoCall && (
-            <div className="rounded-2xl border border-cyan-500/40 p-5 bg-gradient-to-br from-slate-900 via-[#0B1B30] to-slate-950 text-white space-y-4 animate-in zoom-in-95">
+            <div className="rounded-2xl border border-primary/40 p-5 bg-gradient-to-br from-slate-900 via-[#0B1B30] to-slate-950 text-white space-y-4 animate-in zoom-in-95">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span
@@ -527,7 +528,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
               </div>
 
               {/* Real embedded Daily.co call frame */}
-              <div className="relative aspect-video rounded-2xl bg-slate-950 border border-cyan-500/30 overflow-hidden">
+              <div className="relative aspect-video rounded-2xl bg-slate-950 border border-primary/30 overflow-hidden">
                 {videoJoinState === 'error' ? (
                   <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-center px-6">
                     <AlertCircle className="w-8 h-8 text-rose-400" />
@@ -542,8 +543,8 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                   <>
                     {videoJoinState === 'connecting' && (
                       <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 z-10 bg-slate-950/80">
-                        <div className="w-10 h-10 rounded-full border-2 border-cyan-400 border-t-transparent animate-spin" />
-                        <p className="text-xs text-cyan-300 font-bold">
+                        <div className="w-10 h-10 rounded-full border-2 border-primary-light border-t-transparent animate-spin" />
+                        <p className="text-xs text-primary-light font-bold">
                           {isSwahili ? 'Inaunganisha na daktari...' : 'Connecting to your doctor...'}
                         </p>
                       </div>
@@ -566,7 +567,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                 <div className="w-14 h-14 rounded-2xl bg-emerald-500 text-white mx-auto flex items-center justify-center shadow-lg shadow-emerald-500/30">
                   <Check className="w-8 h-8" />
                 </div>
-                <h3 className="text-lg font-black text-white">
+                <h3 className="text-lg font-semibold text-white">
                   {isSwahili ? 'Miadi Imethibitishwa Kikamilifu!' : 'Appointment Successfully Confirmed!'}
                 </h3>
                 <p className="text-xs text-slate-300 max-w-md mx-auto">
@@ -577,21 +578,21 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
               </div>
 
               {/* Digital Pass Card */}
-              <div className="p-4 rounded-2xl bg-slate-950/80 border border-cyan-500/30 text-white space-y-3">
+              <div className="p-4 rounded-2xl bg-slate-950/80 border border-primary/30 text-white space-y-3">
                 <div className="flex items-center justify-between border-b border-white/10 pb-3">
                   <div>
-                    <span className="text-[10px] uppercase font-mono tracking-wider text-cyan-300 font-bold block">
+                    <span className="text-[10px] uppercase font-mono tracking-wider text-primary-light font-bold block">
                       TICKET NUMBER
                     </span>
-                    <span className="font-mono font-black text-lg text-emerald-400">
+                    <span className="font-mono font-semibold text-lg text-emerald-400">
                       {confirmedAppointment.ticketNumber}
                     </span>
                   </div>
                   <div className="text-right">
-                    <span className="text-[10px] uppercase font-mono tracking-wider text-cyan-300 font-bold block">
+                    <span className="text-[10px] uppercase font-mono tracking-wider text-primary-light font-bold block">
                       FOLENI (QUEUE NO)
                     </span>
-                    <span className="font-mono font-black text-lg text-amber-300">
+                    <span className="font-mono font-semibold text-lg text-amber-300">
                       {confirmedAppointment.queueNumber}
                     </span>
                   </div>
@@ -601,7 +602,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                   <div>
                     <span className="text-[10px] text-slate-400 block font-semibold">Daktari (Doctor):</span>
                     <p className="font-bold text-white text-sm">{confirmedAppointment.doctorName}</p>
-                    <p className="text-[11px] text-cyan-300">{confirmedAppointment.doctorSpecialty}</p>
+                    <p className="text-[11px] text-primary-light">{confirmedAppointment.doctorSpecialty}</p>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 block font-semibold">Hospitali & Chumba:</span>
@@ -642,10 +643,8 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => {
-                        alert(isSwahili ? 'Miadi imeongezwa kwenye kalenda yako ya Google/Simu!' : 'Added to Calendar!');
-                      }}
-                      className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold flex items-center gap-1 cursor-pointer"
+                      onClick={() => generateAppointmentIcs(confirmedAppointment)}
+                      className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold flex items-center gap-1 cursor-pointer"
                       title="Add to Calendar"
                     >
                       <CalendarIcon className="w-3.5 h-3.5" />
@@ -658,7 +657,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                         setConfirmedAppointment(null);
                         setActiveTab('my_appointments');
                       }}
-                      className="px-3.5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs cursor-pointer shadow-md"
+                      className="px-3.5 py-2 rounded-xl bg-primary hover:bg-primary-light text-white font-semibold text-xs cursor-pointer shadow-md"
                     >
                       {isSwahili ? 'Tazama Orodha ya Miadi' : 'View Appointments'}
                     </button>
@@ -673,7 +672,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-black">
+                  <h3 className="text-sm font-semibold">
                     {isSwahili ? 'Miadi Yangu Iliyothibitishwa' : 'My Active Appointments'}
                   </h3>
                   <p className="text-xs text-slate-400">
@@ -685,7 +684,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                 <button
                   type="button"
                   onClick={() => setActiveTab('browse')}
-                  className="px-3 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center gap-1 cursor-pointer"
+                  className="px-3 py-1.5 rounded-xl bg-primary hover:bg-primary-light text-white font-bold text-xs flex items-center gap-1 cursor-pointer"
                 >
                   <CalendarCheck className="w-3.5 h-3.5" />
                   <span>{isSwahili ? '+ Weka Miadi Mpya' : '+ New Booking'}</span>
@@ -703,7 +702,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                   <button
                     type="button"
                     onClick={() => setActiveTab('browse')}
-                    className="px-4 py-2 bg-cyan-500 text-slate-950 font-bold text-xs rounded-xl"
+                    className="px-4 py-2 bg-primary text-white font-semibold text-xs rounded-xl"
                   >
                     {isSwahili ? 'Panga Miadi na Daktari Sasa' : 'Schedule with a Doctor Now'}
                   </button>
@@ -719,13 +718,13 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                           isCancelled
                             ? 'opacity-60 bg-slate-900/40 border-slate-800'
                             : isDark
-                            ? 'bg-[#0E1C2F] border-slate-700/80 hover:border-cyan-500/50'
-                            : 'bg-white border-slate-200 hover:border-blue-300 shadow-xs'
+                            ? 'bg-[#0E1C2F] border-slate-700/80 hover:border-primary/50'
+                            : 'bg-white border-slate-200 hover:border-primary-light shadow-xs'
                         }`}
                       >
                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-700/50">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-blue-500/15 text-cyan-400 flex items-center justify-center font-bold flex-shrink-0">
+                            <div className="w-10 h-10 rounded-xl bg-primary/15 text-primary-light flex items-center justify-center font-bold flex-shrink-0">
                               <Stethoscope className="w-5 h-5" />
                             </div>
                             <div>
@@ -743,12 +742,12 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                                   {isCancelled ? 'Cancelled' : apt.queueNumber ? `Foleni: ${apt.queueNumber}` : 'Confirmed'}
                                 </span>
                               </div>
-                              <p className="text-[11px] text-cyan-400 font-semibold">{apt.doctorSpecialty}</p>
+                              <p className="text-[11px] text-primary-light font-semibold">{apt.doctorSpecialty}</p>
                             </div>
                           </div>
 
                           <div className="flex items-center gap-2 text-xs font-mono">
-                            <span className="px-2.5 py-1 rounded-lg bg-slate-800/80 text-cyan-300 font-bold">
+                            <span className="px-2.5 py-1 rounded-lg bg-slate-800/80 text-primary-light font-bold">
                               Ticket: {apt.ticketNumber}
                             </span>
                           </div>
@@ -775,7 +774,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                             <span className="font-bold text-emerald-400 flex items-center gap-1">
                               {apt.consultationType === 'telehealth' ? (
                                 <>
-                                  <Video className="w-3.5 h-3.5 text-cyan-400" /> Ushauri wa Video (Telehealth)
+                                  <Video className="w-3.5 h-3.5 text-primary-light" /> Ushauri wa Video (Telehealth)
                                 </>
                               ) : (
                                 <>
@@ -790,7 +789,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                         {!isCancelled && (
                           <div className="flex items-center justify-between pt-2 border-t border-slate-700/50">
                             <div className="text-[10px] text-slate-400">
-                              Bima: <span className="font-bold text-cyan-300">{apt.insuranceProvider}</span>
+                              Bima: <span className="font-bold text-primary-light">{apt.insuranceProvider}</span>
                             </div>
 
                             <div className="flex items-center gap-2">
@@ -798,7 +797,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                                 <button
                                   type="button"
                                   onClick={() => setActiveVideoCall(apt)}
-                                  className="px-3 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs flex items-center gap-1.5 cursor-pointer shadow-md"
+                                  className="px-3 py-1.5 rounded-xl bg-primary hover:bg-primary-light text-white font-semibold text-xs flex items-center gap-1.5 cursor-pointer shadow-md"
                                 >
                                   <Video className="w-3.5 h-3.5" />
                                   <span>Jiunge na Video Call</span>
@@ -834,14 +833,14 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                   onClick={() => setConsultationType('in_person')}
                   className={`p-3 rounded-2xl border text-center transition-all cursor-pointer ${
                     consultationType === 'in_person'
-                      ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-md'
+                      ? 'bg-primary/20 border-primary-light text-primary-light shadow-md'
                       : isDark
                       ? 'bg-[#0E1C2F] border-slate-800 text-slate-400 hover:border-slate-700'
                       : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                   }`}
                 >
                   <Building2 className="w-5 h-5 mx-auto mb-1" />
-                  <span className="text-xs font-black block">Hospitali (In-Person)</span>
+                  <span className="text-xs font-semibold block">Hospitali (In-Person)</span>
                   <span className="text-[10px] opacity-75">Kituo cha Afya / Referral</span>
                 </button>
 
@@ -850,14 +849,14 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                   onClick={() => setConsultationType('telehealth')}
                   className={`p-3 rounded-2xl border text-center transition-all cursor-pointer ${
                     consultationType === 'telehealth'
-                      ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-md'
+                      ? 'bg-primary/20 border-primary-light text-primary-light shadow-md'
                       : isDark
                       ? 'bg-[#0E1C2F] border-slate-800 text-slate-400 hover:border-slate-700'
                       : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                   }`}
                 >
-                  <Video className="w-5 h-5 mx-auto mb-1 text-cyan-400" />
-                  <span className="text-xs font-black block">Video Telehealth</span>
+                  <Video className="w-5 h-5 mx-auto mb-1 text-primary-light" />
+                  <span className="text-xs font-semibold block">Video Telehealth</span>
                   <span className="text-[10px] opacity-75">Ushauri wa Moja kwa Moja</span>
                 </button>
 
@@ -866,14 +865,14 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                   onClick={() => setConsultationType('home_visit')}
                   className={`p-3 rounded-2xl border text-center transition-all cursor-pointer ${
                     consultationType === 'home_visit'
-                      ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-md'
+                      ? 'bg-primary/20 border-primary-light text-primary-light shadow-md'
                       : isDark
                       ? 'bg-[#0E1C2F] border-slate-800 text-slate-400 hover:border-slate-700'
                       : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                   }`}
                 >
                   <MapPin className="w-5 h-5 mx-auto mb-1 text-emerald-400" />
-                  <span className="text-xs font-black block">Daktari Nyumbani</span>
+                  <span className="text-xs font-semibold block">Daktari Nyumbani</span>
                   <span className="text-[10px] opacity-75">Mobile Home Clinic</span>
                 </button>
               </div>
@@ -889,7 +888,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder={isSwahili ? 'Tafuta Daktari, Hospitali, au Ugonjwa (mf. Moyo, Malaria, Mwangi)...' : 'Search doctor, hospital, or symptoms...'}
                       className={`w-full pl-9 pr-3 py-2.5 rounded-xl border text-xs outline-none ${
-                        isDark ? 'bg-[#0E1C2F] border-slate-700 text-white placeholder-slate-500 focus:border-cyan-400' : 'bg-slate-50 border-slate-200 placeholder-slate-400'
+                        isDark ? 'bg-[#0E1C2F] border-slate-700 text-white placeholder-slate-500 focus:border-primary-light' : 'bg-slate-50 border-slate-200 placeholder-slate-400'
                       }`}
                     />
                   </div>
@@ -923,7 +922,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                         onClick={() => setSelectedSpecialtyId(spec.id)}
                         className={`px-3 py-1.5 rounded-xl whitespace-nowrap font-bold transition-all cursor-pointer ${
                           isSelected
-                            ? 'bg-cyan-500 text-slate-950 shadow-xs'
+                            ? 'bg-primary text-white shadow-xs'
                             : isDark
                             ? 'bg-[#0E1C2F] border border-slate-800 text-slate-300 hover:border-slate-700'
                             : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
@@ -940,26 +939,26 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
               {selectedDoctor && (
                 <div
                   className={`p-4 sm:p-5 rounded-2xl border ${
-                    isDark ? 'bg-[#0F2238] border-cyan-500/40 shadow-xl' : 'bg-blue-50/70 border-blue-200'
+                    isDark ? 'bg-[#0F2238] border-primary/40 shadow-xl' : 'bg-primary/5 border-primary/20'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3 mb-4">
                     <div className="flex items-center gap-3">
                       <div
-                        className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${selectedDoctor.avatarColor} text-white flex items-center justify-center font-black text-lg shadow-md flex-shrink-0`}
+                        className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${selectedDoctor.avatarColor} text-white flex items-center justify-center font-semibold text-lg shadow-md flex-shrink-0`}
                       >
                         {doctorInitial(selectedDoctor.name)}
                       </div>
                       <div>
                         <div className="flex items-center gap-1.5">
-                          <h4 className="font-black text-sm text-slate-900 dark:text-white">
+                          <h4 className="font-semibold text-sm text-slate-900 dark:text-white">
                             {selectedDoctor.name}
                           </h4>
                           <span className="text-[10px] font-bold px-1.5 py-0.2 bg-emerald-500/20 text-emerald-400 rounded">
                             MCT Verified ✓
                           </span>
                         </div>
-                        <p className="text-xs text-cyan-400 font-bold">{selectedDoctor.specialty}</p>
+                        <p className="text-xs text-primary-light font-bold">{selectedDoctor.specialty}</p>
                         <p className="text-[11px] text-slate-400">{selectedDoctor.hospital}</p>
                       </div>
                     </div>
@@ -968,7 +967,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                       <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 block">
                         NHIF 100% COVERED
                       </span>
-                      <span className="text-xs font-black text-slate-900 dark:text-white">
+                      <span className="text-xs font-semibold text-slate-900 dark:text-white">
                         0 TZS Co-Pay
                       </span>
                     </div>
@@ -1017,9 +1016,9 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                                   onClick={() => setSelectedSlot(slot)}
                                   className={`py-1.5 px-2 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
                                     selectedSlot === slot
-                                      ? 'bg-cyan-500 text-slate-950 shadow-md font-black'
+                                      ? 'bg-primary text-white shadow-md font-semibold'
                                       : isDark
-                                      ? 'bg-slate-900/90 text-slate-300 border border-slate-700 hover:border-cyan-400'
+                                      ? 'bg-slate-900/90 text-slate-300 border border-slate-700 hover:border-primary-light'
                                       : 'bg-white text-slate-800 border border-slate-200 hover:bg-slate-100'
                                   }`}
                                 >
@@ -1069,7 +1068,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
 
                     {/* Step 3: Payment / Insurance procedure selection */}
                     <div className="space-y-2">
-                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider block">
+                      <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
                         {isSwahili ? 'Utaratibu wa Malipo / Bima' : 'Payment / Insurance Procedure'}
                       </label>
                       <div className="grid grid-cols-2 gap-2">
@@ -1087,7 +1086,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                           }`}
                         >
                           <div className="flex items-center justify-between mb-1">
-                            <span className="font-black text-xs flex items-center gap-1.5">
+                            <span className="font-semibold text-xs flex items-center gap-1.5">
                               <Shield className="w-3.5 h-3.5 text-emerald-500" />
                               <span>{isSwahili ? 'Bima ya Afya' : 'Insurance'}</span>
                             </span>
@@ -1106,19 +1105,19 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                           className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
                             paymentMethod !== 'insurance'
                               ? isDark
-                                ? 'bg-cyan-950/60 border-cyan-500 text-cyan-300'
-                                : 'bg-cyan-50 border-cyan-600 text-cyan-950 shadow-xs'
+                                ? 'bg-primary/15 border-primary text-primary-light'
+                                : 'bg-primary/5 border-primary text-primary-dark shadow-xs'
                               : isDark
                               ? 'bg-slate-900 border-slate-700/80 text-slate-400 hover:border-slate-600'
                               : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
                           }`}
                         >
                           <div className="flex items-center justify-between mb-1">
-                            <span className="font-black text-xs flex items-center gap-1.5">
-                              <CreditCard className="w-3.5 h-3.5 text-cyan-500" />
+                            <span className="font-semibold text-xs flex items-center gap-1.5">
+                              <CreditCard className="w-3.5 h-3.5 text-primary" />
                               <span>{isSwahili ? 'Pesa / Simu' : 'Cash / Mobile'}</span>
                             </span>
-                            <span className="font-mono text-[10px] font-black text-cyan-500">
+                            <span className="font-mono text-[10px] font-semibold text-primary">
                               {selectedDoctor.consultationFeeTzs.toLocaleString()} TZS
                             </span>
                           </div>
@@ -1147,7 +1146,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                               </span>
                             </div>
                           </div>
-                          <span className="font-mono font-black text-xs text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded">
+                          <span className="font-mono font-semibold text-xs text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded">
                             0 TZS
                           </span>
                         </div>
@@ -1155,12 +1154,12 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                         <div
                           className={`p-2.5 rounded-xl border flex items-center justify-between gap-3 text-xs ${
                             isDark
-                              ? 'bg-blue-950/40 border-blue-800 text-blue-200'
-                              : 'bg-blue-50 border-blue-200 text-blue-900'
+                              ? 'bg-primary/40 border-primary-dark text-primary-light'
+                              : 'bg-primary/5 border-primary-light text-primary-dark'
                           }`}
                         >
                           <div className="flex items-center gap-2">
-                            <CreditCard className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                            <CreditCard className="w-4 h-4 text-primary-light flex-shrink-0" />
                             <div className="text-[11px]">
                               <span className="font-bold block">
                                 {isSwahili ? 'Malipo Dirishani au kwa Simu (M-Pesa / Tigo)' : 'Pay via Mobile Money or at Cashier'}
@@ -1170,7 +1169,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                               </span>
                             </div>
                           </div>
-                          <span className="font-mono font-black text-xs text-cyan-400 bg-cyan-950/80 px-2 py-0.5 rounded">
+                          <span className="font-mono font-semibold text-xs text-primary-light bg-primary/20 px-2 py-0.5 rounded">
                             {selectedDoctor.consultationFeeTzs.toLocaleString()} TZS
                           </span>
                         </div>
@@ -1189,7 +1188,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                         type="button"
                         onClick={handleCompleteBooking}
                         disabled={isBooking || !selectedSlot}
-                        className={`w-full py-3.5 px-4 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20 transition-all active:scale-98 ${
+                        className={`w-full py-3.5 px-4 rounded-2xl bg-primary hover:bg-primary-light text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary/20 transition-all active:scale-98 ${
                           isBooking || !selectedSlot ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'
                         }`}
                       >
@@ -1212,10 +1211,10 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
               {/* LIST OF AVAILABLE SPECIALISTS */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-400">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                     Madaktari Bingwa Waliopo ({filteredDoctors.length})
                   </h4>
-                  <span className="text-[11px] text-cyan-400 font-bold">
+                  <span className="text-[11px] text-primary-light font-bold">
                     Panga Miadi Haraka (1-Tap Book)
                   </span>
                 </div>
@@ -1256,8 +1255,8 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                         className={`p-3.5 rounded-2xl border transition-all flex flex-col justify-between ${
                           isSelected
                             ? isDark
-                              ? 'bg-[#12253D] border-cyan-400 shadow-md'
-                              : 'bg-blue-50/90 border-[#0A4275]'
+                              ? 'bg-[#12253D] border-primary-light shadow-md'
+                              : 'bg-primary/10 border-[var(--nc-primary)]'
                             : isDark
                             ? 'bg-[#0E1C2F] border-slate-800 hover:border-slate-700'
                             : 'bg-white border-slate-200 hover:border-slate-300 shadow-xs'
@@ -1267,7 +1266,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                           <div className="flex items-start justify-between gap-2 mb-2">
                             <div className="flex items-center gap-2.5">
                               <div
-                                className={`w-10 h-10 rounded-xl bg-gradient-to-br ${doc.avatarColor} text-white flex items-center justify-center font-black text-sm flex-shrink-0`}
+                                className={`w-10 h-10 rounded-xl bg-gradient-to-br ${doc.avatarColor} text-white flex items-center justify-center font-semibold text-sm flex-shrink-0`}
                               >
                                 {doctorInitial(doc.name)}
                               </div>
@@ -1275,7 +1274,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                                 <h5 className="font-bold text-xs text-slate-900 dark:text-white leading-tight">
                                   {doc.name}
                                 </h5>
-                                <p className="text-[11px] text-cyan-400 font-semibold">{doc.specialty}</p>
+                                <p className="text-[11px] text-primary-light font-semibold">{doc.specialty}</p>
                               </div>
                             </div>
                             <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
@@ -1312,10 +1311,10 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                           onClick={() => startBookingWithDoctor(doc)}
                           className={`w-full py-2 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-center gap-1 ${
                             isSelected
-                              ? 'bg-cyan-500 text-slate-950 font-black'
+                              ? 'bg-primary text-white font-semibold'
                               : isDark
                               ? 'bg-slate-800 hover:bg-slate-700 text-white'
-                              : 'bg-slate-100 hover:bg-[#0A4275] hover:text-white text-slate-800'
+                              : 'bg-slate-100 hover:bg-[var(--nc-primary)] hover:text-white text-slate-800'
                           }`}
                         >
                           <span>{isSelected ? 'Inachaguliwa Hapo Juu ↑' : 'Weka Miadi (Book Slot)'}</span>

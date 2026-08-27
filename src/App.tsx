@@ -6,7 +6,6 @@ import { TwoFactorSecurity } from './components/TwoFactorSecurity';
 import { HomeOtpVerification } from './components/HomeOtpVerification';
 import { PatientHomeDashboard } from './components/PatientHomeDashboard';
 import { TrustBar } from './components/TrustBar';
-import { OtpModal } from './components/OtpModal';
 import { BiometricModal } from './components/BiometricModal';
 import { PdpaConsentModal } from './components/PdpaConsentModal';
 import { SuccessPassportModal } from './components/SuccessPassportModal';
@@ -108,7 +107,6 @@ export default function App() {
   const [pdpaAccepted, setPdpaAccepted] = useState(false); // Explicit consent required before OTP send
 
   // Modals
-  const [isOtpOpen, setIsOtpOpen] = useState(false);
   const [biometricModal, setBiometricModal] = useState<{ isOpen: boolean; mode: 'fingerprint' | 'faceid' }>({
     isOpen: false,
     mode: 'fingerprint',
@@ -239,7 +237,6 @@ export default function App() {
       return { success: false, error: 'No account profile was found. Register first or ask an administrator to provision your account.' };
     }
 
-    setIsOtpOpen(false);
     setIsHomeOtpActive(false);
     setBiometricModal({ isOpen: false, mode: 'fingerprint' });
     setIsAuthenticated(true);
@@ -374,10 +371,20 @@ export default function App() {
     );
   }
 
-  const shellMaxWidth = isAuthenticated ? 'max-w-[1180px]' : 'max-w-[430px]';
+  const shellMaxWidth = isAuthenticated ? 'max-w-[1180px]' : 'max-w-[480px]';
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-start antialiased transition-colors duration-300 nc-bg nc-text app-canvas">
+    <div
+      className={`min-h-screen flex flex-col items-center justify-start antialiased transition-colors duration-300 nc-bg nc-text app-canvas${
+        isAuthenticated ? '' : ' pre-auth-shell'
+      }`}
+    >
+      {/* The register/verify flow is intentionally a centered, phone-width
+          card (same pattern as Stripe/Linear-style login) rather than the
+          full multi-column dashboard layout. On a wide desktop viewport
+          that narrow card needs a branded backdrop so it reads as a
+          deliberate centered-card pattern, not an accidental sliver of
+          content on a blank page. */}
       {/* A focused patient workspace on mobile, with a more natural clinical layout on larger screens. */}
       <main
         className={`w-full ${shellMaxWidth} mx-auto min-h-screen flex flex-col sm:my-4 sm:min-h-[calc(100vh-2rem)] sm:rounded-xl overflow-hidden relative border transition-all duration-300 ${
@@ -542,15 +549,6 @@ export default function App() {
       />
 
       {/* Modals & Overlays */}
-      <OtpModal
-        isOpen={isOtpOpen}
-        onClose={() => setIsOtpOpen(false)}
-        phone={activePhone}
-        onVerifySuccess={() => setIsOtpOpen(false)}
-        language={language}
-        theme={theme}
-      />
-
       <BiometricModal
         isOpen={biometricModal.isOpen}
         onClose={() => setBiometricModal({ ...biometricModal, isOpen: false })}
