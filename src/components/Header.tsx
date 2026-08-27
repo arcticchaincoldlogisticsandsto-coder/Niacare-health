@@ -2,6 +2,7 @@ import React from 'react';
 import { Settings, ShieldCheck } from 'lucide-react';
 import { Language, Theme } from '../types';
 import { TRANSLATIONS } from '../data/translations';
+import logoImage from '../assets/images/niacare_app_logo_1787113371659.jpg';
 
 interface HeaderProps {
   language: Language;
@@ -27,7 +28,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 relative flex items-center justify-center rounded-lg overflow-hidden border border-slate-200/80 dark:border-slate-700 bg-white">
             <img
-              src="/src/assets/images/niacare_app_logo_1787113371659.jpg"
+              src={logoImage}
               alt="NiaCare Logo"
               referrerPolicy="no-referrer"
               className="w-full h-full object-contain"
@@ -87,7 +88,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* NiaCare App Logo */}
           <div className="w-11 h-11 relative flex items-center justify-center rounded-xl overflow-hidden border border-slate-200/80 dark:border-slate-700 shadow-sm">
             <img
-              src="/src/assets/images/niacare_app_logo_1787113371659.jpg"
+              src={logoImage}
               alt="NiaCare Logo"
               referrerPolicy="no-referrer"
               className="w-full h-full object-contain"

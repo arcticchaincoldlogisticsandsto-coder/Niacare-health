@@ -989,7 +989,11 @@ as $$
 declare
   v_bill_id uuid;
 begin
-  v_bill_id := coalesce(new.bill_id, old.bill_id);
+  if TG_OP = 'DELETE' then
+    v_bill_id := old.bill_id;
+  else
+    v_bill_id := new.bill_id;
+  end if;
 
   update public.bills b
   set
@@ -1417,29 +1421,6 @@ drop trigger if exists audit_profile_role_change on public.profiles;
 create trigger audit_profile_role_change
   after update on public.profiles
   for each row execute function public.audit_role_change();
-
--- Generic append-only audit trigger for clinical/financial/emergency tables:
--- one row per insert/update, tagged with the acting user and a best-effort
--- patient_id (present as a real column on every table it's attached to).
-create or replace function public.audit_row_change()
-returns trigger
-language plpgsql
-security definer
-set search_path = public
-as $$
-begin
-  insert into public.audit_logs (actor_id, action, resource_type, resource_id, patient_id, metadata)
-  values (
-    auth.uid(),
-    upper(TG_TABLE_NAME) || '_' || TG_OP,
-    TG_TABLE_NAME,
-    new.id,
-    new.patient_id,
-    '{}'::jsonb
-  );
-  return new;
-end;
-$$;
 
 drop trigger if exists audit_encounters_insert on public.encounters;
 create trigger audit_encounters_insert

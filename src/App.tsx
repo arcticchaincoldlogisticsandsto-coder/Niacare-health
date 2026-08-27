@@ -391,12 +391,14 @@ export default function App() {
             after that (Login, Register, Verify OTP, Passkey Setup, and every
             authenticated dashboard) uses the compact single-row bar instead
             of repeating the hero on every step. */}
-        <Header
-          language={language}
-          theme={theme}
-          onOpenSettingsModal={() => setIsSettingsOpen(true)}
-          compact={isAuthenticated || hasEnteredAuthFlow}
-        />
+        {!isAuthenticated && (
+          <Header
+            language={language}
+            theme={theme}
+            onOpenSettingsModal={() => setIsSettingsOpen(true)}
+            compact={hasEnteredAuthFlow}
+          />
+        )}
 
         {/* Emergency Action: Red Bar for 1-Tap Ambulance Dispatch — a patient
             safety feature, not relevant to clinical/facility staff screens.
@@ -406,7 +408,7 @@ export default function App() {
             reference design treats emergency as one equal-weight button,
             not a dominant urgent banner) -- it reappears the moment they
             commit to Login/Register, and throughout the patient dashboard. */}
-        {(hasEnteredAuthFlow || isAuthenticated) && (!isAuthenticated || userRole === 'patient') && (
+        {!isAuthenticated && hasEnteredAuthFlow && (
           <EmergencyBar language={language} authUserId={authUserId} />
         )}
 
@@ -510,7 +512,7 @@ export default function App() {
         </div>
 
         {/* Bottom Trust & Compliance Bar */}
-        <TrustBar language={language} theme={theme} />
+        {!isAuthenticated && <TrustBar language={language} theme={theme} />}
       </main>
 
       {/* Settings & Profile Modal */}

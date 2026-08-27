@@ -406,6 +406,71 @@ button { -webkit-tap-highlight-color: transparent; }
   }
 }
 
+.patient-mobile-shell {
+  padding-bottom: 5.75rem;
+}
+
+.patient-mobile-shell > div {
+  box-shadow: 0 8px 24px rgba(36, 72, 112, 0.06) !important;
+}
+
+.patient-mobile-shell > div:first-child {
+  box-shadow: none !important;
+}
+
+.patient-mobile-shell #card-digital-health-passport {
+  border: 0 !important;
+  border-radius: 1.1rem !important;
+  min-height: 13.25rem;
+  box-shadow: 0 14px 30px rgba(0, 87, 184, 0.22) !important;
+}
+
+.patient-mobile-shell #card-digital-health-passport::after {
+  content: "";
+  position: absolute;
+  inset: auto -15% -45% 35%;
+  height: 11rem;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.12);
+  pointer-events: none;
+}
+
+.patient-mobile-shell #card-digital-health-passport > * {
+  position: relative;
+  z-index: 1;
+}
+
+.patient-mobile-shell [id^="hub-btn-"] {
+  min-height: 7.25rem;
+  border-radius: 1rem !important;
+  background: var(--nc-surface-elevated) !important;
+}
+
+.patient-mobile-shell [id^="hub-btn-"]:hover {
+  border-color: var(--nc-primary) !important;
+}
+
+.patient-mobile-shell [id^="hub-btn-"] > div:first-child {
+  border-radius: 0.9rem !important;
+  background: color-mix(in srgb, var(--nc-primary) 12%, white) !important;
+  color: var(--nc-primary) !important;
+}
+
+@media (min-width: 768px) {
+  .patient-mobile-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 0.82fr);
+    gap: 1rem;
+    align-items: start;
+  }
+
+  .patient-mobile-shell > div:first-child,
+  .patient-mobile-shell > div:nth-child(2),
+  .patient-mobile-shell > div:nth-child(3) {
+    grid-column: 1 / -1;
+  }
+}
+
 /* Pulse animation for emergency beacon */
 @keyframes emergencyPulse {
   0%, 100% {

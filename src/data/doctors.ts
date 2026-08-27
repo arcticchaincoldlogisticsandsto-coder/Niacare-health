@@ -359,39 +359,3 @@ export const TANZANIA_DOCTORS: Doctor[] = [
     bioSw: 'Bingwa wa magonjwa ya ngozi, mizio, chunusi sugu na kinga ya mionzi ya jua.',
   },
 ];
-
-const getDynamicUpcomingDate = (daysAhead: number = 2): string => {
-  const d = new Date();
-  d.setDate(d.getDate() + daysAhead);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
-
-export const INITIAL_APPOINTMENTS: Appointment[] = [
-  {
-    id: 'apt-001',
-    ticketNumber: 'NC-MNH-204',
-    doctorId: 'doc-1',
-    doctorName: 'Dr. Juma Ally Mwangi',
-    doctorSpecialty: 'Cardiology (Heart)',
-    hospitalName: 'Muhimbili National Hospital (MNH)',
-    hospitalLocation: 'Jakaya Kikwete Cardiac Institute (JKCI), Upanga',
-    roomNumber: 'Chumba Na. 204 (Ghorofa ya 2)',
-    consultationType: 'in_person',
-    date: getDynamicUpcomingDate(2),
-    timeSlot: '10:15 AM',
-    status: 'confirmed',
-    queueNumber: '#A-042',
-    reason: 'Uchunguzi wa Moyo & Shinikizo la Damu (Routine BP Check)',
-    symptomsNote: 'Kupima mapigo ya moyo na kuangalia kipimo cha ECG',
-    insuranceProvider: 'NHIF (Mfuko wa Taifa)',
-    insuranceCovered: true,
-    coPayAmountTzs: 0,
-    patientName: 'Amina Salum Bakari',
-    patientPhone: '+255 754 829 140',
-    createdAt: getDynamicUpcomingDate(-1),
-  },
-];
-
