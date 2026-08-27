@@ -3,7 +3,10 @@ import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import { ThemeProvider } from './components/ThemeProvider.tsx';
 import { ErrorBoundary } from './components/ErrorBoundary.tsx';
+import { registerServiceWorker } from './lib/pwa.ts';
 import './index.css';
+
+registerServiceWorker();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

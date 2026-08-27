@@ -24,6 +24,7 @@ import {
   FileDown,
   Bell,
   Settings,
+  Siren,
 } from 'lucide-react';
 import { UserCategory, Language, LocalFormData, InternationalFormData, Theme } from '../types';
 import { TRANSLATIONS } from '../data/translations';
