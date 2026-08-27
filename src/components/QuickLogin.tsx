@@ -17,7 +17,7 @@ import {
   Video,
 } from 'lucide-react';
 import { Language, OtpDeliveryChannel, Theme } from '../types';
-import familyImage from '../assets/images/login-family.jpg';
+import familyImage from '../assets/images/welcome-family.jpg';
 import logoImage from '../assets/images/niacare_app_logo_1787113371659.jpg';
 
 interface QuickLoginProps {
