@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Calendar, Clock, Users, Star, LogOut, RefreshCw, Video, Stethoscope, ClipboardPlus, Pill, FlaskConical, Plus } from 'lucide-react';
+import { Calendar, Clock, Users, Star, Video, Stethoscope, ClipboardPlus, Pill, FlaskConical, Plus, Activity, FileCheck2 } from 'lucide-react';
 import type { Language, Theme } from '../types';
 import { supabase } from '../lib/supabaseClient';
 import { EncounterModal } from './EncounterModal';
@@ -7,6 +7,7 @@ import { PatientDetailModal } from './PatientDetailModal';
 import { Avatar } from './Avatar';
 import { createLabOrder, fetchDoctorLabOrders, LabOrderRow } from '../lib/laboratory';
 import { fetchDoctorScheduleForDate, addScheduleSlot, removeScheduleSlot, ScheduleSlotRow } from '../lib/schedule';
+import { DashboardShell, StatCard, SegmentedTabs } from './DashboardShell';
 
 const STANDARD_SLOT_OPTIONS = ['09:00 AM', '10:00 AM', '11:00 AM', '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM'];
 
@@ -258,6 +259,57 @@ const DoctorLabsPanel: React.FC<{
   );
 };
 
+interface ActivityItem {
+  id: string;
+  type: 'prescription' | 'lab' | 'encounter';
+  title: string;
+  patientName: string;
+  timestamp: string;
+}
+
+const ACTIVITY_ICON: Record<ActivityItem['type'], React.ComponentType<{ className?: string }>> = {
+  prescription: Pill,
+  lab: FlaskConical,
+  encounter: FileCheck2,
+};
+
+const RecentActivityPanel: React.FC<{ isSw: boolean; items: ActivityItem[]; loading: boolean }> = ({ isSw, items, loading }) => (
+  <div className="nc-card p-4">
+    <div className="flex items-center gap-2 mb-3">
+      <Activity className="w-4 h-4 text-primary" />
+      <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+        {isSw ? 'Shughuli za Karibuni' : 'Recent Clinical Activity'}
+      </h3>
+    </div>
+    {loading ? (
+      <p className="text-xs text-slate-400 py-2">{isSw ? 'Inapakia…' : 'Loading…'}</p>
+    ) : items.length === 0 ? (
+      <p className="text-xs text-slate-500 dark:text-slate-400 py-2">
+        {isSw ? 'Hakuna shughuli za hivi karibuni.' : 'No recent activity yet — issued prescriptions, ordered labs, and completed visits will show up here.'}
+      </p>
+    ) : (
+      <div className="space-y-3">
+        {items.map((item) => {
+          const Icon = ACTIVITY_ICON[item.type];
+          return (
+            <div key={`${item.type}-${item.id}`} className="flex items-start gap-2.5 text-xs">
+              <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary dark:text-primary-light flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Icon className="w-3.5 h-3.5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-slate-900 dark:text-white truncate">{item.title}</p>
+                <p className="text-slate-500 dark:text-slate-400 truncate">
+                  {item.patientName} • {new Date(item.timestamp).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    )}
+  </div>
+);
+
 interface DoctorDashboardProps {
   language: Language;
   theme: Theme;
@@ -298,22 +350,82 @@ const todayIso = () => new Date().toISOString().slice(0, 10);
 export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, theme, authUserId, onLogout }) => {
   const isSw = language === 'sw';
   const [profile, setProfile] = useState<DoctorProfile | null>(null);
+  const [doctorName, setDoctorName] = useState<string>('');
   const [appointments, setAppointments] = useState<AppointmentRow[]>([]);
+  const [labOrders, setLabOrders] = useState<LabOrderRow[]>([]);
+  const [activityFeed, setActivityFeed] = useState<ActivityItem[]>([]);
+  const [activityLoading, setActivityLoading] = useState(true);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [encounterTarget, setEncounterTarget] = useState<AppointmentRow | null>(null);
   const [detailTarget, setDetailTarget] = useState<AppointmentRow | null>(null);
   const [queueTab, setQueueTab] = useState<'waiting' | 'completed'>('waiting');
-  const [section, setSection] = useState<'queue' | 'prescriptions' | 'labs' | 'calendar'>('queue');
+  const [section, setSection] = useState<'overview' | 'prescriptions' | 'labs' | 'calendar'>('overview');
+
+  const loadActivityFeed = async (doctorProfileId: string) => {
+    setActivityLoading(true);
+
+    const [{ data: rx }, { data: encounters }] = await Promise.all([
+      supabase
+        .from('prescriptions')
+        .select('id, patient_id, medication_name, created_at')
+        .eq('created_by', authUserId)
+        .order('created_at', { ascending: false })
+        .limit(5),
+      supabase
+        .from('encounters')
+        .select('id, patient_id, chief_complaint, ended_at')
+        .eq('doctor_profile_id', doctorProfileId)
+        .eq('status', 'completed')
+        .order('ended_at', { ascending: false })
+        .limit(5),
+    ]);
+
+    const rxRows = rx || [];
+    const encounterRows = encounters || [];
+    const patientIds = Array.from(
+      new Set([...rxRows.map((r) => r.patient_id), ...encounterRows.map((r) => r.patient_id)])
+    );
+    const names = new Map<string, string>();
+    if (patientIds.length > 0) {
+      const { data: profiles } = await supabase.from('profiles').select('id, full_name').in('id', patientIds);
+      for (const p of profiles || []) names.set(p.id, p.full_name);
+    }
+
+    const items: ActivityItem[] = [
+      ...rxRows.map((r) => ({
+        id: r.id,
+        type: 'prescription' as const,
+        title: isSw ? `Dawa iliyoandikwa: ${r.medication_name}` : `Prescribed ${r.medication_name}`,
+        patientName: names.get(r.patient_id) || 'Patient',
+        timestamp: r.created_at,
+      })),
+      ...encounterRows
+        .filter((e) => e.ended_at)
+        .map((e) => ({
+          id: e.id,
+          type: 'encounter' as const,
+          title: isSw ? `Mkutano ulikamilika: ${e.chief_complaint || 'Ziara'}` : `Completed visit: ${e.chief_complaint || 'Consultation'}`,
+          patientName: names.get(e.patient_id) || 'Patient',
+          timestamp: e.ended_at as string,
+        })),
+    ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+    setActivityFeed(items.slice(0, 6));
+    setActivityLoading(false);
+  };
 
   const load = async () => {
     if (!authUserId) return;
     setLoading(true); setError('');
-    const { data: doctorProfile, error: profileError } = await supabase
-      .from('doctor_profiles')
-      .select('id, provider_id, specialty, sub_specialty, rating, reviews_count, is_verified')
-      .eq('user_id', authUserId)
-      .maybeSingle();
+    const [{ data: doctorProfile, error: profileError }, { data: ownProfile }] = await Promise.all([
+      supabase
+        .from('doctor_profiles')
+        .select('id, provider_id, specialty, sub_specialty, rating, reviews_count, is_verified')
+        .eq('user_id', authUserId)
+        .maybeSingle(),
+      supabase.from('profiles').select('full_name').eq('id', authUserId).maybeSingle(),
+    ]);
 
     if (profileError) {
       setError(profileError.message);
@@ -321,17 +433,23 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
       return;
     }
     setProfile(doctorProfile as DoctorProfile | null);
+    setDoctorName(ownProfile?.full_name || '');
 
     if (doctorProfile) {
-      const { data: appts, error: apptError } = await supabase
-        .from('appointments')
-        .select('id, patient_id, patient_name, appointment_date, time_slot, status, consultation_type, reason')
-        .eq('doctor_profile_id', doctorProfile.id)
-        .order('appointment_date', { ascending: true })
-        .order('time_slot', { ascending: true })
-        .limit(200);
+      const [{ data: appts, error: apptError }, { orders: fetchedLabOrders }] = await Promise.all([
+        supabase
+          .from('appointments')
+          .select('id, patient_id, patient_name, appointment_date, time_slot, status, consultation_type, reason')
+          .eq('doctor_profile_id', doctorProfile.id)
+          .order('appointment_date', { ascending: true })
+          .order('time_slot', { ascending: true })
+          .limit(200),
+        fetchDoctorLabOrders(doctorProfile.id),
+      ]);
       if (apptError) setError(apptError.message);
       else setAppointments((appts || []) as AppointmentRow[]);
+      setLabOrders(fetchedLabOrders);
+      loadActivityFeed(doctorProfile.id);
     }
     setLoading(false);
   };
@@ -340,18 +458,20 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
 
   const today = todayIso();
   const todaysPatients = useMemo(() => appointments.filter((a) => a.appointment_date === today && a.status !== 'cancelled'), [appointments, today]);
-  const upcomingVisits = useMemo(() => appointments.filter((a) => a.appointment_date > today && a.status === 'confirmed'), [appointments, today]);
   const inQueue = useMemo(() => appointments.filter((a) => a.status === 'in_queue'), [appointments]);
+  const pendingLabs = useMemo(() => labOrders.filter((o) => o.status !== 'completed' && o.status !== 'cancelled'), [labOrders]);
   const patientOptions = useMemo(() => {
     const seen = new Map<string, string>();
     for (const a of appointments) if (!seen.has(a.patient_id)) seen.set(a.patient_id, a.patient_name || 'Patient');
     return Array.from(seen, ([id, name]) => ({ id, name }));
   }, [appointments]);
 
+  const displayName = doctorName ? (doctorName.trim().toLowerCase().startsWith('dr') ? doctorName : `Dr. ${doctorName}`) : '';
+
   const statCards = [
     { label: isSw ? 'Wagonjwa wa Leo' : "Today's Patients", value: todaysPatients.length, Icon: Users, colour: 'text-primary dark:text-primary-light' },
-    { label: isSw ? 'Ziara Zilizobaki' : 'Upcoming Visits', value: upcomingVisits.length, Icon: Calendar, colour: 'text-emerald-600 dark:text-emerald-400' },
     { label: isSw ? 'Wanaosubiri' : 'In Queue', value: inQueue.length, Icon: Clock, colour: 'text-amber-600 dark:text-amber-400' },
+    { label: isSw ? 'Vipimo Vinavyosubiri' : 'Pending Labs', value: pendingLabs.length, Icon: FlaskConical, colour: 'text-rose-600 dark:text-rose-400' },
     {
       label: isSw ? 'Ukadiriaji' : 'Rating',
       value: profile ? `${profile.rating.toFixed(1)}` : '—',
@@ -362,30 +482,17 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
   ];
 
   return (
-    <div className="pt-2 pb-6">
-      <div className="flex items-center justify-between mb-5">
-        <div>
-          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">{isSw ? 'Daktari' : 'Doctor Portal'}</p>
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-            {profile ? profile.specialty : isSw ? 'Jukwaa la Daktari' : 'Doctor Dashboard'}
-          </h2>
-          {profile?.sub_specialty && <p className="text-[11px] text-slate-500 dark:text-slate-400">{profile.sub_specialty}</p>}
-        </div>
-        <div className="flex gap-2">
-          <button type="button" onClick={load} className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" title="Refresh">
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          </button>
-          <button
-            type="button"
-            onClick={onLogout}
-            className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-            title={isSw ? 'Toka' : 'Logout'}
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
+    <DashboardShell
+      role="doctor"
+      roleLabel={isSw ? 'Daktari' : 'Doctor Portal'}
+      title={displayName || (profile ? profile.specialty : isSw ? 'Jukwaa la Daktari' : 'Doctor Dashboard')}
+      subtitle={profile ? [profile.specialty, profile.sub_specialty].filter(Boolean).join(' • ') : undefined}
+      language={language}
+      theme={theme}
+      onLogout={onLogout}
+      onRefresh={load}
+      loading={loading}
+    >
       {error && <p className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-700">{error}</p>}
 
       {!loading && !profile && !error && (
@@ -398,40 +505,24 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3 mb-5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
         {statCards.map(({ label, value, sub, Icon, colour }) => (
-          <div key={label} className="nc-card p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Icon className={`w-4 h-4 ${colour}`} />
-              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{label}</span>
-            </div>
-            <p className="text-2xl font-semibold text-slate-900 dark:text-white">{loading ? '—' : value}</p>
-            {sub && <p className="text-[10px] text-slate-400 mt-0.5">{sub}</p>}
-          </div>
+          <StatCard key={label} label={label} value={value} sub={sub} Icon={Icon} colorClass={colour} loading={loading} />
         ))}
       </div>
 
-      <div className="mb-4 flex gap-1.5">
-        {([
-          { key: 'queue', label: isSw ? 'Foleni' : 'Queue', Icon: Stethoscope },
+      <SegmentedTabs
+        tabs={[
+          { key: 'overview', label: isSw ? 'Muhtasari' : 'Overview', Icon: Stethoscope },
           { key: 'prescriptions', label: isSw ? 'Dawa' : 'Prescriptions', Icon: Pill },
           { key: 'labs', label: isSw ? 'Maabara' : 'Labs', Icon: FlaskConical },
           { key: 'calendar', label: isSw ? 'Ratiba' : 'Calendar', Icon: Calendar },
-        ] as const).map(({ key, label, Icon }) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => setSection(key)}
-            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
-              section === key
-                ? 'bg-[var(--nc-primary)] text-white dark:bg-primary dark:text-[#041D34]'
-                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            <Icon className="w-3.5 h-3.5" /> {label}
-          </button>
-        ))}
-      </div>
+        ]}
+        active={section}
+        onChange={(key) => setSection(key as typeof section)}
+      />
+
+      <div className="mt-4">
 
       {section === 'prescriptions' && authUserId && (
         <DoctorPrescriptionsPanel isSw={isSw} doctorAuthUserId={authUserId} />
@@ -445,12 +536,13 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
         <DoctorCalendarPanel isSw={isSw} doctorProfileId={profile.id} />
       )}
 
-      {section === 'queue' && (
+      {section === 'overview' && (
+      <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-4 items-start">
       <div className="nc-card p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <Stethoscope className="w-4 h-4 text-rose-500" />
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white">{isSw ? 'Foleni ya Leo' : "Today's Queue"}</h3>
+            <Stethoscope className="w-4 h-4 text-primary" />
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">{isSw ? "Ratiba ya Leo" : "Today's Timeline"}</h3>
           </div>
           <div className="flex gap-1">
             {(['waiting', 'completed'] as const).map((key) => (
@@ -528,7 +620,11 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
           );
         })()}
       </div>
+      <RecentActivityPanel isSw={isSw} items={activityFeed} loading={activityLoading} />
+      </div>
       )}
+
+      </div>
 
       {authUserId && (
         <p className="mt-5 text-[10px] text-center text-slate-400 dark:text-slate-600 font-mono">ID: {authUserId.slice(0, 12)}…</p>
@@ -564,6 +660,6 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
           onCompleted={load}
         />
       )}
-    </div>
+    </DashboardShell>
   );
 };
