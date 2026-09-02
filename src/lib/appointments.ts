@@ -4,6 +4,7 @@ import { Appointment } from '../data/doctors';
 interface AppointmentRow {
   id: string;
   patient_id: string;
+  provider_id: string | null;
   ticket_number: string;
   doctor_id: string;
   doctor_name: string;
@@ -16,6 +17,13 @@ interface AppointmentRow {
   time_slot: string;
   status: Appointment['status'];
   queue_number: string | null;
+  doctor_profile_id: string | null;
+  arrival_confirmed_at: string | null;
+  patient_arrived_at: string | null;
+  called_at: string | null;
+  consultation_started_at: string | null;
+  completed_at: string | null;
+  no_show_reason: string | null;
   reason: string | null;
   symptoms_note: string | null;
   insurance_provider: string | null;
@@ -28,6 +36,7 @@ interface AppointmentRow {
 
 const mapRowToAppointment = (row: AppointmentRow): Appointment => ({
   id: row.id,
+  providerId: row.provider_id,
   ticketNumber: row.ticket_number,
   doctorId: row.doctor_id,
   doctorName: row.doctor_name,
@@ -40,6 +49,13 @@ const mapRowToAppointment = (row: AppointmentRow): Appointment => ({
   timeSlot: row.time_slot,
   status: row.status,
   queueNumber: row.queue_number || undefined,
+  doctorProfileId: row.doctor_profile_id,
+  arrivalConfirmedAt: row.arrival_confirmed_at,
+  patientArrivedAt: row.patient_arrived_at,
+  calledAt: row.called_at,
+  consultationStartedAt: row.consultation_started_at,
+  completedAt: row.completed_at,
+  noShowReason: row.no_show_reason,
   reason: row.reason || '',
   symptomsNote: row.symptoms_note || undefined,
   insuranceProvider: row.insurance_provider || '',
@@ -68,7 +84,7 @@ export const insertAppointment = async (
   appointment: Omit<Appointment, 'id'>,
   providerId?: string | null,
   doctorProfileId?: string | null
-): Promise<{ appointment?: Appointment; error?: string }> => {
+): Promise<{ appointment?: Appointment; error?: string; errorCode?: string }> => {
   // Booking goes through a single-transaction RPC (not a raw table insert)
   // so a real doctor's schedule slot is reserved atomically — two patients
   // racing for the same slot can't both win it. See public.book_appointment
@@ -97,7 +113,7 @@ export const insertAppointment = async (
     p_doctor_profile_id: doctorProfileId || null,
   });
 
-  if (error) return { error: error.message };
+  if (error) return { error: error.message, errorCode: error.code };
   return { appointment: mapRowToAppointment(data as AppointmentRow) };
 };
 

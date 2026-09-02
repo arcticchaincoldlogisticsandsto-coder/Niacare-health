@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { startConsultation, completeAppointmentVisit } from './queue';
 
 export interface VitalsInput {
   temperatureC?: number;
@@ -47,6 +48,14 @@ export const startEncounter = async (
     .single();
 
   if (error) return { error: error.message };
+
+  // Keeps appointments.status (what reception/patient views read) in sync
+  // with this real clinical encounter — best-effort: a failure here doesn't
+  // block the encounter itself, since the appointment may already be past
+  // the queue stage (e.g. telehealth with no reception check-in) where the
+  // status transition legitimately doesn't apply.
+  if (appointmentId) await startConsultation(appointmentId).catch(() => undefined);
+
   return { encounter: data as EncounterRow };
 };
 
@@ -76,7 +85,9 @@ export const saveDiagnosis = async (
   doctorProfileId: string,
   diagnosis: string,
   diagnosisType: 'primary' | 'secondary' | 'differential',
-  notes: string
+  notes: string,
+  bodyRegion?: string,
+  bodySide?: 'left' | 'right' | 'bilateral' | 'midline'
 ): Promise<{ success: boolean; error?: string }> => {
   const { error } = await supabase.from('diagnoses').insert({
     encounter_id: encounterId,
@@ -85,6 +96,8 @@ export const saveDiagnosis = async (
     diagnosis,
     diagnosis_type: diagnosisType,
     notes,
+    body_region: bodyRegion || null,
+    body_side: bodySide || null,
   });
   if (error) return { success: false, error: error.message };
   return { success: true };
@@ -93,7 +106,8 @@ export const saveDiagnosis = async (
 export const completeEncounter = async (
   encounterId: string,
   clinicalNotes: string,
-  followUpNote: string
+  followUpNote: string,
+  appointmentId?: string | null
 ): Promise<{ success: boolean; error?: string }> => {
   const { error } = await supabase
     .from('encounters')
@@ -105,5 +119,9 @@ export const completeEncounter = async (
     })
     .eq('id', encounterId);
   if (error) return { success: false, error: error.message };
+
+  // Keeps appointments.status in sync — see startEncounter's same note.
+  if (appointmentId) await completeAppointmentVisit(appointmentId).catch(() => undefined);
+
   return { success: true };
 };

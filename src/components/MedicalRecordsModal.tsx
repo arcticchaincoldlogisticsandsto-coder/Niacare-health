@@ -35,6 +35,7 @@ import {
 import { MedicalRecord, PersonalFileItem } from '../data/medicalRecords';
 import { Language, Theme } from '../types';
 import { generateMedicalRecordPdf, generateCompiledMedicalPassportPdf } from '../utils/pdfGenerator';
+import { LoadingSkeleton } from './LoadingSkeleton';
 import {
   fetchMedicalRecords,
   fetchPersonalFiles,
@@ -67,6 +68,7 @@ interface MedicalRecordsModalProps {
   patientDocNumber?: string;
   initialTab?: 'records' | 'personal_files';
   authUserId: string | null;
+  onOpenImaging?: () => void;
 }
 
 export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
@@ -84,6 +86,7 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
   patientDocNumber = '19950412111020000421',
   initialTab = 'records',
   authUserId,
+  onOpenImaging,
 }) => {
   const isDark = theme === 'dark';
   const isSwahili = language === 'sw';
@@ -99,12 +102,15 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
 
   // Personal Files State — loaded from Supabase per patient
   const [personalFiles, setPersonalFiles] = useState<PersonalFileItem[]>([]);
+  const [recordsLoading, setRecordsLoading] = useState(true);
 
   useEffect(() => {
-    if (!isOpen || !authUserId) return;
+    if (!isOpen) return;
+    if (!authUserId) { setRecordsLoading(false); return; }
     let active = true;
+    setRecordsLoading(true);
     fetchMedicalRecords(authUserId).then(({ records: fetched }) => {
-      if (active) setRecords(fetched);
+      if (active) { setRecords(fetched); setRecordsLoading(false); }
     });
     fetchPersonalFiles(authUserId).then(({ files }) => {
       if (active) setPersonalFiles(files);
@@ -507,6 +513,19 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            {onOpenImaging && (
+              <button
+                type="button"
+                onClick={onOpenImaging}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer shadow-xs ${
+                  isDark
+                    ? 'bg-primary/10 border-primary/30 text-primary-light hover:bg-primary/15'
+                    : 'bg-primary/5 border-primary/20 text-primary hover:bg-primary/10'
+                }`}
+              >
+                {isSwahili ? 'Radiolojia' : 'Imaging'}
+              </button>
+            )}
             <button
               type="button"
               onClick={handleExportCompletePassport}
@@ -672,7 +691,9 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
 
             {/* Records List (Scrollable Area) */}
             <div className="flex-1 overflow-y-auto pr-1 space-y-3 min-h-0">
-              {filteredRecords.length === 0 ? (
+              {recordsLoading ? (
+                <LoadingSkeleton rows={4} />
+              ) : filteredRecords.length === 0 ? (
                 <div className="text-center py-12 space-y-2">
                   <FileText className="w-10 h-10 text-slate-400 mx-auto opacity-50" />
                   <p className="text-xs font-bold text-slate-500">

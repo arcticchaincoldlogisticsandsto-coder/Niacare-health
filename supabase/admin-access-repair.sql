@@ -1,6 +1,10 @@
 -- NiaCare: repair an older database and grant one existing account admin access.
--- Run this in Supabase SQL Editor. It is safe to run before choosing an admin.
--- Then run the separate promotion query at the end using a real user UUID.
+-- One-paste script for the Supabase SQL Editor.
+--
+-- BEFORE RUNNING: edit the email on the line marked below to the account
+-- you want promoted to admin. That account must already exist (signed up
+-- through the app, or created under Authentication -> Users) — this script
+-- does not create a new login, only promotes an existing public.profiles row.
 
 alter table public.profiles
   add column if not exists role text not null default 'patient'
@@ -49,15 +53,19 @@ begin
 end $$;
 
 -- --------------------------------------------------------------------------
--- PROMOTE YOUR ACCOUNT (run these two queries separately after the script).
--- 1. Copy your UUID from the result of this query:
---    select id, email, created_at from auth.users order by created_at desc;
---
--- 2. Replace ONLY the UUID below, keeping its quotes and ::uuid cast:
---    update public.profiles
---    set role = 'admin', status = 'active'
---    where id = '00000000-0000-0000-0000-000000000000'::uuid;
---
--- 3. Verify:
---    select id, full_name, role, status from public.profiles
---    where id = 'YOUR-REAL-UUID-HERE'::uuid;
+-- PROMOTE YOUR ACCOUNT
+-- --------------------------------------------------------------------------
+update public.profiles
+set role = 'admin', status = 'active'
+where id = (
+  select id from auth.users
+  where lower(email) = lower('niacare46@gmail.com')
+);
+
+-- Verify: should return exactly one row, role = 'admin', status = 'active'.
+-- If it returns zero rows, niacare46@gmail.com didn't match any auth.users
+-- account, or that account has no public.profiles row yet (sign up through
+-- the app first, then re-run just this UPDATE).
+select id, full_name, email, role, status
+from public.profiles
+where lower(email) = lower('niacare46@gmail.com');

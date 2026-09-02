@@ -17,6 +17,7 @@ interface DashboardShellProps {
   children: React.ReactNode;
   actions?: React.ReactNode;
   footer?: React.ReactNode;
+  notificationBell?: React.ReactNode;
 }
 
 const greetingFor = (hour: number, language: Language): string => {
@@ -39,6 +40,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
   children,
   actions,
   footer,
+  notificationBell,
 }) => {
   const isDark = theme === 'dark';
   const greeting = greetingFor(new Date().getHours(), language);
@@ -67,6 +69,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
           </div>
 
           <div className="flex items-center gap-1.5 flex-shrink-0">
+            {notificationBell}
             {onRefresh && (
               <button
                 type="button"

@@ -12,7 +12,8 @@ export const logAuditEvent = async (
   resourceType: string,
   resourceId?: string,
   patientId?: string,
-  metadata: Record<string, unknown> = {}
+  metadata: Record<string, unknown> = {},
+  facilityId?: string
 ): Promise<void> => {
   try {
     await supabase.rpc('log_audit_event', {
@@ -21,6 +22,7 @@ export const logAuditEvent = async (
       p_resource_id: resourceId || null,
       p_patient_id: patientId || null,
       p_metadata: metadata,
+      p_facility_id: facilityId || null,
     });
   } catch {
     // Best-effort — never let audit logging break the primary action.

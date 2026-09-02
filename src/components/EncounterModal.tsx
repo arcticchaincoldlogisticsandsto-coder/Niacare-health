@@ -4,6 +4,7 @@ import type { Language, Theme } from '../types';
 import { startEncounter, saveVitals, saveDiagnosis, completeEncounter, VitalsInput } from '../lib/encounters';
 import { insertPrescription } from '../lib/prescriptions';
 import { logAuditEvent } from '../lib/audit';
+import { BODY_REGIONS } from '../data/bodyRegions';
 
 interface EncounterModalProps {
   isOpen: boolean;
@@ -52,6 +53,8 @@ export const EncounterModal: React.FC<EncounterModalProps> = ({
   const [diagnosisNotes, setDiagnosisNotes] = useState('');
   const [diagnosisSaved, setDiagnosisSaved] = useState(false);
   const [savingDiagnosis, setSavingDiagnosis] = useState(false);
+  const [bodyRegion, setBodyRegion] = useState('');
+  const [bodySide, setBodySide] = useState<'left' | 'right' | 'bilateral' | 'midline' | ''>('');
 
   const [draftMed, setDraftMed] = useState({ medicationName: '', dosageInstructions: '' });
   const [prescriptionsAdded, setPrescriptionsAdded] = useState<DraftPrescription[]>([]);
@@ -81,6 +84,8 @@ export const EncounterModal: React.FC<EncounterModalProps> = ({
     setDiagnosis('');
     setDiagnosisNotes('');
     setDiagnosisSaved(false);
+    setBodyRegion('');
+    setBodySide('');
     setDraftMed({ medicationName: '', dosageInstructions: '' });
     setPrescriptionsAdded([]);
     setClinicalNotes('');
@@ -112,7 +117,9 @@ export const EncounterModal: React.FC<EncounterModalProps> = ({
       doctorProfileId,
       diagnosis.trim(),
       diagnosisType,
-      diagnosisNotes
+      diagnosisNotes,
+      bodyRegion || undefined,
+      (bodySide || undefined) as 'left' | 'right' | 'bilateral' | 'midline' | undefined
     );
     setSavingDiagnosis(false);
     if (success) setDiagnosisSaved(true);
@@ -141,7 +148,7 @@ export const EncounterModal: React.FC<EncounterModalProps> = ({
   const handleComplete = async () => {
     if (!encounterId) return;
     setCompleting(true);
-    const { success, error: err } = await completeEncounter(encounterId, clinicalNotes, followUpNote);
+    const { success, error: err } = await completeEncounter(encounterId, clinicalNotes, followUpNote, appointmentId);
     setCompleting(false);
     if (!success) {
       setError(err || 'Could not complete the encounter.');
@@ -279,6 +286,31 @@ export const EncounterModal: React.FC<EncounterModalProps> = ({
                     placeholder={isSw ? 'Maelezo ya ziada...' : 'Notes...'}
                     className={`w-full p-2 rounded-lg border outline-none mb-2 ${isDark ? 'bg-slate-950 border-slate-700 text-white' : 'bg-white border-slate-300'}`}
                   />
+                  <div className="flex gap-2 mb-2">
+                    <select
+                      value={bodyRegion}
+                      onChange={(e) => setBodyRegion(e.target.value)}
+                      className={`flex-1 p-2 rounded-lg border outline-none text-[11px] ${isDark ? 'bg-slate-950 border-slate-700 text-white' : 'bg-white border-slate-300'}`}
+                      title={isSw ? 'Sehemu ya Mwili (hiari, kwa ramani ya mwili)' : 'Body region (optional, for the body map)'}
+                    >
+                      <option value="">{isSw ? 'Sehemu ya Mwili (hiari)' : 'Body region (optional)'}</option>
+                      {BODY_REGIONS.map((r) => (
+                        <option key={r.key} value={r.key}>{isSw ? r.sw : r.en}</option>
+                      ))}
+                    </select>
+                    {bodyRegion && BODY_REGIONS.find((r) => r.key === bodyRegion)?.sideAware && (
+                      <select
+                        value={bodySide}
+                        onChange={(e) => setBodySide(e.target.value as typeof bodySide)}
+                        className={`p-2 rounded-lg border outline-none text-[11px] font-bold ${isDark ? 'bg-slate-950 border-slate-700 text-white' : 'bg-white border-slate-300'}`}
+                      >
+                        <option value="">{isSw ? 'Upande' : 'Side'}</option>
+                        <option value="left">{isSw ? 'Kushoto' : 'Left'}</option>
+                        <option value="right">{isSw ? 'Kulia' : 'Right'}</option>
+                        <option value="bilateral">{isSw ? 'Pande Zote' : 'Bilateral'}</option>
+                      </select>
+                    )}
+                  </div>
                   <button
                     type="button"
                     onClick={handleSaveDiagnosis}

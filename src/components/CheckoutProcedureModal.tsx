@@ -94,7 +94,8 @@ export const CheckoutProcedureModal: React.FC<CheckoutProcedureModalProps> = ({
   const [selectedBillId, setSelectedBillId] = useState<string>('');
 
   useEffect(() => {
-    if (!isOpen || !authUserId) return;
+    if (!isOpen) return;
+    if (!authUserId) { setIsLoadingBills(false); return; }
     let active = true;
     setIsLoadingBills(true);
     fetchBills(authUserId).then(({ bills: fetched }) => {

@@ -8,6 +8,8 @@ import { PatientHomeDashboard } from './components/PatientHomeDashboard';
 import { TrustBar } from './components/TrustBar';
 import { BiometricModal } from './components/BiometricModal';
 import { PdpaConsentModal } from './components/PdpaConsentModal';
+import { RecordAccessModal } from './components/RecordAccessModal';
+import { NetworkStatusBanner } from './components/NetworkStatusBanner';
 import { SuccessPassportModal } from './components/SuccessPassportModal';
 import { RegistrationModal } from './components/RegistrationModal';
 import { LanguageSelectorModal } from './components/LanguageSelectorModal';
@@ -112,6 +114,7 @@ export default function App() {
     mode: 'fingerprint',
   });
   const [isPdpaModalOpen, setIsPdpaModalOpen] = useState(false);
+  const [isRecordAccessOpen, setIsRecordAccessOpen] = useState(false);
   const [isSuccessPassportOpen, setIsSuccessPassportOpen] = useState(false);
   const [isRegistrationChoiceOpen, setIsRegistrationChoiceOpen] = useState(false);
 
@@ -379,6 +382,7 @@ export default function App() {
         isAuthenticated ? '' : ' pre-auth-shell'
       }`}
     >
+      <NetworkStatusBanner language={language} />
       {/* The register/verify flow is intentionally a centered, phone-width
           card (same pattern as Stripe/Linear-style login) rather than the
           full multi-column dashboard layout. On a wide desktop viewport
@@ -427,7 +431,7 @@ export default function App() {
               {userRole === 'doctor' ? (
                 <DoctorDashboard language={language} theme={theme} authUserId={authUserId} onLogout={handleLogout} />
               ) : userRole === 'provider_staff' ? (
-                <ProviderDashboard language={language} authUserId={authUserId} onLogout={handleLogout} />
+                <ProviderDashboard language={language} theme={theme} authUserId={authUserId} onLogout={handleLogout} />
               ) : (
                 <PatientHomeDashboard
                   userCategory={userCategory}
@@ -532,6 +536,7 @@ export default function App() {
         onToggleTheme={handleToggleTheme}
         onTriggerBiometric={handleTriggerBiometric}
         onOpenPdpaModal={() => setIsPdpaModalOpen(true)}
+        onOpenRecordAccessModal={() => setIsRecordAccessOpen(true)}
         onOpenLanguageModal={() => setIsLanguageModalOpen(true)}
         userCategory={userCategory}
         localData={localData}
@@ -564,6 +569,14 @@ export default function App() {
         onClose={() => setIsPdpaModalOpen(false)}
         onAccept={() => setPdpaAccepted(true)}
         language={language}
+      />
+
+      <RecordAccessModal
+        isOpen={isRecordAccessOpen}
+        onClose={() => setIsRecordAccessOpen(false)}
+        authUserId={authUserId}
+        language={language}
+        theme={theme}
       />
 
       <SuccessPassportModal

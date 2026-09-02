@@ -7,6 +7,9 @@ export interface Doctor {
   hospital: string;
   hospitalLocation: string;
   region: string;
+  /** providers.lat/lng — only set for a real, platform-registered facility with coordinates on file. Powers "Directions" in the Doctor Profile via the existing routing lib, never a fabricated location. */
+  facilityLat?: number;
+  facilityLng?: number;
   rating: number;
   reviewsCount: number;
   experienceYears: number;
@@ -27,7 +30,36 @@ export interface Doctor {
   bioSw: string;
   /** Present only for real, platform-registered doctors (see src/lib/realDoctors.ts) — the facility to book/bill against via public.book_appointment(). */
   providerId?: string;
+  /** doctor_profiles.is_verified — only ever true once an admin has actually verified this doctor (see AdminDashboard's Verify action). */
+  isVerified?: boolean;
 }
+
+/**
+ * What the patient picked in the Doctor Profile before handing off to the
+ * booking modal — carries the real IDs/types already used elsewhere
+ * (Doctor.id, Doctor.providerId, doctor_schedule.time_slot strings,
+ * Appointment.consultationType) rather than inventing new ones.
+ */
+export interface SelectedBookingSlot {
+  doctorId: string;
+  facilityId?: string;
+  date: string;
+  startTime: string;
+  visitType?: Appointment['consultationType'];
+}
+
+/**
+ * How a caller hands off "open the Doctor Profile for this doctor" without
+ * every caller needing to already have the full Doctor object loaded.
+ * `doctor` — already-fetched object (doctor-browse lists). `doctorId` —
+ * doctor_profiles.id (appointments, health journey). `doctorUserId` —
+ * doctor_profiles.user_id (a conversation's other-party id in messaging,
+ * which never carries doctor_profiles.id directly).
+ */
+export type DoctorProfileTarget =
+  | { doctor: Doctor }
+  | { doctorId: string }
+  | { doctorUserId: string };
 
 export interface Appointment {
   id: string;
@@ -41,8 +73,17 @@ export interface Appointment {
   consultationType: 'in_person' | 'telehealth' | 'home_visit';
   date: string;
   timeSlot: string;
-  status: 'confirmed' | 'in_queue' | 'completed' | 'cancelled';
+  status: 'confirmed' | 'arrived' | 'in_queue' | 'called' | 'in_consultation' | 'completed' | 'cancelled' | 'no_show';
   queueNumber?: string;
+  providerId?: string | null;
+  doctorProfileId?: string | null;
+  /** Set once reception confirms arrival (check_in_appointment) — the real "check-in time" reception/patient UIs show. */
+  arrivalConfirmedAt?: string | null;
+  patientArrivedAt?: string | null;
+  calledAt?: string | null;
+  consultationStartedAt?: string | null;
+  completedAt?: string | null;
+  noShowReason?: string | null;
   reason: string;
   symptomsNote?: string;
   insuranceProvider: string;

@@ -23,7 +23,8 @@ export const LaboratoryModal: React.FC<LaboratoryModalProps> = ({ isOpen, onClos
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!isOpen || !patientId) return;
+    if (!isOpen) return;
+    if (!patientId) { setLoading(false); return; }
     setLoading(true);
     fetchPatientLabOrders(patientId).then(({ orders: fetched, error: err }) => {
       if (err) setError(err); else setOrders(fetched);

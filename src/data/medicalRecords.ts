@@ -26,6 +26,9 @@ export interface MedicalRecord {
     validity?: string;
   };
   pdfFileName: string;
+  /** Optional body-map tagging — same non-diagnostic, documentation-only purpose as diagnoses.bodyRegion. */
+  bodyRegion?: string;
+  bodySide?: 'left' | 'right' | 'bilateral' | 'midline';
 }
 
 export interface PersonalFileItem {

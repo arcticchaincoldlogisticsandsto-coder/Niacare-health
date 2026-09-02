@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   Users, Building2, CalendarDays, LogOut, RefreshCw, Search, Moon, Sun, ShieldCheck, UserPlus,
   CreditCard, Siren, ClipboardList, LayoutDashboard, DollarSign, Stethoscope,
-  Plus, Save, X, Edit3, MapPin, Phone, Mail, UserCog,
+  Plus, Save, X, Edit3, MapPin, Phone, Mail, UserCog, BadgeCheck,
 } from 'lucide-react';
 import type { Language, Theme, UserRole, UserStatus } from '../types';
 import { supabase } from '../lib/supabaseClient';
@@ -14,7 +14,10 @@ import {
   fetchBills, BillRow,
   fetchDispatches, setDispatchStatus, DispatchRow, DISPATCH_STATUSES,
   fetchAuditLogs, AuditLogRow,
+  setDoctorVerified, setDoctorActive, updateDoctorProfile, DoctorProfileEditInput,
+  updateStaffRole, setStaffActive,
 } from '../lib/admin';
+import { fetchDepartments, fetchServices, DepartmentRow, ServiceRow } from '../lib/facilityOps';
 
 interface AdminDashboardProps {
   language: Language;
@@ -34,7 +37,17 @@ interface Profile {
   created_at: string;
 }
 
-interface Metrics { providers: number; appointments: number; dispatches: number; }
+interface Metrics {
+  providers: number;
+  activeProviders: number;
+  appointments: number;
+  todayAppointments: number;
+  dispatches: number;
+  verifiedDoctors: number;
+  activeDoctors: number;
+  completedAppointments: number;
+  cancelledAppointments: number;
+}
 
 const ROLE_TABS: { key: UserRole | 'all'; label: string; labelSw: string }[] = [
   { key: 'all', label: 'All', labelSw: 'Wote' },
@@ -85,7 +98,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ language, authUs
   const isSw = language === 'sw';
   const isDark = theme === 'dark';
   const [section, setSection] = useState<SectionKey>('dashboard');
-  const [metrics, setMetrics] = useState<Metrics>({ providers: 0, appointments: 0, dispatches: 0 });
+  const [metrics, setMetrics] = useState<Metrics>({
+    providers: 0, activeProviders: 0, appointments: 0, todayAppointments: 0, dispatches: 0,
+    verifiedDoctors: 0, activeDoctors: 0, completedAppointments: 0, cancelledAppointments: 0,
+  });
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [roleFilter, setRoleFilter] = useState<UserRole | 'all'>('all');
   const [query, setQuery] = useState('');
@@ -96,16 +112,36 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ language, authUs
 
   const load = async () => {
     setLoading(true); setError('');
-    const [providers, appointments, dispatches, people] = await Promise.all([
+    const today = new Date().toISOString().slice(0, 10);
+    const [
+      providers, activeProviders, appointments, todayAppointments, dispatches, people,
+      verifiedDoctors, activeDoctors, completedAppointments, cancelledAppointments,
+    ] = await Promise.all([
       supabase.from('providers').select('*', { count: 'exact', head: true }),
+      supabase.from('providers').select('*', { count: 'exact', head: true }).eq('is_active', true),
       supabase.from('appointments').select('*', { count: 'exact', head: true }),
+      supabase.from('appointments').select('*', { count: 'exact', head: true }).eq('appointment_date', today),
       supabase.from('emergency_dispatches').select('*', { count: 'exact', head: true }),
       supabase.from('profiles').select('id, full_name, role, status, email, phone, created_at').order('created_at', { ascending: false }).limit(1000),
+      supabase.from('doctor_profiles').select('*', { count: 'exact', head: true }).eq('is_verified', true),
+      supabase.from('doctor_profiles').select('*', { count: 'exact', head: true }).eq('is_active', true),
+      supabase.from('appointments').select('*', { count: 'exact', head: true }).eq('status', 'completed'),
+      supabase.from('appointments').select('*', { count: 'exact', head: true }).eq('status', 'cancelled'),
     ]);
-    const failure = [providers, appointments, dispatches, people].find((item) => item.error)?.error;
+    const failure = [providers, activeProviders, appointments, todayAppointments, dispatches, people].find((item) => item.error)?.error;
     if (failure) setError(`${failure.message}. Confirm this account has role "admin" in public.profiles.`);
     else {
-      setMetrics({ providers: providers.count || 0, appointments: appointments.count || 0, dispatches: dispatches.count || 0 });
+      setMetrics({
+        providers: providers.count || 0,
+        activeProviders: activeProviders.count || 0,
+        appointments: appointments.count || 0,
+        todayAppointments: todayAppointments.count || 0,
+        dispatches: dispatches.count || 0,
+        verifiedDoctors: verifiedDoctors.count || 0,
+        activeDoctors: activeDoctors.count || 0,
+        completedAppointments: completedAppointments.count || 0,
+        cancelledAppointments: cancelledAppointments.count || 0,
+      });
       setProfiles((people.data || []) as Profile[]);
     }
     setLoading(false);
@@ -359,8 +395,13 @@ const DashboardPanel: React.FC<{ isSw: boolean; profiles: Profile[]; metrics: Me
     { label: isSw ? 'Watumiaji' : 'Users', value: profiles.length, Icon: Users, accent: 'bg-primary' },
     { label: isSw ? 'Wagonjwa' : 'Patients', value: patients, Icon: Users, accent: 'bg-primary' },
     { label: isSw ? 'Madaktari' : 'Doctors', value: doctors, Icon: Stethoscope, accent: 'bg-primary' },
-    { label: isSw ? 'Vituo' : 'Facilities', value: metrics.providers, Icon: Building2, accent: 'bg-emerald-500' },
-    { label: isSw ? 'Miadi' : 'Appointments', value: metrics.appointments, Icon: CalendarDays, accent: 'bg-amber-500' },
+    { label: isSw ? 'Madaktari Waliothibitishwa' : 'Verified Doctors', value: metrics.verifiedDoctors, Icon: ShieldCheck, accent: 'bg-primary' },
+    { label: isSw ? 'Madaktari Hai' : 'Active Doctors', value: metrics.activeDoctors, Icon: Stethoscope, accent: 'bg-primary' },
+    { label: isSw ? 'Vituo (Hai/Jumla)' : 'Facilities (Active/Total)', value: `${metrics.activeProviders}/${metrics.providers}`, Icon: Building2, accent: 'bg-emerald-500' },
+    { label: isSw ? 'Miadi ya Leo' : "Today's Appointments", value: metrics.todayAppointments, Icon: CalendarDays, accent: 'bg-amber-500' },
+    { label: isSw ? 'Miadi Jumla' : 'Total Appointments', value: metrics.appointments, Icon: CalendarDays, accent: 'bg-amber-500' },
+    { label: isSw ? 'Ziara Zilizokamilika' : 'Completed Visits', value: metrics.completedAppointments, Icon: CalendarDays, accent: 'bg-emerald-500' },
+    { label: isSw ? 'Miadi Iliyoghairiwa' : 'Cancelled Appointments', value: metrics.cancelledAppointments, Icon: CalendarDays, accent: 'bg-rose-500' },
     { label: isSw ? 'Mapato' : 'Revenue', value: `${billTotals.revenue.toLocaleString()} TZS`, Icon: DollarSign, accent: 'bg-emerald-600' },
     { label: isSw ? 'Inasubiri' : 'Pending Payments', value: `${billTotals.pending.toLocaleString()} TZS`, Icon: CreditCard, accent: 'bg-amber-600' },
     { label: isSw ? 'Simu za Dharura' : 'Emergency Calls', value: metrics.dispatches, Icon: Siren, accent: 'bg-rose-500' },
@@ -442,6 +483,8 @@ const emptyProviderForm: ProviderUpsertInput = {
   email: '',
   nhif_enabled: true,
   is_active: true,
+  lat: null,
+  lng: null,
 };
 
 const providerToForm = (provider: ProviderRow): ProviderUpsertInput => ({
@@ -454,10 +497,13 @@ const providerToForm = (provider: ProviderRow): ProviderUpsertInput => ({
   email: provider.email || '',
   nhif_enabled: provider.nhif_enabled,
   is_active: provider.is_active,
+  lat: provider.lat,
+  lng: provider.lng,
 });
 
 const FacilityAdminPanel: React.FC<{ isSw: boolean }> = ({ isSw }) => {
   const [providers, setProviders] = useState<ProviderRow[]>([]);
+  const [facilityQuery, setFacilityQuery] = useState('');
   const [selectedId, setSelectedId] = useState('');
   const [doctors, setDoctors] = useState<ProviderDoctorRow[]>([]);
   const [staff, setStaff] = useState<ProviderStaffRow[]>([]);
@@ -465,10 +511,50 @@ const FacilityAdminPanel: React.FC<{ isSw: boolean }> = ({ isSw }) => {
   const [directoryLoading, setDirectoryLoading] = useState(false);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [verifyingId, setVerifyingId] = useState('');
+
+  const toggleVerified = async (doctorId: string, currentlyVerified: boolean) => {
+    setVerifyingId(doctorId);
+    const { error: err } = await setDoctorVerified(doctorId, !currentlyVerified);
+    setVerifyingId('');
+    if (err) { setError(err); return; }
+    setDoctors((prev) => prev.map((d) => (d.id === doctorId ? { ...d, is_verified: !currentlyVerified } : d)));
+  };
+
+  const [togglingActiveId, setTogglingActiveId] = useState('');
+  const toggleDoctorActive = async (doctorId: string, currentlyActive: boolean) => {
+    if (currentlyActive && !window.confirm(isSw ? 'Daktari huyu hataweza kupokea miadi mpya. Endelea?' : 'This doctor will stop receiving new appointment bookings. Continue?')) return;
+    setTogglingActiveId(doctorId);
+    const { error: err } = await setDoctorActive(doctorId, !currentlyActive);
+    setTogglingActiveId('');
+    if (err) { setError(err); return; }
+    setDoctors((prev) => prev.map((d) => (d.id === doctorId ? { ...d, is_active: !currentlyActive } : d)));
+  };
   const [savingId, setSavingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<ProviderUpsertInput>(emptyProviderForm);
+  const [editingDoctor, setEditingDoctor] = useState<ProviderDoctorRow | null>(null);
+  const [editingStaff, setEditingStaff] = useState<ProviderStaffRow | null>(null);
+  const [togglingStaffId, setTogglingStaffId] = useState('');
   const selected = providers.find((provider) => provider.id === selectedId) || null;
+  // Client-side filter over the already-fetched facility list — fine at
+  // today's scale (fetchProviders() has no pagination yet); a real
+  // nationwide rollout with hundreds of facilities would want server-side
+  // search instead, noted as a future improvement rather than built here.
+  const visibleProviders = providers.filter((p) => {
+    const q = facilityQuery.trim().toLowerCase();
+    if (!q) return true;
+    return p.name.toLowerCase().includes(q) || p.region.toLowerCase().includes(q) || p.type.toLowerCase().includes(q);
+  });
+
+  const toggleStaffActive = async (member: ProviderStaffRow) => {
+    if (member.is_active && !window.confirm(isSw ? 'Mfanyakazi huyu ataondolewa katika ufikiaji wa kituo. Endelea?' : 'This staff member will lose access to facility operations. Continue?')) return;
+    setTogglingStaffId(member.id);
+    const { error: err } = await setStaffActive(member.id, !member.is_active);
+    setTogglingStaffId('');
+    if (err) { setError(err); return; }
+    setStaff((prev) => prev.map((s) => (s.id === member.id ? { ...s, is_active: !member.is_active } : s)));
+  };
 
   const load = async () => {
     setLoading(true);
@@ -516,7 +602,7 @@ const FacilityAdminPanel: React.FC<{ isSw: boolean }> = ({ isSw }) => {
     setForm(emptyProviderForm);
   };
 
-  const updateForm = (key: keyof ProviderUpsertInput, value: string | boolean) => {
+  const updateForm = (key: keyof ProviderUpsertInput, value: string | boolean | number | null) => {
     setForm((current) => ({ ...current, [key]: value }));
   };
 
@@ -545,7 +631,36 @@ const FacilityAdminPanel: React.FC<{ isSw: boolean }> = ({ isSw }) => {
     await load();
   };
 
+  // "A facility should not appear as an active healthcare provider until it
+  // has the minimum required information" — derived from what booking/the
+  // map actually depend on (not an invented certification policy): a real
+  // name/type/address/phone, and lat/lng (fetchMapFacilities() already
+  // silently excludes any facility missing either — see facilityMap.ts).
+  // Missing info is surfaced and requires confirmation, not silently
+  // blocked outright, since an admin may have a real reason to activate
+  // early (e.g. phone-only booking while the map listing catches up).
+  const missingRequiredFields = (provider: ProviderRow): string[] => {
+    const missing: string[] = [];
+    if (!provider.name.trim()) missing.push(isSw ? 'Jina la kituo' : 'Facility name');
+    if (!provider.type.trim()) missing.push(isSw ? 'Aina ya kituo' : 'Facility type');
+    if (!provider.address?.trim()) missing.push(isSw ? 'Anwani' : 'Address');
+    if (!provider.phone?.trim()) missing.push(isSw ? 'Simu' : 'Phone');
+    if (provider.lat == null || provider.lng == null) missing.push(isSw ? 'Latitudo/Longitudo (Ramani)' : 'Coordinates (Facility Map)');
+    return missing;
+  };
+
   const toggle = async (provider: ProviderRow) => {
+    if (!provider.is_active) {
+      const missing = missingRequiredFields(provider);
+      if (missing.length > 0) {
+        const proceed = window.confirm(
+          (isSw
+            ? `Taarifa zifuatazo hazipo: ${missing.join(', ')}. Kituo kitaonekana kikiwa hai lakini kisicho kamili (mfano: hakitaonekana kwenye Ramani ya Vituo bila kuratibu). Endelea kukiwasha?`
+            : `This facility is missing: ${missing.join(', ')}. It will appear active but incomplete (e.g. it won't appear on the Facility Map without coordinates). Activate anyway?`)
+        );
+        if (!proceed) return;
+      }
+    }
     setSavingId(provider.id);
     const { error: err } = await setProviderActive(provider.id, !provider.is_active);
     if (err) setError(err);
@@ -575,8 +690,23 @@ const FacilityAdminPanel: React.FC<{ isSw: boolean }> = ({ isSw }) => {
 
         {error && <p className="border-b border-red-100 bg-red-50 p-3 text-xs font-medium text-red-700">{error}</p>}
 
+        <div className="border-b nc-border p-3">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 nc-text-muted" />
+            <input
+              value={facilityQuery}
+              onChange={(e) => setFacilityQuery(e.target.value)}
+              placeholder={isSw ? 'Tafuta kituo, mkoa, au aina...' : 'Search facility, region, or type...'}
+              className="nc-input w-full py-2 pl-8 pr-3 text-xs"
+            />
+          </div>
+        </div>
+
         <div className="max-h-[620px] overflow-y-auto p-2">
-          {providers.map((provider) => (
+          {!loading && providers.length > 0 && visibleProviders.length === 0 && (
+            <p className="py-6 text-center text-xs nc-text-muted">{isSw ? 'Hakuna kituo kinacholingana.' : 'No facility matches this search.'}</p>
+          )}
+          {visibleProviders.map((provider) => (
             <button
               key={provider.id}
               type="button"
@@ -639,6 +769,35 @@ const FacilityAdminPanel: React.FC<{ isSw: boolean }> = ({ isSw }) => {
                 <input value={form.address || ''} onChange={(e) => updateForm('address', e.target.value)} className="nc-input px-3 py-2" />
               </label>
               <label>
+                <span className="mb-1 block font-bold nc-text-secondary">Latitude</span>
+                <input
+                  type="number"
+                  step="any"
+                  value={form.lat ?? ''}
+                  onChange={(e) => updateForm('lat', e.target.value === '' ? null : Number(e.target.value))}
+                  placeholder="-6.7924"
+                  className="nc-input px-3 py-2"
+                  aria-describedby="lat-lng-hint"
+                />
+              </label>
+              <label>
+                <span className="mb-1 block font-bold nc-text-secondary">Longitude</span>
+                <input
+                  type="number"
+                  step="any"
+                  value={form.lng ?? ''}
+                  onChange={(e) => updateForm('lng', e.target.value === '' ? null : Number(e.target.value))}
+                  placeholder="39.2083"
+                  className="nc-input px-3 py-2"
+                  aria-describedby="lat-lng-hint"
+                />
+              </label>
+              <p id="lat-lng-hint" className="sm:col-span-2 -mt-2 text-[10px] nc-text-muted">
+                {isSw
+                  ? 'Muhimu: kituo hakitaonekana kwenye Ramani ya Vituo bila latitudo na longitudo.'
+                  : 'Required for this facility to appear on the Facility Map — leave blank only if truly unknown yet.'}
+              </p>
+              <label>
                 <span className="mb-1 block font-bold nc-text-secondary">Phone</span>
                 <input value={form.phone || ''} onChange={(e) => updateForm('phone', e.target.value)} className="nc-input px-3 py-2" />
               </label>
@@ -680,6 +839,15 @@ const FacilityAdminPanel: React.FC<{ isSw: boolean }> = ({ isSw }) => {
                     {selected.email && <p className="flex items-center gap-2 nc-text-secondary"><Mail className="h-3.5 w-3.5 text-[var(--nc-primary)]" /> {selected.email}</p>}
                     {selected.emergency_phone && <p className="flex items-center gap-2 nc-text-secondary"><Siren className="h-3.5 w-3.5 text-rose-500" /> {selected.emergency_phone}</p>}
                   </div>
+                  {selected.lat == null || selected.lng == null ? (
+                    <p className="mt-2 flex items-center gap-1.5 rounded-md bg-amber-50 px-2.5 py-1.5 text-[11px] font-bold text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+                      <MapPin className="h-3.5 w-3.5" /> No coordinates set — this facility will not appear on the Facility Map.
+                    </p>
+                  ) : (
+                    <p className="mt-2 flex items-center gap-1.5 text-[11px] font-mono nc-text-muted">
+                      <MapPin className="h-3.5 w-3.5 text-[var(--nc-primary)]" /> {selected.lat.toFixed(4)}, {selected.lng.toFixed(4)}
+                    </p>
+                  )}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <button type="button" onClick={() => startEdit(selected)} className="flex items-center gap-1.5 rounded-md border nc-border px-3 py-2 text-xs font-semibold nc-text-secondary hover:bg-slate-50 dark:hover:bg-slate-800">
@@ -704,6 +872,48 @@ const FacilityAdminPanel: React.FC<{ isSw: boolean }> = ({ isSw }) => {
                   meta: [doctor.specialty, doctor.sub_specialty].filter(Boolean).join(' - '),
                   status: doctor.is_active ? (doctor.is_verified ? 'Verified' : 'Active') : 'Inactive',
                 }))}
+                renderAction={(rowId) => {
+                  const doctor = doctors.find((d) => d.id === rowId);
+                  if (!doctor) return null;
+                  return (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setEditingDoctor(doctor)}
+                        title={isSw ? 'Hariri Wasifu' : 'Edit profile'}
+                        className="flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                      >
+                        <Edit3 className="h-3 w-3" /> {isSw ? 'Hariri' : 'Edit'}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={verifyingId === doctor.id}
+                        onClick={() => toggleVerified(doctor.id, doctor.is_verified)}
+                        title={doctor.is_verified ? (isSw ? 'Ondoa Uthibitisho' : 'Remove verification') : (isSw ? 'Thibitisha Daktari' : 'Verify doctor')}
+                        className={`flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-bold disabled:opacity-40 ${
+                          doctor.is_verified
+                            ? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+                            : 'bg-primary/10 text-[var(--nc-primary)] dark:bg-primary/20 dark:text-primary-light'
+                        }`}
+                      >
+                        <BadgeCheck className="h-3 w-3" /> {doctor.is_verified ? (isSw ? 'Ondoa' : 'Unverify') : (isSw ? 'Thibitisha' : 'Verify')}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={togglingActiveId === doctor.id}
+                        onClick={() => toggleDoctorActive(doctor.id, doctor.is_active)}
+                        title={doctor.is_active ? (isSw ? 'Zima Daktari' : 'Deactivate doctor') : (isSw ? 'Washa Daktari' : 'Activate doctor')}
+                        className={`flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-bold disabled:opacity-40 ${
+                          doctor.is_active
+                            ? 'bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300'
+                            : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+                        }`}
+                      >
+                        {doctor.is_active ? (isSw ? 'Zima' : 'Deactivate') : (isSw ? 'Washa' : 'Activate')}
+                      </button>
+                    </div>
+                  );
+                }}
               />
               <TeamList
                 icon={<UserCog className="h-4 w-4 text-[var(--nc-primary)]" />}
@@ -716,10 +926,292 @@ const FacilityAdminPanel: React.FC<{ isSw: boolean }> = ({ isSw }) => {
                   meta: [member.job_title, member.department].filter(Boolean).join(' - '),
                   status: member.is_active ? 'Active' : 'Inactive',
                 }))}
+                renderAction={(rowId) => {
+                  const member = staff.find((s) => s.id === rowId);
+                  if (!member) return null;
+                  return (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setEditingStaff(member)}
+                        title={isSw ? 'Hariri Jukumu' : 'Edit role'}
+                        className="flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                      >
+                        <Edit3 className="h-3 w-3" /> {isSw ? 'Hariri' : 'Edit'}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={togglingStaffId === member.id}
+                        onClick={() => toggleStaffActive(member)}
+                        title={member.is_active ? (isSw ? 'Zima Mfanyakazi' : 'Deactivate staff') : (isSw ? 'Washa Mfanyakazi' : 'Activate staff')}
+                        className={`flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-bold disabled:opacity-40 ${
+                          member.is_active
+                            ? 'bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300'
+                            : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+                        }`}
+                      >
+                        {member.is_active ? (isSw ? 'Zima' : 'Deactivate') : (isSw ? 'Washa' : 'Activate')}
+                      </button>
+                    </div>
+                  );
+                }}
               />
             </div>
+
+            {editingStaff && (
+              <StaffEditPanel
+                isSw={isSw}
+                member={editingStaff}
+                onClose={() => setEditingStaff(null)}
+                onSaved={(updated) => {
+                  setStaff((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+                  setEditingStaff(null);
+                }}
+              />
+            )}
+
+            <DepartmentsServicesReadOnlyPanel isSw={isSw} providerId={selected.id} />
+
+            {editingDoctor && (
+              <DoctorEditPanel
+                isSw={isSw}
+                doctor={editingDoctor}
+                onClose={() => setEditingDoctor(null)}
+                onSaved={(updated) => {
+                  setDoctors((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
+                  setEditingDoctor(null);
+                }}
+              />
+            )}
           </>
         )}
+      </div>
+    </div>
+  );
+};
+
+// Uses updateDoctorProfile() — same function DoctorDashboard's own "Edit My
+// Profile" panel calls; RLS ("Admins can manage doctor profiles" /
+// "Doctors can update own profile") is what actually decides whether this
+// particular caller is allowed to write to this particular row.
+const DoctorEditPanel: React.FC<{
+  isSw: boolean;
+  doctor: ProviderDoctorRow;
+  onClose: () => void;
+  onSaved: (updated: ProviderDoctorRow) => void;
+}> = ({ isSw, doctor, onClose, onSaved }) => {
+  const [bio, setBio] = useState(doctor.bio || '');
+  const [subSpecialty, setSubSpecialty] = useState(doctor.sub_specialty || '');
+  const [languages, setLanguages] = useState(doctor.languages.join(', '));
+  const [consultationFee, setConsultationFee] = useState(String(doctor.consultation_fee_tzs));
+  const [telehealthFee, setTelehealthFee] = useState(String(doctor.telehealth_fee_tzs));
+  const [homeVisitFee, setHomeVisitFee] = useState(String(doctor.home_visit_fee_tzs));
+  const [experienceYears, setExperienceYears] = useState(doctor.experience_years == null ? '' : String(doctor.experience_years));
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const save = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setError('');
+    const payload: DoctorProfileEditInput = {
+      bio: bio.trim() || null,
+      sub_specialty: subSpecialty.trim() || null,
+      languages: languages.split(',').map((l) => l.trim()).filter(Boolean),
+      consultation_fee_tzs: Number(consultationFee) || 0,
+      telehealth_fee_tzs: Number(telehealthFee) || 0,
+      home_visit_fee_tzs: Number(homeVisitFee) || 0,
+      experience_years: experienceYears === '' ? null : Number(experienceYears),
+    };
+    const { error: err } = await updateDoctorProfile(doctor.id, payload);
+    setSaving(false);
+    if (err) { setError(err); return; }
+    onSaved({ ...doctor, ...payload });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-label={isSw ? 'Hariri Wasifu wa Daktari' : 'Edit doctor profile'}>
+      <div className={`w-full max-w-md ${cardCls} p-4`} style={{ backgroundColor: 'var(--nc-surface)' }}>
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-sm font-semibold">{doctor.full_name} — {isSw ? 'Hariri Wasifu' : 'Edit Profile'}</h3>
+          <button type="button" onClick={onClose} aria-label={isSw ? 'Funga' : 'Close'} className="rounded-md border nc-border p-1.5 nc-text-muted hover:bg-slate-50 dark:hover:bg-slate-800">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        {error && <p className="mb-2 text-xs font-medium text-red-700">{error}</p>}
+        <form onSubmit={save} className="grid gap-3 text-xs">
+          <label>
+            <span className="mb-1 block font-bold nc-text-secondary">{isSw ? 'Utaalamu Mdogo' : 'Sub-specialty'}</span>
+            <input value={subSpecialty} onChange={(e) => setSubSpecialty(e.target.value)} className="nc-input w-full px-3 py-2" />
+          </label>
+          <label>
+            <span className="mb-1 block font-bold nc-text-secondary">{isSw ? 'Wasifu' : 'Bio'}</span>
+            <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={3} className="nc-input w-full px-3 py-2" />
+          </label>
+          <label>
+            <span className="mb-1 block font-bold nc-text-secondary">{isSw ? 'Lugha (tenga kwa koma)' : 'Languages (comma-separated)'}</span>
+            <input value={languages} onChange={(e) => setLanguages(e.target.value)} placeholder="English, Swahili" className="nc-input w-full px-3 py-2" />
+          </label>
+          <label>
+            <span className="mb-1 block font-bold nc-text-secondary">{isSw ? 'Miaka ya Uzoefu' : 'Years of experience'}</span>
+            <input type="number" min={0} value={experienceYears} onChange={(e) => setExperienceYears(e.target.value)} className="nc-input w-full px-3 py-2" />
+          </label>
+          <div className="grid grid-cols-3 gap-2">
+            <label>
+              <span className="mb-1 block font-bold nc-text-secondary">{isSw ? 'Ada (TZS)' : 'Consult fee'}</span>
+              <input type="number" min={0} value={consultationFee} onChange={(e) => setConsultationFee(e.target.value)} className="nc-input w-full px-2 py-2" />
+            </label>
+            <label>
+              <span className="mb-1 block font-bold nc-text-secondary">{isSw ? 'Video' : 'Telehealth'}</span>
+              <input type="number" min={0} value={telehealthFee} onChange={(e) => setTelehealthFee(e.target.value)} className="nc-input w-full px-2 py-2" />
+            </label>
+            <label>
+              <span className="mb-1 block font-bold nc-text-secondary">{isSw ? 'Nyumbani' : 'Home visit'}</span>
+              <input type="number" min={0} value={homeVisitFee} onChange={(e) => setHomeVisitFee(e.target.value)} className="nc-input w-full px-2 py-2" />
+            </label>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button type="button" onClick={onClose} className="rounded-md border nc-border px-3 py-2 font-bold nc-text-secondary">{isSw ? 'Ghairi' : 'Cancel'}</button>
+            <button type="submit" disabled={saving} className="flex items-center gap-1.5 rounded-md bg-[var(--nc-primary)] px-3 py-2 font-semibold text-white disabled:opacity-60">
+              <Save className="h-3.5 w-3.5" /> {saving ? (isSw ? 'Inahifadhi...' : 'Saving...') : (isSw ? 'Hifadhi' : 'Save')}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// provider_staff RLS grants UPDATE to admin only (see updateStaffRole's own
+// comment in lib/admin.ts) — this panel is therefore only reachable from
+// AdminDashboard, never from ProviderDashboard, matching that boundary.
+const StaffEditPanel: React.FC<{
+  isSw: boolean;
+  member: ProviderStaffRow;
+  onClose: () => void;
+  onSaved: (updated: ProviderStaffRow) => void;
+}> = ({ isSw, member, onClose, onSaved }) => {
+  const [jobTitle, setJobTitle] = useState(member.job_title);
+  const [department, setDepartment] = useState(member.department || '');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const save = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!jobTitle.trim()) return;
+    setSaving(true);
+    setError('');
+    const { error: err } = await updateStaffRole(member.id, jobTitle, department);
+    setSaving(false);
+    if (err) { setError(err); return; }
+    onSaved({ ...member, job_title: jobTitle.trim(), department: department.trim() || null });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-label={isSw ? 'Hariri Jukumu la Mfanyakazi' : 'Edit staff role'}>
+      <div className={`w-full max-w-sm ${cardCls} p-4`} style={{ backgroundColor: 'var(--nc-surface)' }}>
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-sm font-semibold">{member.full_name} — {isSw ? 'Hariri Jukumu' : 'Edit Role'}</h3>
+          <button type="button" onClick={onClose} aria-label={isSw ? 'Funga' : 'Close'} className="rounded-md border nc-border p-1.5 nc-text-muted hover:bg-slate-50 dark:hover:bg-slate-800">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        {error && <p className="mb-2 text-xs font-medium text-red-700">{error}</p>}
+        <form onSubmit={save} className="grid gap-3 text-xs">
+          <label>
+            <span className="mb-1 block font-bold nc-text-secondary">{isSw ? 'Cheo' : 'Job title'}</span>
+            <input required value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} className="nc-input w-full px-3 py-2" />
+          </label>
+          <label>
+            <span className="mb-1 block font-bold nc-text-secondary">{isSw ? 'Idara (hiari)' : 'Department (optional)'}</span>
+            <input value={department} onChange={(e) => setDepartment(e.target.value)} className="nc-input w-full px-3 py-2" />
+          </label>
+          <div className="flex justify-end gap-2">
+            <button type="button" onClick={onClose} className="rounded-md border nc-border px-3 py-2 font-bold nc-text-secondary">{isSw ? 'Ghairi' : 'Cancel'}</button>
+            <button type="submit" disabled={saving} className="flex items-center gap-1.5 rounded-md bg-[var(--nc-primary)] px-3 py-2 font-semibold text-white disabled:opacity-60">
+              <Save className="h-3.5 w-3.5" /> {saving ? (isSw ? 'Inahifadhi...' : 'Saving...') : (isSw ? 'Hifadhi' : 'Save')}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// Admin cross-facility visibility into departments/services (Phase 8/9:
+// "Admin should be able to view departments/services across facilities").
+// Read + activate/deactivate only here — creating/editing department and
+// service records themselves stays on the facility side (ProviderDashboard's
+// Departments & Services tab), where the people who actually run that
+// facility configure it; this just lets admin see and, if genuinely
+// necessary, deactivate one without needing SQL access.
+const DepartmentsServicesReadOnlyPanel: React.FC<{ isSw: boolean; providerId: string }> = ({ isSw, providerId }) => {
+  const [departments, setDepartments] = useState<DepartmentRow[]>([]);
+  const [services, setServices] = useState<ServiceRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    Promise.all([fetchDepartments(providerId), fetchServices(providerId)]).then(([deptRes, svcRes]) => {
+      if (!active) return;
+      if (deptRes.error) setError(deptRes.error);
+      else setDepartments(deptRes.departments);
+      if (svcRes.error) setError(svcRes.error);
+      else setServices(svcRes.services);
+      setLoading(false);
+    });
+    return () => { active = false; };
+  }, [providerId]);
+
+  return (
+    <div className="grid gap-4 xl:grid-cols-2">
+      <div className={`overflow-hidden ${cardCls}`} style={{ backgroundColor: 'var(--nc-surface)' }}>
+        <div className="flex items-center justify-between border-b nc-border p-4">
+          <h3 className="text-sm font-semibold">{isSw ? 'Idara' : 'Departments'}</h3>
+          <span className="rounded-md bg-primary/5 px-2 py-1 text-[10px] font-semibold text-[var(--nc-primary)] dark:bg-primary/10 dark:text-primary-light">{departments.length}</span>
+        </div>
+        <div className="space-y-2 p-2">
+          {loading ? (
+            <p className="p-3 text-xs nc-text-muted">{isSw ? 'Inapakia...' : 'Loading...'}</p>
+          ) : error ? (
+            <p className="p-3 text-xs font-medium text-red-700">{error}</p>
+          ) : departments.length === 0 ? (
+            <p className="p-3 text-xs nc-text-muted">{isSw ? 'Hakuna idara bado.' : 'No departments configured yet.'}</p>
+          ) : (
+            departments.map((d) => (
+              <div key={d.id} className="flex items-center justify-between gap-3 rounded-md border border-slate-100 p-3 text-xs dark:border-slate-800">
+                <span className="font-semibold truncate">{d.name}</span>
+                <span className={`rounded-md px-2 py-1 text-[10px] font-semibold ${d.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+                  {d.is_active ? (isSw ? 'Hai' : 'Active') : (isSw ? 'Imezimwa' : 'Inactive')}
+                </span>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+      <div className={`overflow-hidden ${cardCls}`} style={{ backgroundColor: 'var(--nc-surface)' }}>
+        <div className="flex items-center justify-between border-b nc-border p-4">
+          <h3 className="text-sm font-semibold">{isSw ? 'Huduma' : 'Services'}</h3>
+          <span className="rounded-md bg-primary/5 px-2 py-1 text-[10px] font-semibold text-[var(--nc-primary)] dark:bg-primary/10 dark:text-primary-light">{services.length}</span>
+        </div>
+        <div className="space-y-2 p-2">
+          {loading ? (
+            <p className="p-3 text-xs nc-text-muted">{isSw ? 'Inapakia...' : 'Loading...'}</p>
+          ) : services.length === 0 ? (
+            <p className="p-3 text-xs nc-text-muted">{isSw ? 'Hakuna huduma bado.' : 'No services configured yet.'}</p>
+          ) : (
+            services.map((s) => (
+              <div key={s.id} className="flex items-center justify-between gap-3 rounded-md border border-slate-100 p-3 text-xs dark:border-slate-800">
+                <span className="font-semibold truncate">{s.name}</span>
+                <span className={`rounded-md px-2 py-1 text-[10px] font-semibold ${s.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+                  {s.is_active ? (isSw ? 'Hai' : 'Active') : (isSw ? 'Imezimwa' : 'Inactive')}
+                </span>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );
@@ -731,7 +1223,8 @@ const TeamList: React.FC<{
   empty: string;
   loading: boolean;
   rows: { id: string; name: string; meta: string; status: string }[];
-}> = ({ icon, title, empty, loading, rows }) => (
+  renderAction?: (rowId: string) => React.ReactNode;
+}> = ({ icon, title, empty, loading, rows, renderAction }) => (
   <div className={`overflow-hidden ${cardCls}`} style={{ backgroundColor: 'var(--nc-surface)' }}>
     <div className="flex items-center justify-between border-b nc-border p-4">
       <div className="flex items-center gap-2">
@@ -752,9 +1245,12 @@ const TeamList: React.FC<{
               <p className="truncate font-semibold">{row.name}</p>
               <p className="mt-0.5 truncate nc-text-muted">{row.meta || '-'}</p>
             </div>
-            <span className={`rounded-md px-2 py-1 text-[10px] font-semibold ${row.status === 'Inactive' ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'}`}>
-              {row.status}
-            </span>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <span className={`rounded-md px-2 py-1 text-[10px] font-semibold ${row.status === 'Inactive' ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'}`}>
+                {row.status}
+              </span>
+              {renderAction?.(row.id)}
+            </div>
           </div>
         ))
       ) : (
@@ -987,6 +1483,10 @@ const AuditPanel: React.FC<{ isSw: boolean }> = ({ isSw }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
+  const [actionFilter, setActionFilter] = useState('all');
+  const [facilityFilter, setFacilityFilter] = useState('all');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   const load = async () => {
     setLoading(true);
@@ -996,19 +1496,79 @@ const AuditPanel: React.FC<{ isSw: boolean }> = ({ isSw }) => {
   };
   useEffect(() => { load(); }, []);
 
+  // Distinct actions actually present in the loaded window (last 300 rows)
+  // — not a hardcoded list, so it never drifts from what's really logged.
+  const availableActions = useMemo(() => [...new Set(logs.map((l) => l.action))].sort(), [logs]);
+  // Real facility_id column (see fetchAuditLogs' own comment) — only
+  // events that actually set it appear here; not every action is
+  // facility-scoped, so this list is intentionally not "every facility".
+  const availableFacilities = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const l of logs) if (l.facilityId && l.facilityName) map.set(l.facilityId, l.facilityName);
+    return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+  }, [logs]);
+
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return logs;
-    return logs.filter((l) => l.action.toLowerCase().includes(q) || l.resource_type.toLowerCase().includes(q) || l.actorName.toLowerCase().includes(q));
-  }, [logs, query]);
+    return logs.filter((l) => {
+      if (actionFilter !== 'all' && l.action !== actionFilter) return false;
+      if (facilityFilter !== 'all' && l.facilityId !== facilityFilter) return false;
+      const day = l.created_at.slice(0, 10);
+      if (dateFrom && day < dateFrom) return false;
+      if (dateTo && day > dateTo) return false;
+      if (!q) return true;
+      return l.action.toLowerCase().includes(q) || l.resource_type.toLowerCase().includes(q) || l.actorName.toLowerCase().includes(q);
+    });
+  }, [logs, query, actionFilter, facilityFilter, dateFrom, dateTo]);
 
   return (
     <div className={`overflow-hidden ${cardCls}`} style={{ backgroundColor: 'var(--nc-surface)' }}>
-      <div className="flex flex-col gap-3 border-b nc-border p-4 sm:flex-row sm:items-center sm:justify-between">
-        <h3 className="text-sm font-semibold">{isSw ? 'Kumbukumbu za Usalama' : 'Audit logs'}</h3>
-        <div className="relative w-full sm:w-64">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 nc-text-muted" />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={isSw ? 'Tafuta kitendo...' : 'Search action, resource, actor'} className="nc-input w-full py-2 pl-8 pr-3 text-xs" />
+      <div className="flex flex-col gap-3 border-b nc-border p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h3 className="text-sm font-semibold">{isSw ? 'Kumbukumbu za Usalama' : 'Audit logs'}</h3>
+          <div className="relative w-full sm:w-64">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 nc-text-muted" />
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={isSw ? 'Tafuta kitendo...' : 'Search action, resource, actor'} className="nc-input w-full py-2 pl-8 pr-3 text-xs" />
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <label className="flex items-center gap-1.5">
+            <span className="font-bold nc-text-secondary">{isSw ? 'Kitendo' : 'Action'}</span>
+            <select value={actionFilter} onChange={(e) => setActionFilter(e.target.value)} className="nc-input px-2 py-1.5">
+              <option value="all">{isSw ? 'Zote' : 'All'}</option>
+              {availableActions.map((a) => (
+                <option key={a} value={a}>{a}</option>
+              ))}
+            </select>
+          </label>
+          {availableFacilities.length > 0 && (
+            <label className="flex items-center gap-1.5">
+              <span className="font-bold nc-text-secondary">{isSw ? 'Kituo' : 'Facility'}</span>
+              <select value={facilityFilter} onChange={(e) => setFacilityFilter(e.target.value)} className="nc-input px-2 py-1.5">
+                <option value="all">{isSw ? 'Zote' : 'All'}</option>
+                {availableFacilities.map(([id, name]) => (
+                  <option key={id} value={id}>{name}</option>
+                ))}
+              </select>
+            </label>
+          )}
+          <label className="flex items-center gap-1.5">
+            <span className="font-bold nc-text-secondary">{isSw ? 'Kuanzia' : 'From'}</span>
+            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="nc-input px-2 py-1.5" />
+          </label>
+          <label className="flex items-center gap-1.5">
+            <span className="font-bold nc-text-secondary">{isSw ? 'Hadi' : 'To'}</span>
+            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="nc-input px-2 py-1.5" />
+          </label>
+          {(actionFilter !== 'all' || facilityFilter !== 'all' || dateFrom || dateTo || query) && (
+            <button
+              type="button"
+              onClick={() => { setActionFilter('all'); setFacilityFilter('all'); setDateFrom(''); setDateTo(''); setQuery(''); }}
+              className="font-bold text-[var(--nc-primary)] dark:text-primary-light hover:underline"
+            >
+              {isSw ? 'Futa Vichujio' : 'Clear filters'}
+            </button>
+          )}
         </div>
       </div>
       {error && <p className="p-4 text-xs font-medium text-red-700">{error}</p>}
@@ -1020,6 +1580,7 @@ const AuditPanel: React.FC<{ isSw: boolean }> = ({ isSw }) => {
               <th className="px-4 py-2.5 font-bold uppercase tracking-wide">{isSw ? 'Mtekelezaji' : 'Actor'}</th>
               <th className="px-4 py-2.5 font-bold uppercase tracking-wide">{isSw ? 'Kitendo' : 'Action'}</th>
               <th className="px-4 py-2.5 font-bold uppercase tracking-wide">{isSw ? 'Rasilimali' : 'Resource'}</th>
+              <th className="px-4 py-2.5 font-bold uppercase tracking-wide">{isSw ? 'Kituo' : 'Facility'}</th>
               <th className="px-4 py-2.5 font-bold uppercase tracking-wide">{isSw ? 'Mgonjwa' : 'Patient'}</th>
             </tr>
           </thead>
@@ -1030,6 +1591,7 @@ const AuditPanel: React.FC<{ isSw: boolean }> = ({ isSw }) => {
                 <td className="px-4 py-3 font-bold">{l.actorName}</td>
                 <td className="px-4 py-3"><span className="rounded-md bg-primary/5 px-2 py-1 font-bold text-[var(--nc-primary)] dark:bg-primary/10 dark:text-primary-light">{l.action}</span></td>
                 <td className="px-4 py-3 nc-text-secondary">{l.resource_type}</td>
+                <td className="px-4 py-3 nc-text-secondary">{l.facilityName || '—'}</td>
                 <td className="px-4 py-3 nc-text-secondary">{l.patientName || '—'}</td>
               </tr>
             ))}

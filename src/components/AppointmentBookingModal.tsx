@@ -27,11 +27,17 @@ import {
   RefreshCw,
   CreditCard,
   Radio,
+  UserCheck,
+  MapPinned,
+  Loader2,
 } from 'lucide-react';
-import { Doctor, Appointment, TANZANIA_HOSPITALS, SPECIALTIES } from '../data/doctors';
+import { Doctor, Appointment, DoctorProfileTarget, TANZANIA_HOSPITALS, SPECIALTIES } from '../data/doctors';
 import { Language, Theme, UserCategory, LocalFormData, InternationalFormData } from '../types';
 import { getUpcomingDateISO, getTodayISO } from '../utils/dateUtils';
 import { insertAppointment, updateAppointmentStatus } from '../lib/appointments';
+import { patientArriveAppointment } from '../lib/queue';
+import { APPOINTMENT_STATUS_STYLES, appointmentStatusLabel } from '../data/appointmentStatus';
+import { withTimeout } from '../lib/useNetworkStatus';
 import { fetchBookableDoctors, fetchAvailableSlots } from '../lib/realDoctors';
 import { insertBill } from '../lib/bills';
 import { requestVideoRoom } from '../lib/video';
@@ -63,6 +69,12 @@ interface AppointmentBookingModalProps {
   intlData: InternationalFormData;
   onAppointmentBooked?: (appointment: Appointment) => void;
   initialDoctorId?: string;
+  initialHospitalFilter?: string;
+  /** A specific date+time the patient already picked in the Doctor Profile — pre-selects the slot instead of defaulting to the first open one. */
+  initialDate?: string;
+  initialTime?: string;
+  onViewDoctorProfile?: (target: DoctorProfileTarget) => void;
+  onViewFacility?: (providerId: string) => void;
   appointmentsList: Appointment[];
   setAppointmentsList: React.Dispatch<React.SetStateAction<Appointment[]>>;
   authUserId: string | null;
@@ -78,6 +90,11 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
   intlData,
   onAppointmentBooked,
   initialDoctorId,
+  initialHospitalFilter,
+  initialDate,
+  initialTime,
+  onViewDoctorProfile,
+  onViewFacility,
   appointmentsList,
   setAppointmentsList,
   authUserId,
@@ -128,6 +145,22 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
     };
   }, [isOpen, initialDoctorId]);
 
+  // Lets "Book" from the facility map jump straight to that facility's
+  // doctors instead of the full unfiltered list.
+  useEffect(() => {
+    if (isOpen && initialHospitalFilter) setSelectedHospitalFilter(initialHospitalFilter);
+  }, [isOpen, initialHospitalFilter]);
+
+  // A slot the patient already tapped in the Doctor Profile — applied here
+  // (rather than passed straight to selectedSlot) so the slots-effect below
+  // can confirm it's still actually open before honoring it.
+  const [presetSlot, setPresetSlot] = useState<{ date: string; time: string } | null>(null);
+  useEffect(() => {
+    if (!isOpen) return;
+    if (initialDate) setSelectedDate(initialDate);
+    setPresetSlot(initialDate && initialTime ? { date: initialDate, time: initialTime } : null);
+  }, [isOpen, initialDate, initialTime]);
+
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSpecialtyId, setSelectedSpecialtyId] = useState('all');
@@ -144,6 +177,15 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
   const [confirmedAppointment, setConfirmedAppointment] = useState<Appointment | null>(null);
   const [isBooking, setIsBooking] = useState(false);
   const [bookingError, setBookingError] = useState('');
+  const [slotConflict, setSlotConflict] = useState(false);
+  const [slotsRefreshToken, setSlotsRefreshToken] = useState(0);
+
+  // Patient self-check-in — a small view-swap within "My Appointments",
+  // matching this modal's existing pattern (confirmedAppointment/
+  // activeVideoCall) rather than a nested modal.
+  const [checkInFlow, setCheckInFlow] = useState<{ appointment: Appointment; step: 'confirm' | 'success' } | null>(null);
+  const [checkInSubmitting, setCheckInSubmitting] = useState(false);
+  const [checkInError, setCheckInError] = useState('');
 
   // Real open slots for the selected doctor + date, from public.doctor_schedule
   // — not a static per-doctor template.
@@ -161,18 +203,25 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
     }
     let active = true;
     setSlotsLoading(true);
-    fetchAvailableSlots(selectedDoctor.id, selectedDate).then((buckets) => {
-      if (!active) return;
-      setLiveSlots(buckets);
-      const firstAvailable = buckets.morning[0] || buckets.afternoon[0] || buckets.evening[0] || '';
-      setSelectedSlot(firstAvailable);
-      setSlotsLoading(false);
-    });
+    withTimeout(fetchAvailableSlots(selectedDoctor.id, selectedDate), 15000)
+      .then((buckets) => {
+        if (!active) return;
+        setLiveSlots(buckets);
+        const allSlots = [...buckets.morning, ...buckets.afternoon, ...buckets.evening];
+        const preset = presetSlot && presetSlot.date === selectedDate ? presetSlot.time : null;
+        setSelectedSlot(preset && allSlots.includes(preset) ? preset : allSlots[0] || '');
+        setSlotsLoading(false);
+      })
+      .catch(() => {
+        if (!active) return;
+        setLiveSlots({ morning: [], afternoon: [], evening: [] });
+        setSlotsLoading(false);
+      });
     return () => {
       active = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDoctor?.id, selectedDate]);
+  }, [selectedDoctor?.id, selectedDate, presetSlot, slotsRefreshToken]);
 
   // Telehealth Video Call — real Daily.co WebRTC room, embedded via prebuilt UI
   const [activeVideoCall, setActiveVideoCall] = useState<Appointment | null>(null);
@@ -340,16 +389,46 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
 
     setIsBooking(true);
     setBookingError('');
-    const { appointment, error } = await insertAppointment(
-      authUserId,
-      newAppointmentData,
-      selectedDoctor.providerId,
-      selectedDoctor.id
-    );
+    setSlotConflict(false);
+    // A hard network failure (offline, DNS, timeout) throws rather than
+    // resolving to { error }, which — uncaught — would leave isBooking
+    // stuck true forever with no message and, worse, risk the confirmation
+    // screen never distinguishing "failed" from "still in flight". Never
+    // show a confirmed appointment unless this actually resolved with one.
+    let appointment: Appointment | undefined;
+    let error: string | undefined;
+    let errorCode: string | undefined;
+    try {
+      const result = await withTimeout(
+        insertAppointment(authUserId, newAppointmentData, selectedDoctor.providerId, selectedDoctor.id),
+        20000
+      );
+      appointment = result.appointment;
+      error = result.error;
+      errorCode = result.errorCode;
+    } catch {
+      error = isSwahili
+        ? "Imeshindwa kuthibitisha miadi. Tafadhali angalia mtandao wako na ujaribu tena."
+        : "We couldn't confirm your appointment. Please check your connection and try again.";
+    }
     setIsBooking(false);
 
     if (error || !appointment) {
-      setBookingError(error || 'Could not save the appointment. Please try again.');
+      // public.book_appointment() raises this with SQLSTATE 23505 when the
+      // doctor_schedule unique-slot reservation lost the race, and the
+      // appointments_doctor_slot_unique index (defense-in-depth against any
+      // insert path that skips that RPC) raises the same code — a real
+      // backend conflict, not a network problem, so it gets its own recovery
+      // action instead of the generic retry message. Checked by code first
+      // (robust to wording) with the message text as a fallback.
+      if (errorCode === '23505' || (error && /no longer available/i.test(error))) {
+        setSlotConflict(true);
+        setBookingError(
+          isSwahili ? 'Muda huu haupatikani tena.' : 'This appointment slot is no longer available.'
+        );
+      } else {
+        setBookingError(error || 'Could not save the appointment. Please try again.');
+      }
       return;
     }
 
@@ -394,6 +473,38 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
       // Revert on failure since the optimistic update above didn't stick server-side.
       setAppointmentsList((prev) =>
         prev.map((apt) => (apt.id === id ? { ...apt, status: 'confirmed' } : apt))
+      );
+    }
+  };
+
+  // Eligible for the app's own self-check-in: still confirmed, and today —
+  // doctor_schedule.time_slot is free text, not a real time column, so a
+  // reliable minute-level window can't be computed here either (same
+  // constraint documented on patient_arrive_appointment() in schema.sql).
+  const isCheckInEligible = (apt: Appointment) => apt.status === 'confirmed' && apt.date === getTodayISO();
+
+  const handleConfirmCheckIn = async () => {
+    if (!checkInFlow) return;
+    setCheckInSubmitting(true);
+    setCheckInError('');
+    try {
+      const { appointment, error } = await withTimeout(patientArriveAppointment(checkInFlow.appointment.id), 15000);
+      setCheckInSubmitting(false);
+      if (error || !appointment) {
+        setCheckInError(
+          error ||
+            (isSwahili ? 'Imeshindwa kukuingiza. Tafadhali jaribu tena.' : 'Could not check you in. Please try again.')
+        );
+        return;
+      }
+      setAppointmentsList((prev) => prev.map((a) => (a.id === appointment.id ? appointment : a)));
+      setCheckInFlow({ appointment, step: 'success' });
+    } catch {
+      setCheckInSubmitting(false);
+      setCheckInError(
+        isSwahili
+          ? 'Imeshindwa kukuingiza. Angalia mtandao wako na ujaribu tena.'
+          : "We couldn't check you in. Check your connection and try again."
       );
     }
   };
@@ -667,8 +778,84 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
             </div>
           )}
 
+          {/* VIEW 2b: CHECK-IN CONFIRMATION / SUCCESS */}
+          {checkInFlow && (
+            <div className="space-y-4 py-4">
+              {checkInFlow.step === 'confirm' ? (
+                <>
+                  <div className="text-center space-y-1">
+                    <UserCheck className="w-8 h-8 mx-auto text-primary" />
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                      {isSwahili ? 'Thibitisha Kuingia' : 'Confirm Check-In'}
+                    </h3>
+                  </div>
+                  <div className={`rounded-2xl border p-4 space-y-2.5 text-xs ${isDark ? 'bg-[#0E1C2F] border-slate-700/80' : 'bg-slate-50 border-slate-200'}`}>
+                    <div>
+                      <span className="text-slate-400 block">{isSwahili ? 'Kituo' : 'Facility'}</span>
+                      <span className="font-bold text-slate-900 dark:text-white">{checkInFlow.appointment.hospitalName}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block">{isSwahili ? 'Daktari' : 'Doctor'}</span>
+                      <span className="font-bold text-slate-900 dark:text-white">{checkInFlow.appointment.doctorName}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block">{isSwahili ? 'Utaalamu' : 'Specialty'}</span>
+                      <span className="font-bold text-slate-900 dark:text-white">{checkInFlow.appointment.doctorSpecialty}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block">{isSwahili ? 'Miadi' : 'Appointment'}</span>
+                      <span className="font-bold text-slate-900 dark:text-white">{checkInFlow.appointment.date} • {checkInFlow.appointment.timeSlot}</span>
+                    </div>
+                  </div>
+                  {checkInError && (
+                    <p role="alert" className="text-xs font-semibold text-rose-500 bg-rose-500/10 border border-rose-500/30 rounded-xl p-2.5 flex items-center gap-1.5">
+                      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {checkInError}
+                    </p>
+                  )}
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setCheckInFlow(null)}
+                      className={`flex-1 py-3 rounded-2xl font-semibold text-sm border ${isDark ? 'border-slate-700 text-white hover:bg-slate-800' : 'border-slate-200 text-slate-900 hover:bg-slate-50'}`}
+                    >
+                      {isSwahili ? 'Ghairi' : 'Cancel'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleConfirmCheckIn}
+                      disabled={checkInSubmitting}
+                      className="flex-[2] py-3 rounded-2xl bg-primary hover:bg-primary-light text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-60"
+                    >
+                      {checkInSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserCheck className="w-4 h-4" />}
+                      {isSwahili ? 'Thibitisha Kuingia' : 'Confirm Check-In'}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center space-y-3 py-6">
+                  <div className="w-14 h-14 rounded-full bg-emerald-500/15 text-emerald-500 mx-auto flex items-center justify-center">
+                    <CheckCircle2 className="w-7 h-7" />
+                  </div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">{isSwahili ? 'Umeingia' : 'Checked In'}</h3>
+                  <p className="text-xs text-slate-400 max-w-xs mx-auto">
+                    {isSwahili
+                      ? 'Umefanikiwa kuingia. Miadi yako sasa iko kwa mapokezi.'
+                      : 'You have successfully checked in. Your appointment is now with reception.'}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setCheckInFlow(null)}
+                    className="px-5 py-2.5 rounded-2xl bg-primary hover:bg-primary-light text-white font-semibold text-xs"
+                  >
+                    {isSwahili ? 'Sawa' : 'Done'}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* VIEW 3: MY APPOINTMENTS LIST */}
-          {activeTab === 'my_appointments' && !confirmedAppointment && !activeVideoCall && (
+          {activeTab === 'my_appointments' && !confirmedAppointment && !activeVideoCall && !checkInFlow && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -732,17 +919,38 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                                 <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">
                                   {apt.doctorName}
                                 </h4>
-                                <span
-                                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                                    isCancelled
-                                                  ? 'bg-rose-500/20 text-rose-400'
-                                      : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                  }`}
-                                >
-                                  {isCancelled ? 'Cancelled' : apt.queueNumber ? `Foleni: ${apt.queueNumber}` : 'Confirmed'}
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${APPOINTMENT_STATUS_STYLES[apt.status]}`}>
+                                  {appointmentStatusLabel(apt.status, isSwahili)}
                                 </span>
+                                {apt.queueNumber && (
+                                  <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded-full bg-slate-800/80 text-primary-light">
+                                    {apt.queueNumber}
+                                  </span>
+                                )}
                               </div>
                               <p className="text-[11px] text-primary-light font-semibold">{apt.doctorSpecialty}</p>
+                              <div className="flex items-center gap-2.5 mt-0.5 flex-wrap">
+                                {onViewDoctorProfile && (
+                                  <button
+                                    type="button"
+                                    onClick={() => onViewDoctorProfile({ doctorId: apt.doctorId })}
+                                    aria-label={isSwahili ? `Angalia wasifu wa ${apt.doctorName}` : `View ${apt.doctorName}'s profile`}
+                                    className="inline-flex items-center gap-1 text-[10px] text-primary dark:text-primary-light font-bold underline underline-offset-2"
+                                  >
+                                    <User className="w-3 h-3" /> {isSwahili ? 'Wasifu wa Daktari' : 'View Doctor Profile'}
+                                  </button>
+                                )}
+                                {onViewFacility && apt.providerId && (
+                                  <button
+                                    type="button"
+                                    onClick={() => onViewFacility(apt.providerId!)}
+                                    aria-label={isSwahili ? `Angalia kituo ${apt.hospitalName}` : `View ${apt.hospitalName}`}
+                                    className="inline-flex items-center gap-1 text-[10px] text-primary dark:text-primary-light font-bold underline underline-offset-2"
+                                  >
+                                    <MapPinned className="w-3 h-3" /> {isSwahili ? 'Kituo' : 'View Facility'}
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           </div>
 
@@ -793,6 +1001,17 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                             </div>
 
                             <div className="flex items-center gap-2">
+                              {isCheckInEligible(apt) && (
+                                <button
+                                  type="button"
+                                  onClick={() => { setCheckInError(''); setCheckInFlow({ appointment: apt, step: 'confirm' }); }}
+                                  className="px-3 py-1.5 rounded-xl bg-primary hover:bg-primary-light text-white font-semibold text-xs flex items-center gap-1.5 cursor-pointer shadow-md"
+                                >
+                                  <UserCheck className="w-3.5 h-3.5" />
+                                  <span>{isSwahili ? 'Ingia' : 'Check In'}</span>
+                                </button>
+                              )}
+
                               {apt.consultationType === 'telehealth' && (
                                 <button
                                   type="button"
@@ -804,14 +1023,16 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                                 </button>
                               )}
 
-                              <button
-                                type="button"
-                                onClick={() => handleCancelAppointment(apt.id)}
-                                className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-950/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                <span>Ghairi (Cancel)</span>
-                              </button>
+                              {(apt.status === 'confirmed' || apt.status === 'arrived') && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleCancelAppointment(apt.id)}
+                                  className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-950/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <span>Ghairi (Cancel)</span>
+                                </button>
+                              )}
                             </div>
                           </div>
                         )}
@@ -1014,9 +1235,11 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                                   key={slot}
                                   type="button"
                                   onClick={() => setSelectedSlot(slot)}
-                                  className={`py-1.5 px-2 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
+                                  aria-pressed={selectedSlot === slot}
+                                  aria-label={isSwahili ? `Chagua muda ${slot}` : `Select ${slot} time slot`}
+                                  className={`min-h-[38px] py-1.5 px-2 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
                                     selectedSlot === slot
-                                      ? 'bg-primary text-white shadow-md font-semibold'
+                                      ? 'bg-primary text-white shadow-md font-semibold ring-2 ring-offset-1 ring-primary'
                                       : isDark
                                       ? 'bg-slate-900/90 text-slate-300 border border-slate-700 hover:border-primary-light'
                                       : 'bg-white text-slate-800 border border-slate-200 hover:bg-slate-100'
@@ -1179,10 +1402,27 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                     {/* Submit Booking Button */}
                     <div className="pt-2 space-y-2">
                       {bookingError && (
-                        <p className="text-xs font-semibold text-rose-500 bg-rose-500/10 border border-rose-500/30 rounded-xl p-2.5 flex items-center gap-1.5">
-                          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                          {bookingError}
-                        </p>
+                        <div role="alert" className="text-xs font-semibold text-rose-500 bg-rose-500/10 border border-rose-500/30 rounded-xl p-2.5 space-y-2">
+                          <p className="flex items-center gap-1.5">
+                            <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                            {bookingError}
+                          </p>
+                          {slotConflict && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setBookingError('');
+                                setSlotConflict(false);
+                                setSelectedSlot('');
+                                setPresetSlot(null);
+                                setSlotsRefreshToken((t) => t + 1);
+                              }}
+                              className="w-full py-2 rounded-lg bg-rose-500 hover:bg-rose-600 text-white font-bold cursor-pointer"
+                            >
+                              {isSwahili ? 'Chagua Muda Mwingine' : 'Choose Another Time'}
+                            </button>
+                          )}
+                        </div>
                       )}
                       <button
                         type="button"
@@ -1264,7 +1504,13 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                       >
                         <div>
                           <div className="flex items-start justify-between gap-2 mb-2">
-                            <div className="flex items-center gap-2.5">
+                            <button
+                              type="button"
+                              onClick={() => onViewDoctorProfile?.({ doctor: doc })}
+                              disabled={!onViewDoctorProfile}
+                              className="flex items-center gap-2.5 text-left disabled:cursor-default"
+                              title={onViewDoctorProfile ? (isSwahili ? 'Angalia Wasifu' : 'View Profile') : undefined}
+                            >
                               <div
                                 className={`w-10 h-10 rounded-xl bg-gradient-to-br ${doc.avatarColor} text-white flex items-center justify-center font-semibold text-sm flex-shrink-0`}
                               >
@@ -1276,10 +1522,15 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                                 </h5>
                                 <p className="text-[11px] text-primary-light font-semibold">{doc.specialty}</p>
                               </div>
-                            </div>
-                            <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
-                              ★ {doc.rating}
-                            </span>
+                            </button>
+                            {/* Rating only shown once the doctor has real reviews behind it —
+                                every profile defaults to rating 5.0 / 0 reviews, and surfacing
+                                that default reads as a fabricated rating. */}
+                            {doc.reviewsCount > 0 && (
+                              <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded flex-shrink-0">
+                                ★ {doc.rating.toFixed(1)}
+                              </span>
+                            )}
                           </div>
 
                           <p className="text-[11px] text-slate-400 mb-2 line-clamp-2">

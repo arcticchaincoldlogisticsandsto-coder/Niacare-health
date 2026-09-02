@@ -22,9 +22,14 @@ import {
   Banknote,
   FolderLock,
   FileDown,
-  Bell,
   Settings,
   Siren,
+  Users,
+  MessageSquare,
+  Share2,
+  PersonStanding,
+  Route,
+  CalendarDays,
 } from 'lucide-react';
 import { UserCategory, Language, LocalFormData, InternationalFormData, Theme } from '../types';
 import { TRANSLATIONS } from '../data/translations';
@@ -35,19 +40,150 @@ import { MedicalRecordsModal } from './MedicalRecordsModal';
 import { QrPassportModal } from './QrPassportModal';
 import { PrescriptionsModal } from './PrescriptionsModal';
 import { InsuranceModal } from './InsuranceModal';
-import { FacilitiesModal } from './FacilitiesModal';
+import { FacilityMapModal } from './FacilityMapModal';
 import { AiTriageModal } from './AiTriageModal';
-import { Appointment } from '../data/doctors';
+import { Appointment, DoctorProfileTarget } from '../data/doctors';
+import { appointmentStatusLabel } from '../data/appointmentStatus';
 import { MedicalRecord } from '../data/medicalRecords';
 import { getPatientCountry } from '../data/countries';
 import { formatDob } from '../utils/dateUtils';
 import { generateMedicalRecordPdf, generateCompiledMedicalPassportPdf } from '../utils/pdfGenerator';
 import { fetchMedicalRecords } from '../lib/records';
 import { fetchPrescriptions, updatePrescriptionTaken, Prescription } from '../lib/prescriptions';
+import { fetchQueuePosition, QueuePosition } from '../lib/queue';
 import { logAuditEvent } from '../lib/audit';
 import { Avatar } from './Avatar';
+import { NotificationBell } from './NotificationBell';
+import { MessagesModal } from './MessagesModal';
+import { ReferralsModal } from './ReferralsModal';
+import { BodyMapModal } from './BodyMapModal';
+import { HealthJourneyModal } from './HealthJourneyModal';
+import { CalendarModal } from './CalendarModal';
+import { DoctorProfileModal } from './DoctorProfileModal';
+import { FacilityProfileModal, FacilityProfileTarget } from './FacilityProfileModal';
+import { ImagingModal } from './ImagingModal';
 import { LaboratoryModal } from './LaboratoryModal';
 import { BottomNav } from './BottomNav';
+
+// Live "how far along am I" strip for a checked-in appointment — polls
+// instead of using a realtime subscription (matches this codebase's
+// existing pattern of plain fetch-on-interval, no realtime channels
+// anywhere else yet) every 25s while the card is visible, and stops as
+// soon as the appointment is no longer in the queue.
+const QueueStatusStrip: React.FC<{ language: Language; providerId: string; date: string; queueNumber: string; doctorName?: string }> = ({
+  language,
+  providerId,
+  date,
+  queueNumber,
+  doctorName,
+}) => {
+  const [position, setPosition] = useState<QueuePosition | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      const { position: p } = await fetchQueuePosition(providerId, date, queueNumber);
+      if (active && p) setPosition(p);
+    };
+    load();
+    const interval = setInterval(load, 25000);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [providerId, date, queueNumber]);
+
+  if (!position) return null;
+  const isSw = language === 'sw';
+
+  return (
+    <div className="w-full sm:w-auto rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/15 dark:border-primary/25 px-3.5 py-2.5 text-[11px] font-semibold text-primary dark:text-primary-light">
+      <div className="flex items-center justify-between gap-3 mb-1.5">
+        <span className="font-mono font-bold">{isSw ? 'Tiketi' : 'Ticket'} {queueNumber}</span>
+        {doctorName && <span className="truncate">{doctorName}</span>}
+      </div>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <span className="flex items-center gap-1">
+          <Users className="w-3.5 h-3.5" />
+          {isSw ? `Wagonjwa ${position.patientsAhead} mbele yako` : `${position.patientsAhead} ahead of you`}
+        </span>
+        <span className="flex items-center gap-1">
+          <Clock className="w-3.5 h-3.5" />
+          {isSw ? `Muda uliokadiriwa: dakika ${position.estimatedWaitMinutes}` : `Est. wait: ~${position.estimatedWaitMinutes} min`}
+        </span>
+      </div>
+      {(position.currentlyServing || position.nowServing) && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 pt-1.5 border-t border-primary/15 dark:border-primary/25 text-slate-500 dark:text-slate-400 font-mono text-[10px]">
+          {position.currentlyServing && <span>{isSw ? 'Sasa hivi' : 'Now'}: {position.currentlyServing}</span>}
+          {position.nowServing && <span>{isSw ? 'Ijayo' : 'Next'}: {position.nowServing}</span>}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Purely derived from fields the backend already sets on every status
+// transition (see supabase/schema.sql's appointment-pipeline RPCs) — no
+// separate frontend state, so this can never drift from the real status.
+// "Reception confirmed" and "Added to queue" both flip from the same
+// check_in_appointment() call (it sets arrival_confirmed_at and
+// queue_number together, atomically) — shown as two lines because the
+// spec asks for two, not because the backend treats them as separate steps.
+const FLOW_STEPS: { key: string; en: string; sw: string; done: (a: Appointment) => boolean }[] = [
+  { key: 'booked', en: 'Appointment booked', sw: 'Miadi imepangwa', done: () => true },
+  { key: 'arrived', en: 'Arrived', sw: 'Amefika', done: (a) => !!a.patientArrivedAt || !!a.arrivalConfirmedAt },
+  { key: 'confirmed', en: 'Reception confirmed', sw: 'Mapokezi yamethibitisha', done: (a) => !!a.arrivalConfirmedAt },
+  { key: 'queued', en: 'Added to queue', sw: 'Umeongezwa kwenye foleni', done: (a) => !!a.queueNumber },
+  { key: 'waiting', en: 'Waiting', sw: 'Unasubiri', done: (a) => !!a.calledAt || a.status === 'in_consultation' || a.status === 'completed' },
+  { key: 'called', en: 'Called', sw: 'Umeitwa', done: (a) => !!a.calledAt },
+  { key: 'consultation', en: 'Consultation', sw: 'Ushauri', done: (a) => !!a.consultationStartedAt },
+  { key: 'completed', en: 'Completed', sw: 'Imekamilika', done: (a) => a.status === 'completed' },
+];
+
+const AppointmentFlowTimeline: React.FC<{ appointment: Appointment; language: Language; isDark: boolean }> = ({ appointment, language, isDark }) => {
+  const [expanded, setExpanded] = useState(false);
+  const isSw = language === 'sw';
+  const doneFlags = FLOW_STEPS.map((s) => s.done(appointment));
+  const currentIndex = doneFlags.findIndex((d) => !d);
+
+  return (
+    <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+      <button
+        type="button"
+        onClick={() => setExpanded((e) => !e)}
+        aria-expanded={expanded}
+        className="flex items-center gap-1 text-[10px] font-bold text-slate-500 dark:text-slate-400"
+      >
+        {isSw ? 'Ratiba ya Ziara' : 'Visit Timeline'}
+        <ChevronRight className={`w-3 h-3 transition-transform ${expanded ? 'rotate-90' : ''}`} />
+      </button>
+      {expanded && (
+        <div className="mt-2 space-y-1.5">
+          {FLOW_STEPS.map((step, i) => {
+            const done = doneFlags[i];
+            const isCurrent = i === currentIndex;
+            return (
+              <div key={step.key} className="flex items-center gap-2 text-[11px]">
+                {done ? (
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                ) : isCurrent ? (
+                  <span className="w-3.5 h-3.5 flex-shrink-0 flex items-center justify-center">
+                    <span className="w-2 h-2 rounded-full bg-primary dark:bg-primary-light" />
+                  </span>
+                ) : (
+                  <span className="w-3.5 h-3.5 flex-shrink-0 rounded-full border-2 border-slate-300 dark:border-slate-600" />
+                )}
+                <span className={done || isCurrent ? `font-semibold ${isDark ? 'text-white' : 'text-slate-900'}` : 'text-slate-400'}>
+                  {isSw ? step.sw : step.en}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface PatientHomeDashboardProps {
   userCategory: UserCategory;
@@ -79,8 +215,33 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
 
   // Active sub-modals for dashboard actions
   const [activeModal, setActiveModal] = useState<
-    'qr' | 'appointment' | 'prescriptions' | 'records' | 'personal_files' | 'insurance' | 'facilities' | 'ai' | 'checkout' | 'laboratory' | null
+    'qr' | 'appointment' | 'prescriptions' | 'records' | 'personal_files' | 'insurance' | 'facilities' | 'ai' | 'checkout' | 'laboratory' | 'messages' | 'referrals' | 'bodymap' | 'journey' | 'calendar' | 'imaging' | null
   >(null);
+  const [bookingHospitalPreset, setBookingHospitalPreset] = useState<string | null>(null);
+  const [bookingDoctorPreset, setBookingDoctorPreset] = useState<string | null>(null);
+  const [bookingSlotPreset, setBookingSlotPreset] = useState<{ date: string; time: string } | null>(null);
+  const [imagingRecordPreset, setImagingRecordPreset] = useState<string | null>(null);
+  const [viewingDoctorProfile, setViewingDoctorProfile] = useState<DoctorProfileTarget | null>(null);
+  const [viewingFacilityProfile, setViewingFacilityProfile] = useState<FacilityProfileTarget | null>(null);
+
+  // Issue 3 fix: every booking preset is cleared together, and only at the
+  // three points the spec calls out — modal close/cancel, a successful
+  // booking, or an unrelated booking starting fresh. Never mid-session while
+  // the booking modal is still open (that would blow away what the patient
+  // just picked in the Doctor Profile).
+  const clearBookingPresets = () => {
+    setBookingHospitalPreset(null);
+    setBookingDoctorPreset(null);
+    setBookingSlotPreset(null);
+  };
+
+  // Shared by every "Book at this facility" entry point (Facility Map,
+  // Facility Profile) so the preset-setting logic lives in exactly one
+  // place.
+  const handleBookAtFacility = (facilityName: string) => {
+    setBookingHospitalPreset(facilityName);
+    setActiveModal('appointment');
+  };
   const [activeNav, setActiveNav] = useState<'home' | 'appointments' | 'records' | 'prescriptions' | 'profile'>('home');
 
   const handleNavigation = (key: typeof activeNav) => {
@@ -244,14 +405,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
-            <button
-              type="button"
-              className="relative flex h-10 w-10 items-center justify-center rounded-xl border nc-border bg-white text-primary shadow-sm dark:bg-[#101F31] dark:text-primary-light"
-              title="Notifications"
-            >
-              <Bell className="h-4 w-4" />
-              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-rose-500" />
-            </button>
+            <NotificationBell userId={authUserId} language={language} theme={theme} />
             <button
               type="button"
               onClick={onOpenSettings}
@@ -304,7 +458,12 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
           thing on this screen ("what's next for me"), so it leads, before
           the health passport card below. */}
       {(() => {
-        const activeAppointment = appointmentsList.find((a) => a.status !== 'cancelled');
+        // The nearest non-final-state appointment, soonest first — a
+        // completed/cancelled/no_show visit is never "what's next", so it's
+        // excluded here (no_show gets its own panel below, per spec).
+        const activeAppointment = appointmentsList
+          .filter((a) => !['cancelled', 'completed', 'no_show'].includes(a.status))
+          .sort((a, b) => (a.date + a.timeSlot).localeCompare(b.date + b.timeSlot))[0];
         return (
           <div
             className={`p-4 rounded-xl border ${
@@ -368,24 +527,61 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <button
-                    type="button"
-                    onClick={() => setActiveModal('appointment')}
-                    className="w-full sm:w-auto px-3 py-2 rounded-xl text-xs font-bold bg-primary text-white hover:bg-primary-light cursor-pointer transition-all flex items-center justify-center gap-1 shadow-sm"
-                  >
-                    <span>
-                      {activeAppointment.consultationType === 'telehealth'
+                <div className="flex flex-col items-start sm:items-end gap-2 w-full sm:w-auto">
+                  {activeAppointment.status === 'in_queue' && activeAppointment.providerId && activeAppointment.queueNumber && (
+                    <QueueStatusStrip
+                      language={language}
+                      providerId={activeAppointment.providerId}
+                      date={activeAppointment.date}
+                      queueNumber={activeAppointment.queueNumber}
+                      doctorName={activeAppointment.doctorName}
+                    />
+                  )}
+                  {(activeAppointment.status === 'called' || activeAppointment.status === 'in_consultation' || activeAppointment.status === 'arrived') && (
+                    <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold bg-primary/5 dark:bg-primary/10 text-primary dark:text-primary-light border border-primary/20 dark:border-primary/30">
+                      {activeAppointment.status === 'in_consultation' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
+                      {activeAppointment.status === 'called'
                         ? language === 'sw'
-                          ? 'Tazama / Video'
-                          : 'View / Video'
-                        : language === 'sw'
-                        ? 'Kadi ya Foleni & QR'
-                        : 'Queue Pass & QR'}
+                          ? 'Umeitwa — nenda eneo la ushauri'
+                          : "You've been called — please proceed"
+                        : appointmentStatusLabel(activeAppointment.status, language === 'sw')}
                     </span>
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
+                  )}
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    {activeAppointment.consultationType !== 'telehealth' && activeAppointment.providerId && (
+                      <button
+                        type="button"
+                        onClick={() => setViewingFacilityProfile({ providerId: activeAppointment.providerId! })}
+                        aria-label={language === 'sw' ? 'Pata Njia ya Kituo' : 'Get directions to facility'}
+                        className={`px-3 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center justify-center gap-1 border ${
+                          isDark ? 'border-slate-700 text-slate-200 hover:bg-slate-800' : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        <MapPin className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">{language === 'sw' ? 'Njia' : 'Directions'}</span>
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setActiveModal('appointment')}
+                      className="flex-1 sm:flex-initial px-3 py-2 rounded-xl text-xs font-bold bg-primary text-white hover:bg-primary-light cursor-pointer transition-all flex items-center justify-center gap-1 shadow-sm"
+                    >
+                      <span>
+                        {activeAppointment.consultationType === 'telehealth'
+                          ? language === 'sw'
+                            ? 'Tazama / Video'
+                            : 'View / Video'
+                          : language === 'sw'
+                          ? 'Kadi ya Foleni & QR'
+                          : 'Queue Pass & QR'}
+                      </span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
+                {activeAppointment.status !== 'confirmed' && (
+                  <AppointmentFlowTimeline appointment={activeAppointment} language={language} isDark={isDark} />
+                )}
               </div>
             ) : (
               <div
@@ -408,6 +604,42 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
                 </button>
               </div>
             )}
+          </div>
+        );
+      })()}
+
+      {/* 1b. Missed appointment — only the most recent no_show, and only
+          when there's no active upcoming appointment already shown above
+          (once a patient has a new booking, dwelling on the missed one
+          adds clutter rather than useful next-step guidance). */}
+      {(() => {
+        const hasActive = appointmentsList.some((a) => !['cancelled', 'completed', 'no_show'].includes(a.status));
+        const missed = !hasActive
+          ? appointmentsList.filter((a) => a.status === 'no_show').sort((a, b) => b.date.localeCompare(a.date))[0]
+          : null;
+        if (!missed) return null;
+        return (
+          <div className={`p-4 rounded-xl border ${isDark ? 'bg-[#101F31] border-amber-900/50' : 'bg-white border-amber-200'}`}>
+            <div className="flex items-center gap-2 mb-2">
+              <Clock className="w-4 h-4 text-amber-500" />
+              <h3 className="text-xs sm:text-sm font-semibold text-amber-600 dark:text-amber-400">
+                {language === 'sw' ? 'Miadi Uliyokosa' : 'Missed Appointment'}
+              </h3>
+            </div>
+            <p className="text-xs text-slate-700 dark:text-slate-200">
+              {missed.doctorSpecialty} • {missed.doctorName}
+            </p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              {missed.hospitalName} • {missed.date}
+            </p>
+            <button
+              type="button"
+              onClick={() => { if (missed.doctorProfileId) setBookingDoctorPreset(missed.doctorProfileId); setActiveModal('appointment'); }}
+              className="mt-2.5 px-3 py-2 rounded-xl text-xs font-bold bg-primary text-white hover:bg-primary-light cursor-pointer transition-all inline-flex items-center gap-1"
+            >
+              <CalendarCheck className="w-3.5 h-3.5" />
+              {language === 'sw' ? 'Weka Miadi Nyingine' : 'Book Another Appointment'}
+            </button>
           </div>
         );
       })()}
@@ -681,6 +913,54 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
             </div>
           </button>
 
+          {/* Action 1c: Calendar */}
+          <button
+            id="hub-btn-calendar"
+            type="button"
+            onClick={() => setActiveModal('calendar')}
+            className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group active:scale-98 ${
+              isDark
+                ? 'bg-[#091422] border-slate-800 hover:border-primary hover:bg-[#0c1a2d]'
+                : 'bg-[#F9FBFE] border-slate-200/80 hover:border-primary hover:bg-primary/5'
+            }`}
+          >
+            <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary dark:text-primary-light flex items-center justify-center mb-2">
+              <CalendarDays className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-xs font-semibold text-slate-900 dark:text-white leading-tight">
+                {language === 'sw' ? 'Kalenda' : 'Calendar'}
+              </h4>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">
+                {language === 'sw' ? 'Ratiba ya miadi yako' : 'Your visit schedule'}
+              </p>
+            </div>
+          </button>
+
+          {/* Action 1b: Health Journey */}
+          <button
+            id="hub-btn-health-journey"
+            type="button"
+            onClick={() => setActiveModal('journey')}
+            className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group active:scale-98 ${
+              isDark
+                ? 'bg-[#091422] border-slate-800 hover:border-primary hover:bg-[#0c1a2d]'
+                : 'bg-[#F9FBFE] border-slate-200/80 hover:border-primary hover:bg-primary/5'
+            }`}
+          >
+            <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary dark:text-primary-light flex items-center justify-center mb-2">
+              <Route className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-xs font-semibold text-slate-900 dark:text-white leading-tight">
+                {language === 'sw' ? 'Safari ya Afya' : 'Health Journey'}
+              </h4>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">
+                {language === 'sw' ? 'Historia yako yote ya matibabu' : 'Your full care history'}
+              </p>
+            </div>
+          </button>
+
           {/* Action 2: Malipo & Checkout Procedures (Insurance vs Cash) */}
           <button
             id="hub-btn-checkout"
@@ -854,6 +1134,78 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
               </div>
             </div>
           </button>
+
+          {/* Action 9: Messages */}
+          <button
+            id="hub-btn-messages"
+            type="button"
+            onClick={() => setActiveModal('messages')}
+            className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group active:scale-98 sm:col-span-2 ${
+              isDark
+                ? 'bg-[#091422] border-slate-800 hover:border-primary hover:bg-[#0c1a2d]'
+                : 'bg-[#F9FBFE] border-slate-200/80 hover:border-primary hover:bg-primary/5'
+            }`}
+          >
+            <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary dark:text-primary-light flex items-center justify-center mb-2">
+              <MessageSquare className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-xs font-semibold text-slate-900 dark:text-white leading-tight">
+                {language === 'sw' ? 'Ujumbe' : 'Messages'}
+              </h4>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">
+                {language === 'sw' ? 'Wasiliana na timu yako ya afya' : 'Chat with your care team'}
+              </p>
+            </div>
+          </button>
+
+          {/* Action 10: Referrals */}
+          <button
+            id="hub-btn-referrals"
+            type="button"
+            onClick={() => setActiveModal('referrals')}
+            className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group active:scale-98 sm:col-span-2 ${
+              isDark
+                ? 'bg-[#091422] border-slate-800 hover:border-primary hover:bg-[#0c1a2d]'
+                : 'bg-[#F9FBFE] border-slate-200/80 hover:border-primary hover:bg-primary/5'
+            }`}
+          >
+            <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary dark:text-primary-light flex items-center justify-center mb-2">
+              <Share2 className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-xs font-semibold text-slate-900 dark:text-white leading-tight">
+                {language === 'sw' ? 'Rufaa Zangu' : 'Referrals'}
+              </h4>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">
+                {language === 'sw' ? 'Rufaa kwa wataalamu na vituo vingine' : 'Sent to specialists and other facilities'}
+              </p>
+            </div>
+          </button>
+
+          {/* Action 11: Body Map */}
+          <button
+            id="hub-btn-bodymap"
+            type="button"
+            onClick={() => setActiveModal('bodymap')}
+            className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group active:scale-98 sm:col-span-2 ${
+              isDark
+                ? 'bg-[#091422] border-slate-800 hover:border-primary hover:bg-[#0c1a2d]'
+                : 'bg-[#F9FBFE] border-slate-200/80 hover:border-primary hover:bg-primary/5'
+            }`}
+          >
+            <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary dark:text-primary-light flex items-center justify-center mb-2">
+              <PersonStanding className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-xs font-semibold text-slate-900 dark:text-white leading-tight">
+                {language === 'sw' ? 'Ramani ya Mwili' : 'Body Map'}
+              </h4>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">
+                {language === 'sw' ? 'Hali zako kwa eneo la mwili' : 'Your conditions by body area'}
+              </p>
+            </div>
+          </button>
         </div>
       </div>
 
@@ -982,7 +1334,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
       {/* MODAL 2: COMPREHENSIVE DOCTOR & HOSPITAL APPOINTMENT BOOKING */}
       <AppointmentBookingModal
         isOpen={activeModal === 'appointment'}
-        onClose={() => setActiveModal(null)}
+        onClose={() => { setActiveModal(null); clearBookingPresets(); }}
         language={language}
         theme={theme}
         userCategory={userCategory}
@@ -991,9 +1343,16 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
         appointmentsList={appointmentsList}
         setAppointmentsList={setAppointmentsList}
         authUserId={authUserId}
+        initialHospitalFilter={bookingHospitalPreset || undefined}
+        initialDoctorId={bookingDoctorPreset || undefined}
+        initialDate={bookingSlotPreset?.date}
+        initialTime={bookingSlotPreset?.time}
+        onViewDoctorProfile={(target) => setViewingDoctorProfile(target)}
+        onViewFacility={(providerId) => setViewingFacilityProfile({ providerId })}
         onAppointmentBooked={(newApt) => {
           setAppointmentToast(`Miadi imepangwa: ${newApt.doctorName} (${newApt.timeSlot})`);
           setTimeout(() => setAppointmentToast(null), 4000);
+          clearBookingPresets();
         }}
       />
 
@@ -1024,6 +1383,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
         patientDocNumber={primaryDocNumber}
         initialTab={activeModal === 'personal_files' ? 'personal_files' : 'records'}
         authUserId={authUserId}
+        onOpenImaging={() => setActiveModal('imaging')}
       />
 
       {/* MODAL 6: INSURANCE & CLAIMS */}
@@ -1037,10 +1397,13 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
       />
 
       {/* MODAL 7: NEARBY HOSPITALS MAP / DIRECTORY */}
-      <FacilitiesModal
+      <FacilityMapModal
         isOpen={activeModal === 'facilities'}
         onClose={() => setActiveModal(null)}
+        language={language}
         theme={theme}
+        onBookAtFacility={handleBookAtFacility}
+        onViewFacilityProfile={(facility) => setViewingFacilityProfile({ facility })}
       />
 
       {/* MODAL 8: NIAAI HEALTH TRIAGE CHAT */}
@@ -1058,6 +1421,129 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
         onClose={() => setActiveModal(null)}
         theme={theme}
         patientId={authUserId}
+      />
+
+      {/* MODAL 11: MESSAGES — real conversations with doctors/facilities the
+          patient has an actual care relationship with. */}
+      <MessagesModal
+        isOpen={activeModal === 'messages'}
+        onClose={() => setActiveModal(null)}
+        myUserId={authUserId}
+        language={language}
+        theme={theme}
+        onViewDoctorProfile={(target) => setViewingDoctorProfile(target)}
+      />
+
+      {/* MODAL 12: REFERRALS */}
+      <ReferralsModal
+        isOpen={activeModal === 'referrals'}
+        onClose={() => setActiveModal(null)}
+        patientId={authUserId}
+        language={language}
+        theme={theme}
+      />
+
+      {/* MODAL 13: BODY MAP */}
+      <BodyMapModal
+        isOpen={activeModal === 'bodymap'}
+        onClose={() => setActiveModal(null)}
+        patientId={authUserId}
+        language={language}
+        theme={theme}
+        onViewHealthJourney={() => setActiveModal('journey')}
+      />
+
+      {/* MODAL 14: HEALTH JOURNEY */}
+      <HealthJourneyModal
+        isOpen={activeModal === 'journey'}
+        onClose={() => setActiveModal(null)}
+        patientId={authUserId}
+        language={language}
+        theme={theme}
+        appointmentsList={appointmentsList}
+        onViewReport={(recordId) => {
+          setImagingRecordPreset(recordId);
+          setActiveModal('imaging');
+        }}
+        onViewDoctorProfile={(target) => setViewingDoctorProfile(target)}
+        onViewLabResults={() => setActiveModal('laboratory')}
+        onBookFollowUp={(entry) => {
+          if (entry.doctorProfileId) setBookingDoctorPreset(entry.doctorProfileId);
+          setActiveModal('appointment');
+        }}
+        onViewFacility={(providerId) => setViewingFacilityProfile({ providerId })}
+      />
+
+      {/* MODAL 15: CALENDAR */}
+      <CalendarModal
+        isOpen={activeModal === 'calendar'}
+        onClose={() => setActiveModal(null)}
+        appointments={appointmentsList}
+        language={language}
+        theme={theme}
+        onViewDoctorProfile={(target) => setViewingDoctorProfile(target)}
+      />
+
+      {/* MODAL 16: DOCTOR PROFILE — the one canonical implementation, layered
+          above whichever modal it was opened from (z-[60] > their z-50) so
+          it can be reached from Doctor Discovery/Booking, Existing
+          Appointments, Health Journey, Messages, and now Facility Profile's
+          Doctors list without losing that modal's state underneath. */}
+      <DoctorProfileModal
+        isOpen={!!viewingDoctorProfile}
+        onClose={() => setViewingDoctorProfile(null)}
+        target={viewingDoctorProfile}
+        language={language}
+        theme={theme}
+        onBookAppointment={(doc, slot) => {
+          setBookingDoctorPreset(doc.id);
+          setBookingSlotPreset(slot || null);
+          setViewingDoctorProfile(null);
+          setActiveModal('appointment');
+        }}
+        onViewFacility={(doc) => {
+          if (!doc.providerId) return;
+          setViewingDoctorProfile(null);
+          setViewingFacilityProfile({ providerId: doc.providerId });
+        }}
+      />
+
+      {/* MODAL 18: FACILITY PROFILE — reachable from the Facility Map/list
+          (a "N doctors · View Facility Profile" link, additive to the
+          existing map UI) and from Doctor Profile's "View Facility". Layered
+          the same way Doctor Profile is; opening a doctor from here closes
+          this and opens Doctor Profile instead of stacking a third layer,
+          keeping the existing one-overlay-at-a-time navigation model. */}
+      <FacilityProfileModal
+        isOpen={!!viewingFacilityProfile}
+        onClose={() => setViewingFacilityProfile(null)}
+        target={viewingFacilityProfile}
+        language={language}
+        theme={theme}
+        onBookAtFacility={(facilityName) => {
+          setViewingFacilityProfile(null);
+          handleBookAtFacility(facilityName);
+        }}
+        onViewDoctorProfile={(target) => {
+          setViewingFacilityProfile(null);
+          setViewingDoctorProfile(target);
+        }}
+        onBookDoctor={(doc) => {
+          setBookingDoctorPreset(doc.id);
+          setBookingHospitalPreset(doc.hospital);
+          setViewingFacilityProfile(null);
+          setActiveModal('appointment');
+        }}
+      />
+
+      {/* MODAL 17: IMAGING */}
+      <ImagingModal
+        isOpen={activeModal === 'imaging'}
+        onClose={() => { setActiveModal(null); setImagingRecordPreset(null); }}
+        patientId={authUserId}
+        language={language}
+        theme={theme}
+        initialRecordId={imagingRecordPreset}
       />
 
       <BottomNav active={activeNav} onChange={handleNavigation} language={language} />

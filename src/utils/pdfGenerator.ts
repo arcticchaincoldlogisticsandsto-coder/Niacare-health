@@ -31,9 +31,9 @@ export function generateMedicalRecordPdf(
   const isFrench = language === 'fr';
 
   // --- Theme Colors ---
-  const primaryNavy = [13, 148, 136]; // #0D9488 (NiaCare teal)
+  const primaryNavy = [0, 94, 184]; // #005EB8 (NHS Blue)
   const darkSlate = [15, 23, 42]; // #0F172A
-  const accentTeal = [13, 148, 136]; // #0D9488
+  const accentTeal = [0, 94, 184]; // #005EB8 (NHS Blue)
   const lightBg = [248, 250, 252]; // #F8FAFC
   const borderGray = [226, 232, 240]; // #E2E8F0
   const textMuted = [100, 116, 139]; // #64748B
@@ -319,7 +319,7 @@ export function generateCompiledMedicalPassportPdf(
     format: 'a4',
   });
 
-  const primaryNavy = [13, 148, 136]; // #0D9488 (NiaCare teal)
+  const primaryNavy = [0, 94, 184]; // #005EB8 (NHS Blue)
   const darkSlate = [15, 23, 42];
   const lightBg = [248, 250, 252];
   const borderGray = [226, 232, 240];
@@ -441,12 +441,12 @@ export interface ReceiptForPdf {
 export function generateReceiptPdf(receipt: ReceiptForPdf, patient: PatientInfoForPdf): void {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
-  const primaryTeal = [13, 148, 136]; // #0D9488
+  const primaryTeal = [0, 94, 184]; // #005EB8 (NHS Blue)
   const darkSlate = [15, 23, 42]; // #0F172A
   const lightBg = [248, 250, 252]; // #F8FAFC
   const borderGray = [226, 232, 240]; // #E2E8F0
   const textMuted = [100, 116, 139]; // #64748B
-  const successGreen = [16, 185, 129]; // #10B981
+  const successGreen = [0, 127, 59]; // #007F3B (NHS Green)
 
   doc.setFillColor(primaryTeal[0], primaryTeal[1], primaryTeal[2]);
   doc.rect(0, 0, 210, 28, 'F');

@@ -2,7 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { X, CreditCard, Banknote, ShieldCheck } from 'lucide-react';
 import { Theme } from '../types';
 import { fetchBills } from '../lib/bills';
+import { fetchClaimsForPatient, Claim, ClaimStatus } from '../lib/claims';
 import { MedicalBill } from './CheckoutProcedureModal';
+
+const CLAIM_STATUS_STYLES: Record<ClaimStatus, string> = {
+  submitted: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
+  under_review: 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
+  approved: 'bg-primary/5 text-[var(--nc-primary)] dark:bg-primary/10 dark:text-primary-light',
+  rejected: 'bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300',
+  paid: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
+};
 
 interface InsuranceModalProps {
   isOpen: boolean;
@@ -23,15 +32,18 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({
 }) => {
   const isDark = theme === 'dark';
   const [bills, setBills] = useState<MedicalBill[]>([]);
+  const [claims, setClaims] = useState<Claim[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!isOpen || !authUserId) return;
+    if (!isOpen) return;
+    if (!authUserId) { setIsLoading(false); return; }
     let active = true;
     setIsLoading(true);
-    fetchBills(authUserId).then(({ bills: fetched }) => {
+    Promise.all([fetchBills(authUserId), fetchClaimsForPatient(authUserId)]).then(([billsRes, claimsRes]) => {
       if (!active) return;
-      setBills(fetched);
+      setBills(billsRes.bills);
+      setClaims(claimsRes.claims);
       setIsLoading(false);
     });
     return () => {
@@ -72,6 +84,31 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({
               <span>Hali: Inatumika (Active)</span>
             </div>
           </div>
+
+          {claims.length > 0 && (
+            <div className="space-y-2">
+              <h5 className="font-bold text-xs">Madai ya Bima (Insurance Claims):</h5>
+              {claims.map((claim) => (
+                <div
+                  key={claim.id}
+                  className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between"
+                >
+                  <div>
+                    <span className="font-bold block">{claim.insuranceProvider}</span>
+                    <span className="text-[10px] text-slate-400">
+                      {claim.referenceNumber || '—'} • {new Date(claim.submittedAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="font-mono font-bold">TZS {claim.claimAmountTzs.toLocaleString()}</span>
+                    <span className={`rounded-md px-1.5 py-0.5 text-[9px] font-bold capitalize ${CLAIM_STATUS_STYLES[claim.status]}`}>
+                      {claim.status.replace('_', ' ')}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="space-y-2">
             <h5 className="font-bold text-xs">Madai ya Hivi Karibuni:</h5>

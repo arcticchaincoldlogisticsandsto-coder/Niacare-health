@@ -22,6 +22,8 @@ interface MedicalRecordRow {
   summary_sw: string;
   details: MedicalRecord['details'] | null;
   pdf_file_name: string | null;
+  body_region: string | null;
+  body_side: MedicalRecord['bodySide'] | null;
 }
 
 const mapRowToRecord = (row: MedicalRecordRow): MedicalRecord => ({
@@ -37,6 +39,8 @@ const mapRowToRecord = (row: MedicalRecordRow): MedicalRecord => ({
   summary: { sw: row.summary_sw, en: row.summary_en },
   details: row.details || undefined,
   pdfFileName: row.pdf_file_name || `${row.id}_Medical_Report.pdf`,
+  bodyRegion: row.body_region || undefined,
+  bodySide: row.body_side || undefined,
 });
 
 export const fetchMedicalRecords = async (

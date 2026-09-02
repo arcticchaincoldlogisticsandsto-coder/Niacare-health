@@ -36,6 +36,7 @@ interface SettingsModalProps {
   onToggleTheme: () => void;
   onTriggerBiometric: (mode: 'fingerprint' | 'faceid') => void;
   onOpenPdpaModal: () => void;
+  onOpenRecordAccessModal: () => void;
   onOpenLanguageModal?: () => void;
   patientName?: string;
   patientId?: string;
@@ -54,6 +55,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onToggleTheme,
   onTriggerBiometric,
   onOpenPdpaModal,
+  onOpenRecordAccessModal,
   onOpenLanguageModal,
   patientName = 'Amina Salum Bakari',
   patientId = 'NC-TZ-8849201',
@@ -722,6 +724,25 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <div className="flex items-center gap-2">
                 <Shield className="w-3.5 h-3.5 text-primary" />
                 <span>{t.viewPdpaBtn[language]}</span>
+              </div>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onOpenRecordAccessModal();
+              }}
+              className={`w-full mt-2 p-2.5 rounded-xl border text-xs font-bold flex items-center justify-between cursor-pointer transition-colors ${
+                isDark
+                  ? 'bg-[#08121E] border-slate-700 text-primary-light hover:bg-slate-800'
+                  : 'bg-white border-slate-200 text-[var(--nc-primary)] hover:bg-primary/5'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Lock className="w-3.5 h-3.5 text-primary" />
+                <span>{language === 'sw' ? 'Simamia Ufikiaji wa Rekodi' : 'Manage Record Access'}</span>
               </div>
               <ChevronRight className="w-4 h-4" />
             </button>

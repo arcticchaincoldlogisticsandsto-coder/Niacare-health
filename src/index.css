@@ -1,36 +1,40 @@
 @import "tailwindcss";
 
 :root {
-  /* NiaCare brand palette — matches the approved Figma reference (teal
-     primary, deep navy reserved for headings/dark accents, not chrome). */
-  --nc-primary: #0D9488;
-  --nc-primary-dark: #0F766E;
-  --nc-primary-light: #14B8A6;
+  /* NiaCare brand palette — aligned to the NHS digital service manual
+     (service-manual.nhs.uk/design-system): NHS Blue for brand/links/focus,
+     NHS Green reserved for the primary-action button convention below,
+     NHS's own grey scale for neutrals. Chosen deliberately, not copied
+     wholesale — see the color-policy comment further down. */
+  --nc-primary: #005EB8;      /* NHS Blue */
+  --nc-primary-dark: #003087; /* NHS Dark Blue */
+  --nc-primary-light: #41B6E6; /* NHS Light Blue */
   --nc-accent: #0B1220;
   --nc-accent-light: #1E293B;
 
-  /* Semantic colors */
-  --nc-success: #10B981;
-  --nc-success-subtle: #D1FAE5;
-  --nc-warning: #F59E0B;
-  --nc-warning-subtle: #FEF3C7;
-  --nc-danger: #EF4444;
-  --nc-danger-subtle: #FEE2E2;
-  --nc-info: #3B82F6;
-  --nc-info-subtle: #DBEAFE;
-  --nc-purple: #8B5CF6;
-  --nc-purple-subtle: #EDE9FE;
+  /* Semantic colors — NHS Green/Orange/Red */
+  --nc-success: #007F3B;
+  --nc-success-subtle: #DFF3E6;
+  --nc-warning: #ED8B00;
+  --nc-warning-subtle: #FDEBD3;
+  --nc-danger: #D5281B;
+  --nc-danger-subtle: #FBE1DE;
+  --nc-info: #41B6E6;
+  --nc-info-subtle: #E3F4FC;
+  --nc-purple: #330072;       /* NHS Purple, extended palette */
+  --nc-purple-subtle: #EAE3F5;
+  --nc-focus: #FFEB3B;        /* NHS/GOV.UK-style visible focus ring */
 
-  /* Light mode surfaces */
-  --nc-bg: #F7FAFE;
+  /* Light mode surfaces — NHS grey scale */
+  --nc-bg: #F0F4F5;      /* NHS Grey-5 */
   --nc-surface: #FFFFFF;
-  --nc-surface-elevated: #FBFDFF;
-  --nc-border: #E4EBF4;
-  --nc-border-strong: #D5E0ED;
-  --nc-text: #10233E;
-  --nc-text-secondary: #52647B;
-  --nc-text-muted: #7A8AA0;
-  --nc-placeholder: #94A3B8;
+  --nc-surface-elevated: #FAFCFC;
+  --nc-border: #D8DDE0;        /* NHS Grey-4 */
+  --nc-border-strong: #AEB7BD; /* NHS Grey-3 */
+  --nc-text: #212B32;          /* NHS Black */
+  --nc-text-secondary: #4C6272; /* NHS Grey-1 */
+  --nc-text-muted: #768692;     /* NHS Grey-2 */
+  --nc-placeholder: #AEB7BD;
 }
 
 .dark {
@@ -52,11 +56,16 @@
  * border-border, text-heading, etc.) so components can stop hand-coding
  * raw palette classes (bg-cyan-500) or arbitrary hex literals.
  *
- * Color policy: --color-primary is for actions/links/active-state/focus.
- * --color-accent (teal) is the ONE allowed secondary decorative color and
- * should be used sparingly, not one-per-card. success/warning/danger/info
- * are for status only, never decoration. Saturated purple/cyan/rose/pink/
- * indigo as decorative fills are not part of this system.
+ * Color policy: --color-primary (NHS Blue) is for links, active tabs,
+ * badges, and focus/brand accents. The primary ACTION button
+ * (.nc-btn-primary — book, confirm, submit, pay) uses NHS Green
+ * specifically, matching the real NHS.UK convention where blue is the
+ * brand/link colour and green is reserved for the main call-to-action —
+ * see service-manual.nhs.uk/design-system/components/buttons. success/
+ * warning/danger/info are for status only, never decoration. Saturated
+ * purple/cyan/rose/pink/indigo as decorative fills are not part of this
+ * system; --color-purple is NHS's own extended-palette purple, used
+ * sparingly (e.g. maternity/paediatric context tags), not as a default.
  */
 @theme {
   --color-primary: var(--nc-primary);
@@ -64,6 +73,7 @@
   --color-primary-light: var(--nc-primary-light);
   --color-accent: var(--nc-accent);
   --color-accent-light: var(--nc-accent-light);
+  --color-focus: var(--nc-focus);
 
   --color-success: var(--nc-success);
   --color-success-subtle: var(--nc-success-subtle);
@@ -152,17 +162,19 @@
   .nc-text-secondary { color: var(--nc-text-secondary); }
   .nc-text-muted { color: var(--nc-text-muted); }
 
+  /* NHS convention: the primary action button is green, not brand blue —
+     blue stays reserved for links/tabs/focus (see color-policy comment above). */
   .nc-btn-primary {
     @apply rounded-lg font-extrabold text-xs transition-all active:scale-[0.98];
-    background-color: var(--nc-primary);
+    background-color: var(--nc-success);
     color: #FFFFFF;
   }
   .nc-btn-primary:hover {
-    background-color: var(--nc-primary-light);
+    background-color: #009443;
   }
 
   .dark .nc-btn-primary:hover {
-    background-color: var(--nc-primary-light);
+    background-color: #009443;
   }
 
   .nc-card {
@@ -201,8 +213,18 @@
   }
 
   .nc-gradient-passport {
-    background: linear-gradient(135deg, #0F766E 0%, #0D9488 60%, #14B8A6 100%);
+    background: linear-gradient(135deg, #003087 0%, #005EB8 60%, #41B6E6 100%);
   }
+}
+
+/* Visible keyboard-focus ring, NHS/GOV.UK convention: high-contrast yellow
+   works on every surface colour in this system, unlike a same-hue outline
+   that can disappear against a similarly-coloured background. Only shows
+   for keyboard navigation (:focus-visible), never on a mouse click. */
+:focus-visible {
+  outline: 3px solid var(--nc-focus);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 /* Compact clinical primitives mirrored from the supplied product reference. */
@@ -506,6 +528,20 @@ button { -webkit-tap-highlight-color: transparent; }
 .patient-mobile-shell #card-digital-health-passport > * {
   position: relative;
   z-index: 1;
+}
+
+/* The "reverse" white button (Show QR Code) inside the blue passport card
+   needs to stay a bright white pill for contrast against the gradient in
+   BOTH themes — the app-wide dark-mode bg-white override two rules above
+   (which correctly turns an ordinary white card dark) would otherwise also
+   darken this intentional reverse-button, making its text unreadable
+   against the still-blue card. Scoped to this one card only. */
+.patient-mobile-shell #card-digital-health-passport [class~="bg-white"] {
+  background-color: #FFFFFF !important;
+  color: var(--nc-primary-dark) !important;
+}
+.patient-mobile-shell #card-digital-health-passport [class~="bg-white"]:hover {
+  background-color: #F0F4F5 !important;
 }
 
 .patient-mobile-shell [id^="hub-btn-"] {

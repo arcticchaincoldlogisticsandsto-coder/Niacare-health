@@ -14,7 +14,17 @@ interface DoctorProfileRow {
   reviews_count: number;
   experience_years: number | null;
   telehealth_fee_tzs: number;
-  providers: { name: string; region: string; nhif_enabled: boolean } | { name: string; region: string; nhif_enabled: boolean }[] | null;
+  is_verified: boolean;
+  providers: ProviderRef | ProviderRef[] | null;
+}
+
+interface ProviderRef {
+  id: string;
+  name: string;
+  region: string;
+  nhif_enabled: boolean;
+  lat: number | null;
+  lng: number | null;
 }
 
 const AVATAR_COLORS = [
@@ -34,6 +44,41 @@ const colorForId = (id: string) => {
 
 const first = <T,>(value: T | T[] | null): T | null => (Array.isArray(value) ? value[0] || null : value);
 
+const DOCTOR_PROFILE_SELECT =
+  'id, user_id, provider_id, mct_registration, specialty, consultation_fee_tzs, telehealth_fee_tzs, languages, bio, rating, reviews_count, experience_years, is_verified, providers(id, name, region, nhif_enabled, lat, lng)';
+
+const mapDoctorRow = (row: DoctorProfileRow, doctorName: string): Doctor => {
+  const provider = first(row.providers);
+  return {
+    id: row.id,
+    name: doctorName,
+    title: row.specialty,
+    specialty: row.specialty,
+    specialtySw: row.specialty,
+    hospital: provider?.name || 'Unassigned facility',
+    hospitalLocation: provider?.region || '',
+    facilityLat: provider?.lat ?? undefined,
+    facilityLng: provider?.lng ?? undefined,
+    region: provider?.region || '',
+    rating: row.rating,
+    reviewsCount: row.reviews_count,
+    experienceYears: row.experience_years || 0,
+    languages: row.languages && row.languages.length > 0 ? row.languages : ['Kiswahili', 'English'],
+    mctRegistration: row.mct_registration || '—',
+    nhifAccepted: provider?.nhif_enabled || false,
+    privateInsuranceAccepted: true,
+    consultationFeeTzs: row.consultation_fee_tzs,
+    availableDays: [],
+    availableSlots: { morning: [], afternoon: [], evening: [] },
+    telehealthAvailable: row.telehealth_fee_tzs > 0,
+    avatarColor: colorForId(row.id),
+    bio: row.bio || `${row.specialty} specialist.`,
+    bioSw: row.bio || `Daktari bingwa wa ${row.specialty}.`,
+    providerId: row.provider_id || undefined,
+    isVerified: row.is_verified,
+  };
+};
+
 /**
  * Real, platform-registered doctors — invited via api/invite-staff.ts, not
  * the static fictional directory. Mapped into the same Doctor shape the
@@ -44,9 +89,7 @@ const first = <T,>(value: T | T[] | null): T | null => (Array.isArray(value) ? v
 export const fetchBookableDoctors = async (): Promise<{ doctors: Doctor[]; error?: string }> => {
   const { data, error } = await supabase
     .from('doctor_profiles')
-    .select(
-      'id, user_id, provider_id, mct_registration, specialty, consultation_fee_tzs, telehealth_fee_tzs, languages, bio, rating, reviews_count, experience_years, providers(name, region, nhif_enabled)'
-    )
+    .select(DOCTOR_PROFILE_SELECT)
     .eq('is_active', true);
 
   if (error) return { doctors: [], error: error.message };
@@ -63,36 +106,62 @@ export const fetchBookableDoctors = async (): Promise<{ doctors: Doctor[]; error
     for (const p of profileRows || []) namesByUserId.set(p.id, p.full_name);
   }
 
-  const doctors: Doctor[] = rows.map((row) => {
-    const provider = first(row.providers);
-    return {
-      id: row.id,
-      name: namesByUserId.get(row.user_id) || 'Doctor',
-      title: row.specialty,
-      specialty: row.specialty,
-      specialtySw: row.specialty,
-      hospital: provider?.name || 'Unassigned facility',
-      hospitalLocation: provider?.region || '',
-      region: provider?.region || '',
-      rating: row.rating,
-      reviewsCount: row.reviews_count,
-      experienceYears: row.experience_years || 0,
-      languages: row.languages && row.languages.length > 0 ? row.languages : ['Kiswahili', 'English'],
-      mctRegistration: row.mct_registration || '—',
-      nhifAccepted: provider?.nhif_enabled || false,
-      privateInsuranceAccepted: true,
-      consultationFeeTzs: row.consultation_fee_tzs,
-      availableDays: [],
-      availableSlots: { morning: [], afternoon: [], evening: [] },
-      telehealthAvailable: row.telehealth_fee_tzs > 0,
-      avatarColor: colorForId(row.id),
-      bio: row.bio || `${row.specialty} specialist.`,
-      bioSw: row.bio || `Daktari bingwa wa ${row.specialty}.`,
-      providerId: row.provider_id || undefined,
-    };
-  });
+  const doctors: Doctor[] = rows.map((row) => mapDoctorRow(row, namesByUserId.get(row.user_id) || 'Doctor'));
 
   return { doctors };
+};
+
+/** Real doctors at one facility — doctor_profiles.provider_id is the only doctor↔facility link the schema has (one facility per doctor, not many-to-many), so this is a plain filter, not a join table. */
+export const fetchDoctorsByProvider = async (providerId: string): Promise<{ doctors: Doctor[]; error?: string }> => {
+  const { data, error } = await supabase
+    .from('doctor_profiles')
+    .select(DOCTOR_PROFILE_SELECT)
+    .eq('provider_id', providerId)
+    .eq('is_active', true);
+
+  if (error) return { doctors: [], error: error.message };
+
+  const rows = (data || []) as unknown as DoctorProfileRow[];
+  const userIds = rows.map((r) => r.user_id);
+  const namesByUserId = new Map<string, string>();
+  if (userIds.length > 0) {
+    const { data: profileRows } = await supabase.from('profiles').select('id, full_name').in('id', userIds);
+    for (const p of profileRows || []) namesByUserId.set(p.id, p.full_name);
+  }
+
+  return { doctors: rows.map((row) => mapDoctorRow(row, namesByUserId.get(row.user_id) || 'Doctor')) };
+};
+
+/** One real doctor by doctor_profiles.id — for entry points that only hold that id (an appointment, a health journey encounter/referral). */
+export const fetchDoctorById = async (doctorProfileId: string): Promise<{ doctor: Doctor | null; error?: string }> => {
+  const { data, error } = await supabase
+    .from('doctor_profiles')
+    .select(DOCTOR_PROFILE_SELECT)
+    .eq('id', doctorProfileId)
+    .maybeSingle();
+
+  if (error) return { doctor: null, error: error.message };
+  if (!data) return { doctor: null };
+
+  const row = data as unknown as DoctorProfileRow;
+  const { data: profileRow } = await supabase.from('profiles').select('full_name').eq('id', row.user_id).maybeSingle();
+  return { doctor: mapDoctorRow(row, profileRow?.full_name || 'Doctor') };
+};
+
+/** One real doctor by doctor_profiles.user_id — for entry points that only carry the auth user id (a messaging conversation's other party). */
+export const fetchDoctorByUserId = async (userId: string): Promise<{ doctor: Doctor | null; error?: string }> => {
+  const { data, error } = await supabase
+    .from('doctor_profiles')
+    .select(DOCTOR_PROFILE_SELECT)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (error) return { doctor: null, error: error.message };
+  if (!data) return { doctor: null };
+
+  const row = data as unknown as DoctorProfileRow;
+  const { data: profileRow } = await supabase.from('profiles').select('full_name').eq('id', row.user_id).maybeSingle();
+  return { doctor: mapDoctorRow(row, profileRow?.full_name || 'Doctor') };
 };
 
 const bucketSlot = (slot: string): 'morning' | 'afternoon' | 'evening' => {

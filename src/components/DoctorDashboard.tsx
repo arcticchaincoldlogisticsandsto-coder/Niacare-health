@@ -1,111 +1,21 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Calendar, Clock, Users, Star, Video, Stethoscope, ClipboardPlus, Pill, FlaskConical, Plus, Activity, FileCheck2 } from 'lucide-react';
+import { Calendar, Clock, Users, Star, Video, Stethoscope, ClipboardPlus, Pill, FlaskConical, Plus, Activity, FileCheck2, ChevronRight, Megaphone } from 'lucide-react';
 import type { Language, Theme } from '../types';
 import { supabase } from '../lib/supabaseClient';
+import { callPatient } from '../lib/queue';
+import { updateDoctorProfile, DoctorProfileEditInput } from '../lib/admin';
 import { EncounterModal } from './EncounterModal';
 import { PatientDetailModal } from './PatientDetailModal';
+import { HealthJourneyModal } from './HealthJourneyModal';
 import { Avatar } from './Avatar';
 import { createLabOrder, fetchDoctorLabOrders, LabOrderRow } from '../lib/laboratory';
-import { fetchDoctorScheduleForDate, addScheduleSlot, removeScheduleSlot, ScheduleSlotRow } from '../lib/schedule';
 import { DashboardShell, StatCard, SegmentedTabs } from './DashboardShell';
-
-const STANDARD_SLOT_OPTIONS = ['09:00 AM', '10:00 AM', '11:00 AM', '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM'];
-
-const DoctorCalendarPanel: React.FC<{ isSw: boolean; doctorProfileId: string }> = ({ isSw, doctorProfileId }) => {
-  const [date, setDate] = useState(todayIso());
-  const [slots, setSlots] = useState<ScheduleSlotRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [busyId, setBusyId] = useState<string | null>(null);
-
-  const load = async () => {
-    setLoading(true);
-    const { slots: fetched, error: err } = await fetchDoctorScheduleForDate(doctorProfileId, date);
-    if (err) setError(err); else setSlots(fetched);
-    setLoading(false);
-  };
-  useEffect(() => { load(); }, [doctorProfileId, date]);
-
-  const existingTimes = new Set(slots.map((s) => s.time_slot));
-  const available = STANDARD_SLOT_OPTIONS.filter((t) => !existingTimes.has(t));
-
-  const handleAddSlot = async (timeSlot: string) => {
-    setBusyId(timeSlot);
-    const { error: err } = await addScheduleSlot(doctorProfileId, date, timeSlot);
-    setBusyId(null);
-    if (err) setError(err); else load();
-  };
-
-  const handleBlock = async (slot: ScheduleSlotRow) => {
-    setBusyId(slot.id);
-    const { error: err } = await removeScheduleSlot(slot.id);
-    setBusyId(null);
-    if (err) setError(err); else load();
-  };
-
-  return (
-    <div className="nc-card p-4">
-      <div className="flex items-center justify-between mb-3 gap-2">
-        <div className="flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-primary" />
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white">{isSw ? 'Ratiba Yangu' : 'My Calendar'}</h3>
-        </div>
-        <input type="date" value={date} min={todayIso()} onChange={(e) => setDate(e.target.value)} className="nc-input px-2.5 py-1.5 text-xs" />
-      </div>
-      {error && <p className="text-xs text-rose-600 mb-2">{error}</p>}
-
-      <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-1.5">{isSw ? 'Nafasi Zilizopo' : 'Available Slots'}</p>
-      {!loading && slots.filter((s) => !s.is_booked).length === 0 && (
-        <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">{isSw ? 'Hakuna nafasi tarehe hii.' : 'No open slots on this date yet.'}</p>
-      )}
-      <div className="flex flex-wrap gap-1.5 mb-4">
-        {slots.map((s) => (
-          <span
-            key={s.id}
-            className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold ${
-              s.is_booked
-                ? 'bg-primary/5 text-[var(--nc-primary)] dark:bg-primary/10 dark:text-primary-light'
-                : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
-            }`}
-          >
-            {s.time_slot}
-            {!s.is_booked && (
-              <button
-                type="button"
-                disabled={busyId === s.id}
-                onClick={() => handleBlock(s)}
-                className="hover:text-rose-600 disabled:opacity-40"
-                title={isSw ? 'Zuia (ondoa nafasi)' : 'Block (remove this slot)'}
-              >
-                ×
-              </button>
-            )}
-            {s.is_booked && <span className="text-[9px] opacity-70">{isSw ? '(imechukuliwa)' : '(booked)'}</span>}
-          </span>
-        ))}
-      </div>
-
-      <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-1.5">{isSw ? 'Ongeza Nafasi' : 'Create Availability'}</p>
-      <div className="flex flex-wrap gap-1.5">
-        {available.length === 0 ? (
-          <p className="text-xs text-slate-400">{isSw ? 'Nafasi zote za kawaida zimeongezwa.' : 'All standard slots are already open for this date.'}</p>
-        ) : (
-          available.map((t) => (
-            <button
-              key={t}
-              type="button"
-              disabled={busyId === t}
-              onClick={() => handleAddSlot(t)}
-              className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:border-[var(--nc-primary)] dark:hover:border-primary disabled:opacity-40 flex items-center gap-1"
-            >
-              <Plus className="w-3 h-3" /> {t}
-            </button>
-          ))
-        )}
-      </div>
-    </div>
-  );
-};
+import { ScheduleManager } from './ScheduleManager';
+import { fetchMyAccessRequests, requestRecordAccess, AccessRequest, AccessScope } from '../lib/recordAccess';
+import { MessagesModal } from './MessagesModal';
+import { CreateReferralModal } from './CreateReferralModal';
+import { NotificationBell } from './NotificationBell';
+import { APPOINTMENT_STATUS_STYLES, appointmentStatusLabel, AppointmentStatus } from '../data/appointmentStatus';
 
 const LAB_STATUS_STYLES: Record<string, string> = {
   ordered: 'bg-primary/5 text-[var(--nc-primary)] dark:bg-primary/10 dark:text-primary-light',
@@ -310,6 +220,166 @@ const RecentActivityPanel: React.FC<{ isSw: boolean; items: ActivityItem[]; load
   </div>
 );
 
+const SCOPE_OPTIONS: { key: AccessScope; en: string; sw: string }[] = [
+  { key: 'medical_records', en: 'Medical Records', sw: 'Rekodi za Matibabu' },
+  { key: 'prescriptions', en: 'Prescriptions', sw: 'Dawa' },
+  { key: 'lab_results', en: 'Lab Results', sw: 'Matokeo ya Maabara' },
+  { key: 'diagnoses', en: 'Diagnoses', sw: 'Uchunguzi' },
+];
+
+// A doctor with no prior appointment/encounter relationship to a patient
+// has no RLS path to that patient's records at all (correctly, per the RLS
+// audit earlier this session) — this is the deliberate exception: request
+// access using an identifier the patient shared directly (NIDA or phone),
+// the patient approves or declines from their own session, never a search
+// across the patient directory. See request_record_access() in
+// supabase/schema.sql.
+const RequestRecordAccessPanel: React.FC<{ isSw: boolean; doctorAuthUserId: string }> = ({ isSw, doctorAuthUserId }) => {
+  const [expanded, setExpanded] = useState(false);
+  const [identifierType, setIdentifierType] = useState<'nida' | 'phone'>('nida');
+  const [identifierValue, setIdentifierValue] = useState('');
+  const [reason, setReason] = useState('');
+  const [scopes, setScopes] = useState<AccessScope[]>(['medical_records']);
+  const [submitting, setSubmitting] = useState(false);
+  const [feedback, setFeedback] = useState<{ ok: boolean; text: string } | null>(null);
+  const [myRequests, setMyRequests] = useState<AccessRequest[]>([]);
+  const [loadingRequests, setLoadingRequests] = useState(true);
+
+  const load = async () => {
+    setLoadingRequests(true);
+    const { requests } = await fetchMyAccessRequests(doctorAuthUserId);
+    setMyRequests(requests);
+    setLoadingRequests(false);
+  };
+  useEffect(() => { load(); }, [doctorAuthUserId]);
+
+  const toggleScope = (key: AccessScope) => {
+    setScopes((prev) => (prev.includes(key) ? prev.filter((s) => s !== key) : [...prev, key]));
+  };
+
+  const submit = async () => {
+    if (!identifierValue.trim() || !reason.trim() || scopes.length === 0) return;
+    setSubmitting(true);
+    setFeedback(null);
+    const { success, error } = await requestRecordAccess(identifierType, identifierValue.trim(), reason.trim(), scopes);
+    setSubmitting(false);
+    if (!success) {
+      setFeedback({ ok: false, text: error || (isSw ? 'Imeshindwa.' : 'Something went wrong.') });
+      return;
+    }
+    setFeedback({ ok: true, text: isSw ? 'Ombi limetumwa. Mgonjwa ataarifiwa.' : 'Request sent — the patient will be asked to approve it.' });
+    setIdentifierValue('');
+    setReason('');
+    load();
+  };
+
+  const REQUEST_STATUS_STYLES: Record<string, string> = {
+    pending: 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
+    approved: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
+    declined: 'bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300',
+    revoked: 'bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300',
+    expired: 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400',
+  };
+
+  return (
+    <div className="nc-card p-4">
+      <button type="button" onClick={() => setExpanded((v) => !v)} className="w-full flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <FileCheck2 className="w-4 h-4 text-primary" />
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+            {isSw ? 'Omba Rekodi za Mgonjwa Mwingine' : 'Request Records From a Different Patient'}
+          </h3>
+        </div>
+        <ChevronRight className={`w-4 h-4 text-slate-400 transition-transform ${expanded ? 'rotate-90' : ''}`} />
+      </button>
+      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+        {isSw
+          ? 'Kwa mgonjwa asiye na miadi nawe (rufaa, maoni ya pili). Wanahitaji kukubali.'
+          : 'For a patient with no appointment history with you (referral, second opinion). They must approve it.'}
+      </p>
+
+      {expanded && (
+        <div className="mt-3 space-y-3">
+          <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-3 space-y-2.5">
+            <div className="flex gap-1.5">
+              {(['nida', 'phone'] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setIdentifierType(t)}
+                  className={`rounded-lg px-2.5 py-1.5 text-xs font-bold ${
+                    identifierType === t
+                      ? 'bg-[var(--nc-primary)] text-white dark:bg-primary dark:text-[#041D34]'
+                      : 'border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400'
+                  }`}
+                >
+                  {t === 'nida' ? (isSw ? 'NIDA' : 'NIDA') : isSw ? 'Namba ya Simu' : 'Phone'}
+                </button>
+              ))}
+            </div>
+            <input
+              value={identifierValue}
+              onChange={(e) => setIdentifierValue(e.target.value)}
+              placeholder={identifierType === 'nida' ? (isSw ? 'Namba ya NIDA ya mgonjwa' : "Patient's NIDA number") : (isSw ? 'Namba ya simu ya mgonjwa' : "Patient's phone number")}
+              className="nc-input w-full px-3 py-2 text-xs"
+            />
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              rows={2}
+              placeholder={isSw ? 'Sababu ya kuomba (mf. rufaa kutoka Aga Khan)' : 'Reason for the request (e.g. referral from Aga Khan)'}
+              className="nc-input w-full px-3 py-2 text-xs resize-none"
+            />
+            <div className="flex flex-wrap gap-1.5">
+              {SCOPE_OPTIONS.map((o) => (
+                <button
+                  key={o.key}
+                  type="button"
+                  onClick={() => toggleScope(o.key)}
+                  className={`rounded-lg px-2.5 py-1.5 text-xs font-bold ${
+                    scopes.includes(o.key)
+                      ? 'bg-primary/10 text-primary dark:text-primary-light border border-primary/30'
+                      : 'border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400'
+                  }`}
+                >
+                  {isSw ? o.sw : o.en}
+                </button>
+              ))}
+            </div>
+            {feedback && (
+              <p className={`text-xs ${feedback.ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600'}`}>{feedback.text}</p>
+            )}
+            <button
+              type="button"
+              disabled={submitting || !identifierValue.trim() || !reason.trim() || scopes.length === 0}
+              onClick={submit}
+              className="w-full rounded-lg bg-[var(--nc-primary)] dark:bg-primary text-white dark:text-[#041D34] px-3 py-2 text-xs font-bold disabled:opacity-50"
+            >
+              {submitting ? (isSw ? 'Inatuma...' : 'Sending…') : isSw ? 'Tuma Ombi' : 'Send Request'}
+            </button>
+          </div>
+
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-1.5">{isSw ? 'Maombi Yangu' : 'My Requests'}</p>
+            {!loadingRequests && myRequests.length === 0 ? (
+              <p className="text-xs text-slate-500 dark:text-slate-400">{isSw ? 'Hakuna maombi bado.' : 'No requests yet.'}</p>
+            ) : (
+              <div className="space-y-1.5">
+                {myRequests.map((r) => (
+                  <div key={r.id} className="flex items-center justify-between rounded-lg border border-slate-100 dark:border-slate-800 px-2.5 py-1.5 text-xs">
+                    <span className="text-slate-600 dark:text-slate-300 truncate flex-1">{r.reason}</span>
+                    <span className={`ml-2 flex-shrink-0 rounded-lg px-2 py-0.5 font-bold capitalize ${REQUEST_STATUS_STYLES[r.status]}`}>{r.status}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 interface DoctorDashboardProps {
   language: Language;
   theme: Theme;
@@ -325,6 +395,12 @@ interface DoctorProfile {
   rating: number;
   reviews_count: number;
   is_verified: boolean;
+  bio: string | null;
+  languages: string[];
+  consultation_fee_tzs: number;
+  telehealth_fee_tzs: number;
+  home_visit_fee_tzs: number;
+  experience_years: number | null;
 }
 
 interface AppointmentRow {
@@ -333,19 +409,104 @@ interface AppointmentRow {
   patient_name: string | null;
   appointment_date: string;
   time_slot: string;
-  status: string;
+  status: AppointmentStatus;
   consultation_type: string;
   reason: string | null;
 }
 
-const STATUS_STYLES: Record<string, string> = {
-  confirmed: 'bg-primary/5 text-[var(--nc-primary)] dark:bg-primary/10 dark:text-primary-light',
-  in_queue: 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
-  completed: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
-  cancelled: 'bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300',
-};
-
 const todayIso = () => new Date().toISOString().slice(0, 10);
+// No Supabase Realtime configured — see the identical note in
+// ProviderDashboard.tsx. Same lightweight polling substitute.
+const DOCTOR_POLL_MS = 25000;
+
+// A real gap found while reviewing doctor_profiles' RLS: it already has an
+// "own profile" UPDATE policy (auth.uid() = user_id), but nothing in the
+// app ever called it — sub_specialty/bio/languages/fees/experience_years
+// could only ever be set once, at profile creation, with no way to edit
+// them afterward. Collapsed by default so it doesn't compete with the
+// schedule editor it sits above.
+const DoctorMyProfilePanel: React.FC<{ isSw: boolean; profile: DoctorProfile; onSaved: (updated: DoctorProfile) => void }> = ({ isSw, profile, onSaved }) => {
+  const [expanded, setExpanded] = useState(false);
+  const [bio, setBio] = useState(profile.bio || '');
+  const [subSpecialty, setSubSpecialty] = useState(profile.sub_specialty || '');
+  const [languages, setLanguages] = useState((profile.languages || []).join(', '));
+  const [consultationFee, setConsultationFee] = useState(String(profile.consultation_fee_tzs));
+  const [telehealthFee, setTelehealthFee] = useState(String(profile.telehealth_fee_tzs));
+  const [homeVisitFee, setHomeVisitFee] = useState(String(profile.home_visit_fee_tzs));
+  const [experienceYears, setExperienceYears] = useState(profile.experience_years == null ? '' : String(profile.experience_years));
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [savedMsg, setSavedMsg] = useState('');
+
+  const save = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setError('');
+    setSavedMsg('');
+    const payload: DoctorProfileEditInput = {
+      bio: bio.trim() || null,
+      sub_specialty: subSpecialty.trim() || null,
+      languages: languages.split(',').map((l) => l.trim()).filter(Boolean),
+      consultation_fee_tzs: Number(consultationFee) || 0,
+      telehealth_fee_tzs: Number(telehealthFee) || 0,
+      home_visit_fee_tzs: Number(homeVisitFee) || 0,
+      experience_years: experienceYears === '' ? null : Number(experienceYears),
+    };
+    const { error: err } = await updateDoctorProfile(profile.id, payload);
+    setSaving(false);
+    if (err) { setError(err); return; }
+    setSavedMsg(isSw ? 'Wasifu umehifadhiwa.' : 'Profile saved.');
+    onSaved({ ...profile, ...payload });
+  };
+
+  return (
+    <div className="nc-card p-4 mb-4">
+      <button type="button" onClick={() => setExpanded((v) => !v)} aria-expanded={expanded} className="flex items-center justify-between w-full text-left">
+        <h3 className="text-sm font-bold text-slate-900 dark:text-white">{isSw ? 'Wasifu Wangu wa Kitaalamu' : 'My Professional Profile'}</h3>
+        <ChevronRight className={`w-4 h-4 text-slate-400 transition-transform ${expanded ? 'rotate-90' : ''}`} />
+      </button>
+      {expanded && (
+        <form onSubmit={save} className="grid gap-3 text-xs mt-3">
+          {error && <p className="text-rose-600">{error}</p>}
+          {savedMsg && <p className="text-emerald-600 dark:text-emerald-400">{savedMsg}</p>}
+          <label>
+            <span className="mb-1 block font-bold text-slate-500 dark:text-slate-400">{isSw ? 'Utaalamu Mdogo' : 'Sub-specialty'}</span>
+            <input value={subSpecialty} onChange={(e) => setSubSpecialty(e.target.value)} className="nc-input w-full px-3 py-2" />
+          </label>
+          <label>
+            <span className="mb-1 block font-bold text-slate-500 dark:text-slate-400">{isSw ? 'Wasifu' : 'Bio'}</span>
+            <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={3} className="nc-input w-full px-3 py-2" />
+          </label>
+          <label>
+            <span className="mb-1 block font-bold text-slate-500 dark:text-slate-400">{isSw ? 'Lugha (tenga kwa koma)' : 'Languages (comma-separated)'}</span>
+            <input value={languages} onChange={(e) => setLanguages(e.target.value)} placeholder="English, Swahili" className="nc-input w-full px-3 py-2" />
+          </label>
+          <label>
+            <span className="mb-1 block font-bold text-slate-500 dark:text-slate-400">{isSw ? 'Miaka ya Uzoefu' : 'Years of experience'}</span>
+            <input type="number" min={0} value={experienceYears} onChange={(e) => setExperienceYears(e.target.value)} className="nc-input w-full px-3 py-2" />
+          </label>
+          <div className="grid grid-cols-3 gap-2">
+            <label>
+              <span className="mb-1 block font-bold text-slate-500 dark:text-slate-400">{isSw ? 'Ada (TZS)' : 'Consult fee'}</span>
+              <input type="number" min={0} value={consultationFee} onChange={(e) => setConsultationFee(e.target.value)} className="nc-input w-full px-2 py-2" />
+            </label>
+            <label>
+              <span className="mb-1 block font-bold text-slate-500 dark:text-slate-400">{isSw ? 'Video' : 'Telehealth'}</span>
+              <input type="number" min={0} value={telehealthFee} onChange={(e) => setTelehealthFee(e.target.value)} className="nc-input w-full px-2 py-2" />
+            </label>
+            <label>
+              <span className="mb-1 block font-bold text-slate-500 dark:text-slate-400">{isSw ? 'Nyumbani' : 'Home visit'}</span>
+              <input type="number" min={0} value={homeVisitFee} onChange={(e) => setHomeVisitFee(e.target.value)} className="nc-input w-full px-2 py-2" />
+            </label>
+          </div>
+          <button type="submit" disabled={saving} className="justify-self-end rounded-lg bg-[var(--nc-primary)] dark:bg-primary text-white dark:text-[#041D34] px-3 py-2 font-bold disabled:opacity-50">
+            {saving ? (isSw ? 'Inahifadhi...' : 'Saving…') : (isSw ? 'Hifadhi' : 'Save')}
+          </button>
+        </form>
+      )}
+    </div>
+  );
+};
 
 export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, theme, authUserId, onLogout }) => {
   const isSw = language === 'sw';
@@ -359,6 +520,11 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
   const [loading, setLoading] = useState(true);
   const [encounterTarget, setEncounterTarget] = useState<AppointmentRow | null>(null);
   const [detailTarget, setDetailTarget] = useState<AppointmentRow | null>(null);
+  const [callingId, setCallingId] = useState<string | null>(null);
+  const [journeyPatient, setJourneyPatient] = useState<{ id: string; name: string } | null>(null);
+  const [messagesOpen, setMessagesOpen] = useState(false);
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const [referralTarget, setReferralTarget] = useState<{ id: string; name: string } | null>(null);
   const [queueTab, setQueueTab] = useState<'waiting' | 'completed'>('waiting');
   const [section, setSection] = useState<'overview' | 'prescriptions' | 'labs' | 'calendar'>('overview');
 
@@ -415,13 +581,14 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
     setActivityLoading(false);
   };
 
-  const load = async () => {
+  const load = async (silent = false) => {
     if (!authUserId) return;
-    setLoading(true); setError('');
+    if (!silent) setLoading(true);
+    setError('');
     const [{ data: doctorProfile, error: profileError }, { data: ownProfile }] = await Promise.all([
       supabase
         .from('doctor_profiles')
-        .select('id, provider_id, specialty, sub_specialty, rating, reviews_count, is_verified')
+        .select('id, provider_id, specialty, sub_specialty, rating, reviews_count, is_verified, bio, languages, consultation_fee_tzs, telehealth_fee_tzs, home_visit_fee_tzs, experience_years')
         .eq('user_id', authUserId)
         .maybeSingle(),
       supabase.from('profiles').select('full_name').eq('id', authUserId).maybeSingle(),
@@ -456,6 +623,14 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
 
   useEffect(() => { load(); }, [authUserId]);
 
+  // No Realtime configured — quiet background refresh so a reception
+  // check-in/call shows up here without a manual reload.
+  useEffect(() => {
+    if (!profile) return;
+    const interval = setInterval(() => load(true), DOCTOR_POLL_MS);
+    return () => clearInterval(interval);
+  }, [profile, authUserId]);
+
   const today = todayIso();
   const todaysPatients = useMemo(() => appointments.filter((a) => a.appointment_date === today && a.status !== 'cancelled'), [appointments, today]);
   const inQueue = useMemo(() => appointments.filter((a) => a.status === 'in_queue'), [appointments]);
@@ -465,6 +640,14 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
     for (const a of appointments) if (!seen.has(a.patient_id)) seen.set(a.patient_id, a.patient_name || 'Patient');
     return Array.from(seen, ([id, name]) => ({ id, name }));
   }, [appointments]);
+
+  const handleCallPatient = async (id: string) => {
+    setCallingId(id);
+    const { appointment, error: err } = await callPatient(id);
+    setCallingId(null);
+    if (err) { setError(err); return; }
+    if (appointment) setAppointments((prev) => prev.map((a) => (a.id === id ? { ...a, status: 'called' } : a)));
+  };
 
   const displayName = doctorName ? (doctorName.trim().toLowerCase().startsWith('dr') ? doctorName : `Dr. ${doctorName}`) : '';
 
@@ -490,8 +673,9 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
       language={language}
       theme={theme}
       onLogout={onLogout}
-      onRefresh={load}
+      onRefresh={() => load()}
       loading={loading}
+      notificationBell={<NotificationBell userId={authUserId} language={language} theme={theme} />}
     >
       {error && <p className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-700">{error}</p>}
 
@@ -533,10 +717,14 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
       )}
 
       {section === 'calendar' && profile && (
-        <DoctorCalendarPanel isSw={isSw} doctorProfileId={profile.id} />
+        <>
+          <DoctorMyProfilePanel isSw={isSw} profile={profile} onSaved={(updated) => setProfile(updated)} />
+          <ScheduleManager isSw={isSw} doctorProfileId={profile.id} />
+        </>
       )}
 
       {section === 'overview' && (
+      <>
       <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-4 items-start">
       <div className="nc-card p-4">
         <div className="flex items-center justify-between mb-3">
@@ -557,14 +745,16 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
                 }`}
               >
                 {key === 'waiting'
-                  ? `${isSw ? 'Wanaosubiri' : 'Waiting'} (${todaysPatients.filter((a) => a.status !== 'completed').length})`
+                  ? `${isSw ? 'Wanaosubiri' : 'Waiting'} (${todaysPatients.filter((a) => a.status !== 'completed' && a.status !== 'no_show').length})`
                   : `${isSw ? 'Wamemaliza' : 'Completed'} (${todaysPatients.filter((a) => a.status === 'completed').length})`}
               </button>
             ))}
           </div>
         </div>
         {(() => {
-          const list = todaysPatients.filter((a) => (queueTab === 'waiting' ? a.status !== 'completed' : a.status === 'completed'));
+          const list = todaysPatients.filter((a) =>
+            queueTab === 'waiting' ? a.status !== 'completed' && a.status !== 'no_show' : a.status === 'completed'
+          );
           if (list.length === 0) {
             return (
               <p className="text-xs text-slate-500 dark:text-slate-400 py-2">
@@ -598,13 +788,28 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className={`rounded-lg px-2 py-1 font-bold capitalize ${STATUS_STYLES[apt.status] || STATUS_STYLES.confirmed}`}>
-                      {apt.status.replace('_', ' ')}
+                    <span className={`rounded-lg px-2 py-1 font-bold ${APPOINTMENT_STATUS_STYLES[apt.status] || APPOINTMENT_STATUS_STYLES.confirmed}`}>
+                      {appointmentStatusLabel(apt.status, isSw)}
                     </span>
-                    {apt.status !== 'cancelled' && apt.status !== 'completed' && (
+                    {apt.status === 'in_queue' && (
                       <span
                         role="button"
                         tabIndex={0}
+                        aria-busy={callingId === apt.id}
+                        aria-label={isSw ? 'Mwite Mgonjwa' : 'Call Patient'}
+                        onClick={(e) => { e.stopPropagation(); if (callingId !== apt.id) handleCallPatient(apt.id); }}
+                        onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); if (callingId !== apt.id) handleCallPatient(apt.id); } }}
+                        className={`rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 px-2 py-1 font-bold flex items-center gap-1 ${callingId === apt.id ? 'opacity-50' : ''}`}
+                        title={isSw ? 'Mwite Mgonjwa' : 'Call Patient'}
+                      >
+                        <Megaphone className="w-3.5 h-3.5" />
+                      </span>
+                    )}
+                    {apt.status !== 'cancelled' && apt.status !== 'completed' && apt.status !== 'no_show' && (
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        aria-label={isSw ? 'Anza Mkutano' : 'Start Encounter'}
                         onClick={(e) => { e.stopPropagation(); setEncounterTarget(apt); }}
                         onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); setEncounterTarget(apt); } }}
                         className="rounded-lg bg-[var(--nc-primary)] dark:bg-primary text-white dark:text-[#041D34] px-2 py-1 font-bold flex items-center gap-1"
@@ -622,6 +827,8 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
       </div>
       <RecentActivityPanel isSw={isSw} items={activityFeed} loading={activityLoading} />
       </div>
+      {profile && authUserId && <div className="mt-4"><RequestRecordAccessPanel isSw={isSw} doctorAuthUserId={authUserId} /></div>}
+      </>
       )}
 
       </div>
@@ -643,6 +850,54 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
             setEncounterTarget(detailTarget);
             setDetailTarget(null);
           }}
+          onMessagePatient={(conversationId) => {
+            setDetailTarget(null);
+            setActiveConversationId(conversationId);
+            setMessagesOpen(true);
+          }}
+          onReferPatient={() => {
+            setReferralTarget({ id: detailTarget.patient_id, name: detailTarget.patient_name || 'Patient' });
+            setDetailTarget(null);
+          }}
+          onViewHealthJourney={() => {
+            setJourneyPatient({ id: detailTarget.patient_id, name: detailTarget.patient_name || 'Patient' });
+            setDetailTarget(null);
+          }}
+        />
+      )}
+
+      {/* Reuses the exact same patient-facing Health Journey — RLS on
+          encounters/referrals/lab_orders/medical_records already scopes
+          what comes back to what this doctor is actually authorized to see
+          (treating doctor of an encounter, facility staff, or an approved
+          record_access_requests grant for medical_records/prescriptions/
+          lab_results/diagnoses); passing the patient's id here can never
+          return more than RLS already allows. No booking/lab-navigation
+          props are passed — those only make sense from the patient's own
+          session. */}
+      <HealthJourneyModal
+        isOpen={!!journeyPatient}
+        onClose={() => setJourneyPatient(null)}
+        patientId={journeyPatient?.id || null}
+        language={language}
+        theme={theme}
+      />
+
+      <MessagesModal
+        isOpen={messagesOpen}
+        onClose={() => setMessagesOpen(false)}
+        myUserId={authUserId}
+        language={language}
+        theme={theme}
+        initialConversationId={activeConversationId}
+      />
+
+      {referralTarget && (
+        <CreateReferralModal
+          isOpen
+          onClose={() => setReferralTarget(null)}
+          patientId={referralTarget.id}
+          patientName={referralTarget.name}
         />
       )}
 
