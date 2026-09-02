@@ -1449,7 +1449,6 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
         onClose={() => setActiveModal(null)}
         patientId={authUserId}
         language={language}
-        theme={theme}
         onViewHealthJourney={() => setActiveModal('journey')}
       />
 

@@ -1,24 +1,27 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { X, PersonStanding, Scan, Stethoscope } from 'lucide-react';
-import { Language, Theme } from '../types';
+import React, { Suspense, useEffect, useMemo, useState } from 'react';
+import { X, PersonStanding, Scan, Stethoscope, Box, Squircle, Loader2 } from 'lucide-react';
+import { Language } from '../types';
 import { fetchBodyMapEntries, BodyMapEntry } from '../lib/bodyMap';
 import { BODY_REGIONS, bodyRegionLabel } from '../data/bodyRegions';
 import { withTimeout } from '../lib/useNetworkStatus';
+
+// Lazily loaded — see Mannequin3DView.tsx's own header comment. This keeps
+// `three` (and this whole viewer) out of the app's main bundle entirely
+// until a patient actually opens the Body Map.
+const Mannequin3DView = React.lazy(() => import('./Mannequin3DView'));
 
 interface BodyMapModalProps {
   isOpen: boolean;
   onClose: () => void;
   patientId: string | null;
   language: Language;
-  theme: Theme;
   onViewHealthJourney?: () => void;
 }
 
-// Front-view hotspots only — regions that aren't visible from the front
-// (back, spine, ear) are offered as a chip row below the diagram instead of
-// forced onto a silhouette that can't show them. This is a documentation/
-// visualization aid (spec: "not a diagnostic tool"), so a clean simplified
-// outline is the right level of fidelity, not an anatomical illustration.
+// 2D fallback hotspots — used when WebGL is unavailable, the 3D viewer
+// fails to initialize, or the patient explicitly switches to 2D. Same
+// simplified-outline convention as before: a documentation/navigation
+// aid, not anatomy.
 const HOTSPOTS: { key: string; side?: 'left' | 'right'; shape: 'circle' | 'rect'; x: number; y: number; w?: number; h?: number; r?: number }[] = [
   { key: 'head', shape: 'circle', x: 100, y: 32, r: 22 },
   { key: 'neck', shape: 'rect', x: 90, y: 54, w: 20, h: 14 },
@@ -51,11 +54,6 @@ const HOTSPOTS: { key: string; side?: 'left' | 'right'; shape: 'circle' | 'rect'
   { key: 'foot', side: 'right', shape: 'circle', x: 115, y: 332, r: 9 },
 ];
 
-// Back-view hotspots — a mirror-layout schematic (same simplified-outline
-// convention as the front view, not real anatomy) so 'back' and 'spine'
-// become real tappable regions instead of only a fallback chip, and limb
-// joints (shoulder/arm/elbow/etc.) remain reachable from either view since
-// the same joint is visible from front and back.
 const BACK_HOTSPOTS: typeof HOTSPOTS = [
   { key: 'head', shape: 'circle', x: 100, y: 32, r: 22 },
   { key: 'neck', shape: 'rect', x: 90, y: 54, w: 20, h: 14 },
@@ -85,18 +83,24 @@ const BACK_HOTSPOTS: typeof HOTSPOTS = [
   { key: 'foot', side: 'right', shape: 'circle', x: 115, y: 332, r: 9 },
 ];
 
-export const BodyMapModal: React.FC<BodyMapModalProps> = ({ isOpen, onClose, patientId, language, theme, onViewHealthJourney }) => {
+const regionKey = (region: string, side: string | null) => `${region}:${side || 'none'}`;
+
+export const BodyMapModal: React.FC<BodyMapModalProps> = ({ isOpen, onClose, patientId, language, onViewHealthJourney }) => {
   const isSw = language === 'sw';
-  const isDark = theme === 'dark';
   const [entries, setEntries] = useState<BodyMapEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [retryToken, setRetryToken] = useState(0);
   const [view, setView] = useState<'front' | 'back'>('front');
+  // 3D is preferred; falls back to the existing 2D SVG on unsupported WebGL,
+  // a viewer init failure, or the patient's own choice. Never silently
+  // blank — one of the two always renders.
+  const [viewMode, setViewMode] = useState<'3d' | '2d'>('3d');
+  const [viewer3dStatus, setViewer3dStatus] = useState<'checking' | 'ready' | 'unavailable'>('checking');
 
   useEffect(() => {
-    if (!isOpen) { setSelectedKey(null); setView('front'); }
+    if (!isOpen) { setSelectedKey(null); setView('front'); setViewMode('3d'); setViewer3dStatus('checking'); }
   }, [isOpen]);
 
   useEffect(() => {
@@ -115,8 +119,6 @@ export const BodyMapModal: React.FC<BodyMapModalProps> = ({ isOpen, onClose, pat
       });
   }, [isOpen, patientId, retryToken]);
 
-  const regionKey = (region: string, side: string | null) => `${region}:${side || 'none'}`;
-
   const entriesByRegion = useMemo(() => {
     const map = new Map<string, BodyMapEntry[]>();
     for (const e of entries) {
@@ -133,6 +135,12 @@ export const BodyMapModal: React.FC<BodyMapModalProps> = ({ isOpen, onClose, pat
   const activeHotspots = view === 'front' ? HOTSPOTS : BACK_HOTSPOTS;
   const activeHotspotKeys = new Set(activeHotspots.map((h) => h.key));
   const offSilhouetteKeys = [...markedKeys].filter((k) => !activeHotspotKeys.has(k.split(':')[0]));
+  // Every region with a real record, keyboard/screen-reader reachable
+  // regardless of viewer mode — the 3D canvas has no native focusable DOM
+  // element per hotspot, so this list is what actually satisfies "keyboard
+  // users must be able to access the record system without requiring 3D
+  // interaction."
+  const allMarkedKeys = [...markedKeys];
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -144,17 +152,17 @@ export const BodyMapModal: React.FC<BodyMapModalProps> = ({ isOpen, onClose, pat
             </div>
             <div>
               <h3 className="text-base font-bold">{isSw ? 'Ramani ya Mwili' : 'Body Map'}</h3>
-              <p className="text-xs text-white/80">{isSw ? 'Gusa eneo kuona rekodi zake' : 'Tap an area to see related conditions'}</p>
+              <p className="text-xs text-white/80">{isSw ? 'Gusa eneo kuona rekodi zake' : 'Tap a body area to view related health records'}</p>
             </div>
           </div>
-          <button type="button" onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center">
+          <button type="button" onClick={onClose} aria-label={isSw ? 'Funga' : 'Close'} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <div className="p-4 overflow-y-auto text-xs">
           {error && (
-            <div className="flex items-center justify-between gap-2 rounded-xl border border-rose-100 dark:border-rose-900 p-2.5 mb-2">
+            <div role="alert" className="flex items-center justify-between gap-2 rounded-xl border border-rose-100 dark:border-rose-900 p-2.5 mb-2">
               <p className="text-rose-600">{error}</p>
               <button type="button" onClick={() => setRetryToken((t) => t + 1)} className="font-bold text-primary dark:text-primary-light flex-shrink-0">
                 {isSw ? 'Jaribu Tena' : 'Retry'}
@@ -162,93 +170,142 @@ export const BodyMapModal: React.FC<BodyMapModalProps> = ({ isOpen, onClose, pat
             </div>
           )}
 
-          <div className="flex justify-center gap-1.5 mb-3">
-            {(['front', 'back'] as const).map((v) => (
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <div className="flex gap-1.5">
+              {(['front', 'back'] as const).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setView(v)}
+                  aria-pressed={view === v}
+                  className={`rounded-lg px-4 py-1.5 font-semibold ${
+                    view === v
+                      ? 'bg-[var(--nc-primary)] text-white dark:bg-primary dark:text-[#041D34]'
+                      : 'border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400'
+                  }`}
+                >
+                  {v === 'front' ? (isSw ? 'Mbele' : 'Front') : (isSw ? 'Nyuma' : 'Back')}
+                </button>
+              ))}
+            </div>
+            {viewer3dStatus === 'ready' && (
               <button
-                key={v}
                 type="button"
-                onClick={() => setView(v)}
-                aria-pressed={view === v}
-                className={`rounded-lg px-4 py-1.5 font-bold ${
-                  view === v
-                    ? 'bg-[var(--nc-primary)] text-white dark:bg-primary dark:text-[#041D34]'
-                    : 'border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400'
-                }`}
+                onClick={() => setViewMode((m) => (m === '3d' ? '2d' : '3d'))}
+                aria-pressed={viewMode === '3d'}
+                title={viewMode === '3d' ? (isSw ? 'Tumia Ramani ya 2D' : 'Use 2D Body Map') : (isSw ? 'Tumia Muundo wa 3D' : 'Use 3D Model')}
+                className="flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 font-semibold text-slate-500 dark:text-slate-400"
               >
-                {v === 'front' ? (isSw ? 'Mbele' : 'Front') : (isSw ? 'Nyuma' : 'Back')}
+                {viewMode === '3d' ? <Squircle className="w-3.5 h-3.5" /> : <Box className="w-3.5 h-3.5" />}
+                {viewMode === '3d' ? '2D' : '3D'}
               </button>
-            ))}
+            )}
           </div>
 
-          <div className="flex justify-center mb-3">
-            <svg viewBox="0 0 200 350" width="220" height="385" className="select-none">
-              {/* Simplified outline — a documentation aid, not anatomy. Front
-                  and back share the same limb outline; only the torso
-                  markup differs (chest/abdomen vs back/spine). */}
-              <ellipse cx="100" cy="32" rx="22" ry="24" fill="none" stroke={isDark ? '#334155' : '#CBD5E1'} strokeWidth="1.5" />
-              <rect x="65" y="66" width="70" height="90" rx="14" fill="none" stroke={isDark ? '#334155' : '#CBD5E1'} strokeWidth="1.5" />
-              <rect x="72" y="172" width="56" height="64" rx="10" fill="none" stroke={isDark ? '#334155' : '#CBD5E1'} strokeWidth="1.5" />
-              <rect x="76" y="234" width="18" height="80" rx="8" fill="none" stroke={isDark ? '#334155' : '#CBD5E1'} strokeWidth="1.5" />
-              <rect x="106" y="234" width="18" height="80" rx="8" fill="none" stroke={isDark ? '#334155' : '#CBD5E1'} strokeWidth="1.5" />
-              <rect x="36" y="88" width="20" height="150" rx="9" fill="none" stroke={isDark ? '#334155' : '#CBD5E1'} strokeWidth="1.5" />
-              <rect x="144" y="88" width="20" height="150" rx="9" fill="none" stroke={isDark ? '#334155' : '#CBD5E1'} strokeWidth="1.5" />
-              {view === 'back' && (
-                <line x1="100" y1="70" x2="100" y2="200" stroke={isDark ? '#334155' : '#CBD5E1'} strokeWidth="1.5" strokeDasharray="3,3" />
-              )}
+          {viewMode === '3d' ? (
+            <Suspense
+              fallback={
+                <div className="flex items-center justify-center gap-1.5 text-slate-400 py-24">
+                  <Loader2 className="w-4 h-4 animate-spin" /> {isSw ? 'Inapakia muundo...' : 'Loading body model…'}
+                </div>
+              }
+            >
+              <Mannequin3DView
+                view={view}
+                markedKeys={markedKeys}
+                selectedKey={selectedKey}
+                onSelectKey={setSelectedKey}
+                onStatus={setViewer3dStatus}
+                isSw={isSw}
+              />
+            </Suspense>
+          ) : (
+            <div className="flex justify-center mb-3">
+              <svg viewBox="0 0 200 350" width="220" height="385" className="select-none">
+                <g
+                  fill="color-mix(in srgb, var(--nc-primary) 7%, var(--nc-surface-elevated))"
+                  stroke="var(--nc-border-strong)"
+                  strokeWidth="1.25"
+                >
+                  <ellipse cx="100" cy="30" rx="19" ry="21" />
+                  <rect x="93" y="47" width="14" height="13" rx="5" />
+                  <rect x="64" y="63" width="72" height="50" rx="22" />
+                  <rect x="70" y="103" width="60" height="54" rx="18" />
+                  <rect x="40" y="68" width="17" height="62" rx="8.5" />
+                  <rect x="143" y="68" width="17" height="62" rx="8.5" />
+                  <rect x="41" y="126" width="15" height="58" rx="7.5" />
+                  <rect x="144" y="126" width="15" height="58" rx="7.5" />
+                  <rect x="66" y="148" width="68" height="32" rx="16" />
+                  <rect x="73" y="172" width="24" height="64" rx="12" />
+                  <rect x="103" y="172" width="24" height="64" rx="12" />
+                  <rect x="77" y="230" width="16" height="80" rx="8" />
+                  <rect x="107" y="230" width="16" height="80" rx="8" />
+                  <ellipse cx="85" cy="322" rx="10" ry="7" />
+                  <ellipse cx="115" cy="322" rx="10" ry="7" />
+                </g>
+                {view === 'back' && (
+                  <line x1="100" y1="66" x2="100" y2="195" stroke="var(--nc-border-strong)" strokeWidth="1.25" strokeDasharray="2,4" strokeLinecap="round" />
+                )}
 
-              {activeHotspots.map((h) => {
-                const key = regionKey(h.key, h.side || null);
-                const marked = markedKeys.has(key);
-                const isSelected = selectedKey === key;
-                const fill = isSelected ? 'var(--nc-primary)' : marked ? 'color-mix(in srgb, var(--nc-primary) 35%, transparent)' : 'transparent';
-                const stroke = marked || isSelected ? 'var(--nc-primary)' : (isDark ? '#475569' : '#94A3B8');
-                const label = `${bodyRegionLabel(h.key, isSw)}${h.side ? ` (${h.side})` : ''}`;
-                const activate = () => setSelectedKey(marked ? key : null);
-                const a11yProps = {
-                  role: 'button' as const,
-                  tabIndex: marked ? 0 : -1,
-                  'aria-label': label,
-                  'aria-pressed': isSelected,
-                  onKeyDown: (e: React.KeyboardEvent) => {
-                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); }
-                  },
-                };
-                return h.shape === 'circle' ? (
-                  <circle
-                    key={key}
-                    cx={h.x}
-                    cy={h.y}
-                    r={h.r}
-                    fill={fill}
-                    stroke={stroke}
-                    strokeWidth={1.5}
-                    className="cursor-pointer transition-colors focus:outline focus:outline-2 focus:outline-primary"
-                    onClick={activate}
-                    {...a11yProps}
-                  >
-                    <title>{label}</title>
-                  </circle>
-                ) : (
-                  <rect
-                    key={key}
-                    x={h.x}
-                    y={h.y}
-                    width={h.w}
-                    height={h.h}
-                    rx={4}
-                    fill={fill}
-                    stroke={stroke}
-                    strokeWidth={1.5}
-                    className="cursor-pointer transition-colors focus:outline focus:outline-2 focus:outline-primary"
-                    onClick={activate}
-                    {...a11yProps}
-                  >
-                    <title>{label}</title>
-                  </rect>
-                );
-              })}
-            </svg>
-          </div>
+                {activeHotspots.map((h) => {
+                  const key = regionKey(h.key, h.side || null);
+                  const marked = markedKeys.has(key);
+                  const isSelected = selectedKey === key;
+                  const fill = isSelected
+                    ? 'var(--nc-primary)'
+                    : marked
+                    ? 'color-mix(in srgb, var(--nc-primary) 30%, transparent)'
+                    : 'transparent';
+                  const stroke = isSelected || marked ? 'var(--nc-primary)' : 'transparent';
+                  const label = `${bodyRegionLabel(h.key, isSw)}${h.side ? ` (${h.side})` : ''}`;
+                  const activate = () => setSelectedKey(marked ? key : null);
+                  const a11yProps = {
+                    role: 'button' as const,
+                    tabIndex: marked ? 0 : -1,
+                    'aria-label': label,
+                    'aria-pressed': isSelected,
+                    onKeyDown: (e: React.KeyboardEvent) => {
+                      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); }
+                    },
+                  };
+                  const hoverClass = marked ? '' : 'hover:fill-primary/10 dark:hover:fill-primary/15';
+                  return h.shape === 'circle' ? (
+                    <circle
+                      key={key}
+                      cx={h.x}
+                      cy={h.y}
+                      r={h.r}
+                      fill={fill}
+                      stroke={stroke}
+                      strokeWidth={1.5}
+                      className={`cursor-pointer transition-colors focus:outline focus:outline-2 focus:outline-primary ${hoverClass}`}
+                      onClick={activate}
+                      {...a11yProps}
+                    >
+                      <title>{label}</title>
+                    </circle>
+                  ) : (
+                    <rect
+                      key={key}
+                      x={h.x}
+                      y={h.y}
+                      width={h.w}
+                      height={h.h}
+                      rx={Math.min(10, (h.w || 0) / 2, (h.h || 0) / 2)}
+                      fill={fill}
+                      stroke={stroke}
+                      strokeWidth={1.5}
+                      className={`cursor-pointer transition-colors focus:outline focus:outline-2 focus:outline-primary ${hoverClass}`}
+                      onClick={activate}
+                      {...a11yProps}
+                    >
+                      <title>{label}</title>
+                    </rect>
+                  );
+                })}
+              </svg>
+            </div>
+          )}
 
           {!loading && entries.length === 0 && (
             <p className="text-slate-500 dark:text-slate-400 text-center py-2">
@@ -262,12 +319,13 @@ export const BodyMapModal: React.FC<BodyMapModalProps> = ({ isOpen, onClose, pat
             </p>
           )}
 
-          {/* Regions not on the current view's silhouette (e.g. back/spine
-              while viewing Front, or chest/abdomen while viewing Back; eye/
-              ear/other never appear on either) — still reachable as chips. */}
-          {offSilhouetteKeys.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 justify-center mb-3">
-              {offSilhouetteKeys.map((k) => {
+          {/* Accessible region list — keyboard/screen-reader access to every
+              marked region without requiring pointer interaction with the
+              3D canvas (or, in 2D mode, a supplement for regions not on the
+              current silhouette). */}
+          {allMarkedKeys.length > 0 && (
+            <div role="group" aria-label={isSw ? 'Chagua Eneo la Mwili' : 'Select Body Area'} className="flex flex-wrap gap-1.5 justify-center mb-3">
+              {(viewMode === '3d' ? allMarkedKeys : offSilhouetteKeys).map((k) => {
                 const [region, side] = k.split(':');
                 return (
                   <button
@@ -275,7 +333,7 @@ export const BodyMapModal: React.FC<BodyMapModalProps> = ({ isOpen, onClose, pat
                     type="button"
                     onClick={() => setSelectedKey(k)}
                     aria-pressed={selectedKey === k}
-                    className={`rounded-lg px-2.5 py-1.5 font-bold ${
+                    className={`rounded-lg px-2.5 py-1.5 font-semibold ${
                       selectedKey === k
                         ? 'bg-[var(--nc-primary)] text-white dark:bg-primary dark:text-[#041D34]'
                         : 'bg-primary/10 text-primary dark:text-primary-light'
@@ -291,7 +349,7 @@ export const BodyMapModal: React.FC<BodyMapModalProps> = ({ isOpen, onClose, pat
           {selectedKey && (
             <div className="space-y-2 border-t nc-border pt-3">
               <div>
-                <p className="font-bold text-slate-900 dark:text-white">
+                <p className="font-semibold text-slate-900 dark:text-white">
                   {bodyRegionLabel(selectedKey.split(':')[0], isSw)}
                   {selectedKey.split(':')[1] !== 'none' ? ` (${selectedKey.split(':')[1]})` : ''}
                 </p>
@@ -299,24 +357,32 @@ export const BodyMapModal: React.FC<BodyMapModalProps> = ({ isOpen, onClose, pat
                   {activeEntries.length} {isSw ? 'rekodi zinazohusiana' : activeEntries.length === 1 ? 'related record' : 'related records'}
                 </p>
               </div>
-              {activeEntries.map((e) => (
-                <div key={e.id} className="rounded-xl border border-slate-100 dark:border-slate-800 p-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="font-bold text-slate-900 dark:text-white">{e.diagnosis}</p>
-                    <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-bold flex-shrink-0 ${e.kind === 'imaging' ? 'bg-primary/10 text-primary dark:text-primary-light' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}`}>
-                      {e.kind === 'imaging' ? <Scan className="w-3 h-3" /> : <Stethoscope className="w-3 h-3" />}
-                      {e.kind === 'imaging' ? (isSw ? 'Picha' : 'Imaging') : (isSw ? 'Utambuzi' : 'Diagnosis')}
-                    </span>
+              {activeEntries.length === 0 ? (
+                <p className="text-slate-500 dark:text-slate-400 rounded-xl border border-slate-100 dark:border-slate-800 p-3">
+                  {isSw
+                    ? 'Hakuna rekodi zilizounganishwa na eneo hili bado.'
+                    : 'No records are linked to this body area yet. This does not mean there is no medical condition.'}
+                </p>
+              ) : (
+                activeEntries.map((e) => (
+                  <div key={e.id} className="rounded-xl border border-slate-100 dark:border-slate-800 p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="font-semibold text-slate-900 dark:text-white">{e.diagnosis}</p>
+                      <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-semibold flex-shrink-0 ${e.kind === 'imaging' ? 'bg-primary/10 text-primary dark:text-primary-light' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}`}>
+                        {e.kind === 'imaging' ? <Scan className="w-3 h-3" /> : <Stethoscope className="w-3 h-3" />}
+                        {e.kind === 'imaging' ? (isSw ? 'Picha' : 'Imaging') : (isSw ? 'Utambuzi' : 'Diagnosis')}
+                      </span>
+                    </div>
+                    {e.notes && <p className="text-slate-600 dark:text-slate-300 mt-1">{e.notes}</p>}
+                    <p className="text-slate-400 mt-1">{e.doctorName} • {new Date(e.createdAt).toLocaleDateString()}</p>
                   </div>
-                  {e.notes && <p className="text-slate-600 dark:text-slate-300 mt-1">{e.notes}</p>}
-                  <p className="text-slate-400 mt-1">{e.doctorName} • {new Date(e.createdAt).toLocaleDateString()}</p>
-                </div>
-              ))}
+                ))
+              )}
               {onViewHealthJourney && (
                 <button
                   type="button"
                   onClick={onViewHealthJourney}
-                  className="w-full rounded-xl bg-primary/10 text-primary dark:text-primary-light px-3 py-2 font-bold"
+                  className="w-full rounded-xl bg-primary/10 text-primary dark:text-primary-light px-3 py-2 font-semibold"
                 >
                   {isSw ? 'Angalia Historia ya Afya' : 'View Health History'}
                 </button>

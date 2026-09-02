@@ -1,53 +1,59 @@
 @import "tailwindcss";
 
 :root {
-  /* NiaCare brand palette — aligned to the NHS digital service manual
-     (service-manual.nhs.uk/design-system): NHS Blue for brand/links/focus,
-     NHS Green reserved for the primary-action button convention below,
-     NHS's own grey scale for neutrals. Chosen deliberately, not copied
-     wholesale — see the color-policy comment further down. */
-  --nc-primary: #005EB8;      /* NHS Blue */
-  --nc-primary-dark: #003087; /* NHS Dark Blue */
-  --nc-primary-light: #41B6E6; /* NHS Light Blue */
-  --nc-accent: #0B1220;
-  --nc-accent-light: #1E293B;
+  /* NiaCare brand palette v2 — "premium clinical infrastructure": deep
+     navy/blue as the dominant identity color (not NHS's blue-for-links/
+     green-for-actions split from v1), one restrained cyan accent, status
+     colors reserved strictly for status. Same token NAMES as before so
+     every component that already consumes var(--nc-*) picks this up
+     automatically — only the VALUES and a couple of policy decisions
+     (see .nc-btn-primary below) changed. */
+  --nc-primary: #0066CC;       /* nia-blue — primary action, links, active states, focus */
+  --nc-primary-dark: #0B1F3A;  /* nia-navy — deep headers, high-identity surfaces (Health Passport) */
+  --nc-primary-light: #18A8D8; /* nia-cyan — sparing secondary accent, dark-mode primary */
+  --nc-accent: #0B1F3A;
+  --nc-accent-light: #16324F;
 
-  /* Semantic colors — NHS Green/Orange/Red */
-  --nc-success: #007F3B;
-  --nc-success-subtle: #DFF3E6;
-  --nc-warning: #ED8B00;
-  --nc-warning-subtle: #FDEBD3;
-  --nc-danger: #D5281B;
-  --nc-danger-subtle: #FBE1DE;
-  --nc-info: #41B6E6;
-  --nc-info-subtle: #E3F4FC;
-  --nc-purple: #330072;       /* NHS Purple, extended palette */
-  --nc-purple-subtle: #EAE3F5;
-  --nc-focus: #FFEB3B;        /* NHS/GOV.UK-style visible focus ring */
+  /* Semantic colors — status only, never decoration */
+  --nc-success: #00A878;
+  --nc-success-subtle: #DCF3EB;
+  --nc-warning: #D99A00;
+  --nc-warning-subtle: #FBEED1;
+  --nc-danger: #D7263D;
+  --nc-danger-subtle: #FBDDE1;
+  --nc-info: #18A8D8;
+  --nc-info-subtle: #DEF2F8;
+  --nc-purple: #4C3A8C;
+  --nc-purple-subtle: #E7E3F3;
+  /* Deliberately NOT brand blue: a same-hue focus ring can disappear
+     against the many blue buttons/borders in this system. Amber-gold is
+     visible against every surface/primary color here, in both themes. */
+  --nc-focus: #D99A00;
 
-  /* Light mode surfaces — NHS grey scale */
-  --nc-bg: #F0F4F5;      /* NHS Grey-5 */
+  /* Light mode surfaces */
+  --nc-bg: #F4F7FA;
   --nc-surface: #FFFFFF;
-  --nc-surface-elevated: #FAFCFC;
-  --nc-border: #D8DDE0;        /* NHS Grey-4 */
-  --nc-border-strong: #AEB7BD; /* NHS Grey-3 */
-  --nc-text: #212B32;          /* NHS Black */
-  --nc-text-secondary: #4C6272; /* NHS Grey-1 */
-  --nc-text-muted: #768692;     /* NHS Grey-2 */
-  --nc-placeholder: #AEB7BD;
+  --nc-surface-elevated: #F9FBFD;
+  --nc-border: #D9E1EA;
+  --nc-border-strong: #B9C6D4;
+  --nc-text: #122033;
+  --nc-text-secondary: #45566E;
+  --nc-text-muted: #66758A;
+  --nc-placeholder: #9AA8B8;
 }
 
 .dark {
-  /* Dark mode surfaces */
-  --nc-bg: #080E17;
-  --nc-surface: #0B1522;
-  --nc-surface-elevated: #101F31;
-  --nc-border: rgba(51, 65, 85, 0.9);
-  --nc-border-strong: #334155;
-  --nc-text: #F8FAFC;
-  --nc-text-secondary: #CBD5E1;
-  --nc-text-muted: #94A3B8;
-  --nc-placeholder: #64748B;
+  /* Dark mode surfaces — deep navy, not slate/gray, to stay on-brand */
+  --nc-bg: #060B14;
+  --nc-surface: #0B1526;
+  --nc-surface-elevated: #101E33;
+  --nc-border: rgba(45, 65, 92, 0.55);
+  --nc-border-strong: #2D415C;
+  --nc-text: #F2F6FA;
+  --nc-text-secondary: #C4D0DE;
+  --nc-text-muted: #8496AC;
+  --nc-placeholder: #56698299;
+  --nc-focus: #E5B93D;
 }
 
 /*
@@ -162,23 +168,21 @@
   .nc-text-secondary { color: var(--nc-text-secondary); }
   .nc-text-muted { color: var(--nc-text-muted); }
 
-  /* NHS convention: the primary action button is green, not brand blue —
-     blue stays reserved for links/tabs/focus (see color-policy comment above). */
+  /* v2 policy: brand blue is the primary action color (conventional
+     SaaS/fintech pattern), not NHS's blue-for-links/green-for-actions
+     split. font-semibold, not extrabold — bold is reserved for numerals,
+     prices, and critical alerts, not every button label. */
   .nc-btn-primary {
-    @apply rounded-lg font-extrabold text-xs transition-all active:scale-[0.98];
-    background-color: var(--nc-success);
+    @apply rounded-lg font-semibold text-xs transition-all active:scale-[0.98];
+    background-color: var(--nc-primary);
     color: #FFFFFF;
   }
   .nc-btn-primary:hover {
-    background-color: #009443;
-  }
-
-  .dark .nc-btn-primary:hover {
-    background-color: #009443;
+    background-color: var(--nc-primary-dark);
   }
 
   .nc-card {
-    @apply rounded-lg border transition-all;
+    @apply rounded-xl border transition-all;
     background-color: var(--nc-surface);
     border-color: var(--nc-border);
     box-shadow: 0 1px 2px rgba(15, 45, 80, 0.025);
@@ -212,8 +216,12 @@
     --tw-ring-color: var(--nc-primary-light);
   }
 
+  /* The one deliberately gradient surface in the system, per brief:
+     "gradients may only be used strategically for major identity elements
+     such as the Health Passport." Deep navy anchoring the brand, not a
+     bright banking-card blue sweep. */
   .nc-gradient-passport {
-    background: linear-gradient(135deg, #003087 0%, #005EB8 60%, #41B6E6 100%);
+    background: linear-gradient(135deg, #0B1F3A 0%, #0E2A4E 55%, #0066CC 100%);
   }
 }
 
@@ -236,16 +244,23 @@
 button, input, select, textarea { font: inherit; }
 button { -webkit-tap-highlight-color: transparent; }
 
-/* Reference-board polish: compact clinical UI, not bubbly marketing cards. */
+/* Compact clinical UI, not bubbly marketing cards — but not flattened to a
+   single radius either. Ordinary cards/panels: 12px. Large identity
+   surfaces (rounded-3xl — the Health Passport, onboarding panels): 16px,
+   the system's one deliberately larger radius, not a bigger version of
+   the same card radius. */
 .rounded-xl,
-.rounded-2xl,
+.rounded-2xl {
+  border-radius: 0.75rem !important;
+}
+
 .rounded-3xl {
-  border-radius: 0.5rem !important;
+  border-radius: 1rem !important;
 }
 
 .rounded-t-3xl {
-  border-top-left-radius: 0.5rem !important;
-  border-top-right-radius: 0.5rem !important;
+  border-top-left-radius: 1rem !important;
+  border-top-right-radius: 1rem !important;
 }
 
 .shadow-md,
@@ -473,8 +488,34 @@ button { -webkit-tap-highlight-color: transparent; }
   border-color: var(--nc-primary) !important;
 }
 
+/* De-shout pass: this codebase has font-bold on nearly every label across
+   every screen — a global downgrade here fixes "near-maximum weight
+   everywhere" app-wide in one place, rather than needing to touch every
+   className string in every component. Per the type policy above, bold is
+   reserved for numerals/prices/critical alerts, not ordinary labels/titles
+   — this rule moves the app's default "bold" down to semibold, matching
+   that policy without a component-by-component rewrite. */
+.app-canvas [class*="font-bold"] {
+  font-weight: 600 !important;
+}
+
+.app-canvas [class*="font-extrabold"] {
+  font-weight: 600 !important;
+}
+
 .app-canvas [class*="font-black"] {
-  font-weight: 800 !important;
+  font-weight: 700 !important;
+}
+
+/* Exception, higher specificity than the three rules above: numeric/
+   identifier content (ticket numbers, prices, patient/NIDA IDs — anything
+   already paired with font-mono) keeps real bold weight. This is exactly
+   the "clear numeric hierarchy... bold reserved for numerals and prices"
+   policy — numbers earn the weight the rest of the UI just gave up. */
+.app-canvas [class*="font-mono"][class*="font-bold"],
+.app-canvas [class*="font-mono"][class*="font-extrabold"],
+.app-canvas [class*="font-mono"][class*="font-black"] {
+  font-weight: 700 !important;
 }
 
 @media (max-width: 640px) {
