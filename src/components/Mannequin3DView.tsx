@@ -91,55 +91,63 @@ const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({ view, markedCounts, s
   }
 
   return (
-    <div className="flex flex-col items-center">
+    <div
+      className="relative w-full h-[360px] sm:h-[420px] lg:h-[440px] overflow-hidden"
+      style={{ background: 'var(--nc-stage-bg)', border: '1px solid var(--nc-stage-border)', borderRadius: 'var(--nc-radius-card)' }}
+    >
       <div
         ref={containerRef}
         role="img"
         aria-label={isSw ? 'Muundo wa mwili wa 3D unaozunguka' : 'Rotatable 3D body model'}
-        className="relative w-full h-[360px] sm:h-[420px] overflow-hidden touch-none"
-        style={{ background: 'color-mix(in srgb, var(--nc-primary) 3%, var(--nc-surface-elevated))', borderRadius: 'var(--nc-radius-card)' }}
-      >
-        {status === 'loading' && (
-          <div className="absolute inset-0 flex items-center justify-center gap-1.5 text-slate-400">
-            <Loader2 className="w-4 h-4 animate-spin" /> {isSw ? 'Inapakia Ramani ya Afya...' : 'Loading Health Map…'}
-          </div>
-        )}
-      </div>
+        className="absolute inset-0 touch-none"
+      />
+
+      {status === 'loading' && (
+        <div className="absolute inset-0 flex items-center justify-center gap-1.5" style={{ color: 'var(--nc-stage-text)' }}>
+          <Loader2 className="w-4 h-4 animate-spin" /> {isSw ? 'Inapakia Ramani ya Afya...' : 'Loading Health Map…'}
+        </div>
+      )}
+
       {status === 'ready' && (
-        <div className="flex items-center justify-between w-full mt-2">
-          <div className="flex items-center gap-0.5">
+        <>
+          {hoveredKey && (
+            <div className="absolute top-3 left-3 rounded-md px-2 py-1 text-[11px] font-semibold bg-black/40 backdrop-blur-sm" style={{ color: 'var(--nc-stage-text)' }}>
+              {descriptiveRegionLabel(hoveredKey.split(':')[0], hoveredKey.split(':')[1], isSw)}
+            </div>
+          )}
+
+          {/* Overlay control cluster — reads as an instrument's own
+              controls rather than page chrome sitting below the model. */}
+          <div className="absolute bottom-3 right-3 flex items-center gap-0.5 rounded-lg bg-black/40 backdrop-blur-sm p-0.5">
             <button
               type="button"
               onClick={() => viewerRef.current?.zoomStep('out')}
               aria-label={isSw ? 'Punguza' : 'Zoom out'}
               title={isSw ? 'Punguza' : 'Zoom out'}
-              className="nc-btn-icon"
+              className="w-7 h-7 rounded-md flex items-center justify-center text-white/80 hover:bg-white/10 hover:text-white transition-colors"
             >
-              <ZoomOut className="w-4 h-4" />
+              <ZoomOut className="w-3.5 h-3.5" />
             </button>
             <button
               type="button"
               onClick={() => viewerRef.current?.zoomStep('in')}
               aria-label={isSw ? 'Kuza' : 'Zoom in'}
               title={isSw ? 'Kuza' : 'Zoom in'}
-              className="nc-btn-icon"
+              className="w-7 h-7 rounded-md flex items-center justify-center text-white/80 hover:bg-white/10 hover:text-white transition-colors"
             >
-              <ZoomIn className="w-4 h-4" />
+              <ZoomIn className="w-3.5 h-3.5" />
             </button>
             <button
               type="button"
               onClick={() => viewerRef.current?.resetView()}
               aria-label={isSw ? 'Rudisha Mwonekano' : 'Reset view'}
               title={isSw ? 'Rudisha Mwonekano' : 'Reset view'}
-              className="nc-btn-icon"
+              className="w-7 h-7 rounded-md flex items-center justify-center text-white/80 hover:bg-white/10 hover:text-white transition-colors"
             >
-              <RotateCcw className="w-4 h-4" />
+              <RotateCcw className="w-3.5 h-3.5" />
             </button>
           </div>
-          <span className="text-[11px] font-semibold text-primary dark:text-primary-light truncate max-w-[55%] text-right">
-            {hoveredKey ? descriptiveRegionLabel(hoveredKey.split(':')[0], hoveredKey.split(':')[1], isSw) : ''}
-          </span>
-        </div>
+        </>
       )}
     </div>
   );

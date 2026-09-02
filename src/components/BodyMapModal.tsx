@@ -1,5 +1,5 @@
 import React, { Suspense, useEffect, useMemo, useState } from 'react';
-import { X, PersonStanding, Scan, Stethoscope, Box, Squircle, Loader2 } from 'lucide-react';
+import { X, Scan, Stethoscope, Box, Squircle, Loader2, Activity, Route } from 'lucide-react';
 import { Language } from '../types';
 import { fetchBodyMapEntries, bodyMapRegionKey, BodyMapEntry } from '../lib/bodyMap';
 import { descriptiveRegionLabel } from '../data/bodyRegionHierarchy';
@@ -139,6 +139,11 @@ export const BodyMapModal: React.FC<BodyMapModalProps> = ({ isOpen, onClose, pat
     return map;
   }, [entries]);
 
+  // Real counts by record kind — the same `entries` the map itself
+  // fetched, just tallied. Feeds the compact summary line only.
+  const diagnosisCount = useMemo(() => entries.filter((e) => e.kind === 'diagnosis').length, [entries]);
+  const imagingCount = useMemo(() => entries.filter((e) => e.kind === 'imaging').length, [entries]);
+
   if (!isOpen) return null;
 
   const activeEntries = selectedKey ? entriesByRegion.get(selectedKey) || [] : [];
@@ -160,18 +165,15 @@ export const BodyMapModal: React.FC<BodyMapModalProps> = ({ isOpen, onClose, pat
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="nc-card w-full max-w-lg lg:max-w-3xl max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-        <div className="p-5 flex items-center justify-between bg-primary text-white flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center">
-              <PersonStanding className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-base font-bold">{isSw ? 'Ramani ya Mwili' : 'Body Map'}</h3>
-              <p className="text-xs text-white/80">{isSw ? 'Gusa eneo kuona rekodi zake' : 'Tap a body area to view related health records'}</p>
-            </div>
+      <div className="nc-card w-full max-w-lg lg:max-w-4xl max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+        {/* Compact professional header — a page title and a one-line
+            purpose statement, not a hero banner. */}
+        <div className="px-5 py-4 flex items-center justify-between border-b nc-border flex-shrink-0">
+          <div>
+            <h3 className="text-base font-semibold text-slate-900 dark:text-white">{isSw ? 'Ramani ya Mwili' : 'Body Map'}</h3>
+            <p className="text-xs text-slate-400">{isSw ? 'Ramani Shirikishi ya Afya' : 'Interactive Health Map'}</p>
           </div>
-          <button type="button" onClick={onClose} aria-label={isSw ? 'Funga' : 'Close'} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center">
+          <button type="button" onClick={onClose} aria-label={isSw ? 'Funga' : 'Close'} className="nc-btn-icon">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -191,20 +193,22 @@ export const BodyMapModal: React.FC<BodyMapModalProps> = ({ isOpen, onClose, pat
               document order — the side panel becomes the last section on
               the page, reading like a bottom sheet without a second
               overlay system. */}
-          <div className="lg:grid lg:grid-cols-[1fr_300px] lg:gap-5 lg:items-start">
+          <div className="lg:grid lg:grid-cols-[1fr_320px] lg:gap-5 lg:items-start">
           <div>
           <div className="flex items-center justify-between gap-2 mb-3">
-            <div className="flex gap-1.5">
+            {/* Compact segmented control, not two separate buttons — one
+                bordered pill with an internal sliding selected state. */}
+            <div className="inline-flex rounded-lg border nc-border p-0.5">
               {(['front', 'back'] as const).map((v) => (
                 <button
                   key={v}
                   type="button"
                   onClick={() => setView(v)}
                   aria-pressed={view === v}
-                  className={`rounded-lg px-4 py-1.5 font-semibold ${
+                  className={`rounded-md px-3.5 py-1 font-semibold transition-colors ${
                     view === v
                       ? 'bg-[var(--nc-primary)] text-white dark:bg-primary dark:text-[#041D34]'
-                      : 'border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400'
+                      : 'text-slate-500 dark:text-slate-400'
                   }`}
                 >
                   {v === 'front' ? (isSw ? 'Mbele' : 'Front') : (isSw ? 'Nyuma' : 'Back')}
@@ -217,7 +221,7 @@ export const BodyMapModal: React.FC<BodyMapModalProps> = ({ isOpen, onClose, pat
                 onClick={() => setViewMode((m) => (m === '3d' ? '2d' : '3d'))}
                 aria-pressed={viewMode === '3d'}
                 title={viewMode === '3d' ? (isSw ? 'Tumia Ramani ya 2D' : 'Use 2D Body Map') : (isSw ? 'Tumia Muundo wa 3D' : 'Use 3D Model')}
-                className="flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 font-semibold text-slate-500 dark:text-slate-400"
+                className="nc-btn-ghost flex items-center gap-1 px-2.5 py-1.5"
               >
                 {viewMode === '3d' ? <Squircle className="w-3.5 h-3.5" /> : <Box className="w-3.5 h-3.5" />}
                 {viewMode === '3d' ? '2D' : '3D'}
@@ -336,36 +340,61 @@ export const BodyMapModal: React.FC<BodyMapModalProps> = ({ isOpen, onClose, pat
             </p>
           )}
 
+          {/* Compact health-activity summary — real counts derived from
+              the same entries the map itself uses, nothing invented.
+              Never phrased as severity/risk. */}
           {entries.length > 0 && (
-            <p className="text-slate-400 text-center mb-3">
-              {isSw ? 'Maeneo yenye rangi yana rekodi. Gusa kuona.' : 'Highlighted areas have records — tap to view.'}
-            </p>
+            <div className="flex items-center flex-wrap gap-x-4 gap-y-1 mb-3 px-0.5">
+              <span className="flex items-center gap-1.5">
+                <Activity className="w-3.5 h-3.5 text-primary dark:text-primary-light flex-shrink-0" />
+                <span className="font-semibold text-slate-900 dark:text-white">{entries.length}</span>
+                <span className="text-slate-400">{isSw ? 'jumla ya rekodi' : entries.length === 1 ? 'record' : 'records'}</span>
+              </span>
+              {diagnosisCount > 0 && (
+                <span className="text-slate-400">{diagnosisCount} {isSw ? 'utambuzi' : diagnosisCount === 1 ? 'diagnosis' : 'diagnoses'}</span>
+              )}
+              {imagingCount > 0 && (
+                <span className="text-slate-400">{imagingCount} {isSw ? 'picha' : 'imaging'}</span>
+              )}
+            </div>
           )}
 
           {/* Accessible region list — keyboard/screen-reader access to every
               marked region without requiring pointer interaction with the
               3D canvas (or, in 2D mode, a supplement for regions not on the
-              current silhouette). */}
+              current silhouette). Styled as a compact index, not a wrap of
+              pill badges. */}
           {allMarkedKeys.length > 0 && (
-            <div role="group" aria-label={isSw ? 'Chagua Eneo la Mwili' : 'Select Body Area'} className="flex flex-wrap gap-1.5 justify-center lg:justify-start mb-3">
-              {(viewMode === '3d' ? allMarkedKeys : offSilhouetteKeys).map((k) => {
-                const [region, side] = k.split(':');
-                return (
-                  <button
-                    key={k}
-                    type="button"
-                    onClick={() => setSelectedKey(k)}
-                    aria-pressed={selectedKey === k}
-                    className={`rounded-lg px-2.5 py-1.5 font-semibold ${
-                      selectedKey === k
-                        ? 'bg-[var(--nc-primary)] text-white dark:bg-primary dark:text-[#041D34]'
-                        : 'bg-primary/10 text-primary dark:text-primary-light'
-                    }`}
-                  >
-                    {descriptiveRegionLabel(region, side, isSw)}
-                  </button>
-                );
-              })}
+            <div className="mb-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 mb-1.5 px-0.5">
+                {isSw ? 'MAENEO YA MWILI' : 'BODY REGIONS'}
+              </p>
+              <div
+                role="group"
+                aria-label={isSw ? 'Chagua Eneo la Mwili' : 'Select Body Area'}
+                className="border nc-border rounded-lg divide-y divide-[var(--nc-border)] max-h-44 lg:max-h-64 overflow-y-auto"
+              >
+                {(viewMode === '3d' ? allMarkedKeys : offSilhouetteKeys).map((k) => {
+                  const [region, side] = k.split(':');
+                  const isSelected = selectedKey === k;
+                  return (
+                    <button
+                      key={k}
+                      type="button"
+                      onClick={() => setSelectedKey(k)}
+                      aria-pressed={isSelected}
+                      className={`w-full flex items-center justify-between px-3 py-2 text-left font-medium transition-colors ${
+                        isSelected
+                          ? 'bg-primary/10 text-primary dark:text-primary-light'
+                          : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                      }`}
+                    >
+                      <span>{descriptiveRegionLabel(region, side, isSw)}</span>
+                      {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-primary dark:bg-primary-light flex-shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
           </div>
@@ -376,51 +405,63 @@ export const BodyMapModal: React.FC<BodyMapModalProps> = ({ isOpen, onClose, pat
               second overlay/portal system for one screen. */}
           <div className="mt-4 lg:mt-0">
             {selectedKey ? (
-              <div className="space-y-2 border-t nc-border pt-3 lg:border lg:rounded-xl lg:p-3.5 lg:pt-3.5">
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-                    {isSw ? 'Shughuli za Afya' : 'Health Activity'}
-                  </p>
-                  <p className="font-semibold text-slate-900 dark:text-white">
-                    {descriptiveRegionLabel(selectedKey.split(':')[0], selectedKey.split(':')[1], isSw)}
-                  </p>
-                  <p className="text-slate-400">
+              <div className="border-t nc-border pt-3 lg:border lg:rounded-lg lg:p-3.5 lg:pt-3.5">
+                <p className="font-semibold text-slate-900 dark:text-white">
+                  {descriptiveRegionLabel(selectedKey.split(':')[0], selectedKey.split(':')[1], isSw)}
+                </p>
+                <div className="flex items-center gap-1.5 mt-1 mb-3 text-slate-400">
+                  <Activity className="w-3 h-3 flex-shrink-0" />
+                  <span>{isSw ? 'Shughuli za Afya' : 'Health activity'}:</span>
+                  <span className="font-semibold text-slate-700 dark:text-slate-200">
                     {activeEntries.length} {isSw ? 'rekodi' : activeEntries.length === 1 ? 'record' : 'records'}
-                  </p>
+                  </span>
                 </div>
+
                 {activeEntries.length === 0 ? (
-                  <p className="text-slate-500 dark:text-slate-400 rounded-xl border border-slate-100 dark:border-slate-800 p-3">
+                  <p className="text-slate-500 dark:text-slate-400">
                     {isSw
                       ? 'Hakuna rekodi zilizounganishwa na eneo hili bado.'
                       : 'No records are linked to this body area yet. This does not mean there is no medical condition.'}
                   </p>
                 ) : (
-                  activeEntries.map((e) => (
-                    <div key={e.id} className="rounded-xl border border-slate-100 dark:border-slate-800 p-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="font-semibold text-slate-900 dark:text-white">{e.diagnosis}</p>
-                        <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-semibold flex-shrink-0 ${e.kind === 'imaging' ? 'bg-primary/10 text-primary dark:text-primary-light' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}`}>
-                          {e.kind === 'imaging' ? <Scan className="w-3 h-3" /> : <Stethoscope className="w-3 h-3" />}
-                          {e.kind === 'imaging' ? (isSw ? 'Picha' : 'Imaging') : (isSw ? 'Utambuzi' : 'Diagnosis')}
-                        </span>
-                      </div>
-                      {e.notes && <p className="text-slate-600 dark:text-slate-300 mt-1">{e.notes}</p>}
-                      <p className="text-slate-400 mt-1">{e.doctorName} • {new Date(e.createdAt).toLocaleDateString()}</p>
+                  <>
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 mb-1.5">
+                      {isSw ? 'Historia ya Hivi Karibuni' : 'Recent History'}
+                    </p>
+                    {/* A divided list, not a card per record — this is
+                        supporting detail for the selected region, not a
+                        standalone information surface of its own. */}
+                    <div className="divide-y divide-[var(--nc-border)] border-t border-b nc-border mb-3">
+                      {activeEntries.map((e) => (
+                        <div key={e.id} className="py-2.5">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-slate-400">{new Date(e.createdAt).toLocaleDateString()}</p>
+                            <span className={`inline-flex items-center gap-1 font-semibold flex-shrink-0 ${e.kind === 'imaging' ? 'text-primary dark:text-primary-light' : 'text-slate-500 dark:text-slate-400'}`}>
+                              {e.kind === 'imaging' ? <Scan className="w-3 h-3" /> : <Stethoscope className="w-3 h-3" />}
+                              {e.kind === 'imaging' ? (isSw ? 'Picha' : 'Imaging') : (isSw ? 'Utambuzi' : 'Diagnosis')}
+                            </span>
+                          </div>
+                          <p className="font-semibold text-slate-900 dark:text-white mt-0.5">{e.diagnosis}</p>
+                          {e.notes && <p className="text-slate-600 dark:text-slate-300 mt-0.5">{e.notes}</p>}
+                          <p className="text-slate-400 mt-0.5">{e.doctorName}</p>
+                        </div>
+                      ))}
                     </div>
-                  ))
+                  </>
                 )}
                 {onViewHealthJourney && (
                   <button
                     type="button"
                     onClick={onViewHealthJourney}
-                    className="w-full rounded-xl bg-primary/10 text-primary dark:text-primary-light px-3 py-2 font-semibold"
+                    className="nc-btn-primary w-full py-2 flex items-center justify-center gap-1.5"
                   >
+                    <Route className="w-3.5 h-3.5" />
                     {isSw ? 'Angalia Historia ya Afya' : 'View Health History'}
                   </button>
                 )}
               </div>
             ) : (
-              <div className="hidden lg:flex items-center justify-center text-slate-400 text-center border nc-border rounded-xl p-6 h-full min-h-[200px]">
+              <div className="hidden lg:flex items-center justify-center text-slate-400 text-center border nc-border rounded-lg p-6 h-full min-h-[200px]">
                 {isSw ? 'Chagua eneo la mwili kuona shughuli zake za afya.' : 'Select a body area to view its health activity.'}
               </div>
             )}
