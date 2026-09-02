@@ -4,19 +4,10 @@ import {
   X,
   Search,
   Download,
-  Share2,
   CheckCircle2,
-  Calendar,
-  Building2,
-  User,
   ShieldCheck,
-  Activity,
-  Printer,
   ChevronDown,
   ChevronUp,
-  FileCheck2,
-  Sparkles,
-  Filter,
   FolderLock,
   Upload,
   BookmarkPlus,
@@ -25,12 +16,8 @@ import {
   Star,
   FileDown,
   Plus,
-  Eye,
   Lock,
-  Check,
   AlertCircle,
-  FileSpreadsheet,
-  Layers,
 } from 'lucide-react';
 import { MedicalRecord, PersonalFileItem } from '../data/medicalRecords';
 import { Language, Theme } from '../types';
@@ -88,7 +75,6 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
   authUserId,
   onOpenImaging,
 }) => {
-  const isDark = theme === 'dark';
   const isSwahili = language === 'sw';
 
   // Primary active tab: 'records' | 'personal_files'
@@ -484,123 +470,72 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
     }
   };
 
+  const categorySummary: { id: 'lab' | 'radiology' | 'consultation' | 'vaccine'; label: string; count: number }[] = [
+    { id: 'lab', label: isSwahili ? 'Maabara' : 'Lab', count: records.filter((r) => r.category === 'lab').length },
+    { id: 'radiology', label: isSwahili ? 'Mionzi' : 'Imaging', count: records.filter((r) => r.category === 'radiology').length },
+    { id: 'consultation', label: isSwahili ? 'Kliniki' : 'Encounters', count: records.filter((r) => r.category === 'consultation').length },
+    { id: 'vaccine', label: isSwahili ? 'Chanjo' : 'Vaccines', count: records.filter((r) => r.category === 'vaccine').length },
+  ];
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-xs animate-in fade-in">
-      <div
-        className={`w-full max-w-3xl rounded-2xl p-4 sm:p-6 border relative max-h-[94vh] flex flex-col shadow-2xl ${
-          isDark ? 'bg-[#0E1B2C] border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
-        }`}
-      >
+      <div className="nc-card w-full max-w-3xl p-4 sm:p-5 relative max-h-[94vh] flex flex-col nc-text">
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary dark:text-primary-light flex items-center justify-center font-semibold shadow-inner">
-              <FolderLock className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base sm:text-lg font-semibold tracking-tight">
-                  {isSwahili ? 'Rekodi za Matibabu & Faili Binafsi' : 'Medical Records & Personal Files Vault'}
-                </h3>
-                <span className="text-[10px] font-mono font-bold bg-primary/10 text-primary dark:text-primary-light px-2 py-0.5 rounded-full">
-                  {activeTab === 'records' ? `${filteredRecords.length} Reports` : `${filteredPersonalFiles.length} Stored Files`}
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                {isSwahili ? `Mgonjwa: ${patientName} • ID: ${patientId}` : `Patient: ${patientName} • ID: ${patientId}`}
-              </p>
-            </div>
+        <div className="flex items-start justify-between gap-3 pb-3 border-b nc-border flex-shrink-0">
+          <div className="min-w-0">
+            <h3 className="text-lg font-semibold tracking-tight nc-text">
+              {isSwahili ? 'Rekodi za Matibabu' : 'Medical Records'}
+            </h3>
+            <p className="text-[13px] nc-text-muted truncate">
+              {patientName} · ID: {patientId}
+            </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 flex-shrink-0">
             {onOpenImaging && (
-              <button
-                type="button"
-                onClick={onOpenImaging}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer shadow-xs ${
-                  isDark
-                    ? 'bg-primary/10 border-primary/30 text-primary-light hover:bg-primary/15'
-                    : 'bg-primary/5 border-primary/20 text-primary hover:bg-primary/10'
-                }`}
-              >
+              <button type="button" onClick={onOpenImaging} className="nc-btn-ghost px-2.5 py-1.5 hidden sm:inline-flex">
                 {isSwahili ? 'Radiolojia' : 'Imaging'}
               </button>
             )}
-            <button
-              type="button"
-              onClick={handleExportCompletePassport}
-              className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer shadow-xs ${
-                isDark
-                  ? 'bg-primary/10 border-primary/30 text-primary-light hover:bg-primary/15'
-                  : 'bg-primary/5 border-primary/20 text-primary hover:bg-primary/10'
-              }`}
-              title="Download Complete Health Passport PDF"
-            >
-              <FileDown className="w-3.5 h-3.5" />
-              <span>{isSwahili ? 'Pakua Pasipoti Zote (PDF)' : 'Download All as PDF'}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer transition-colors"
-            >
-              <X className="w-5 h-5" />
+            <button type="button" onClick={onClose} className="nc-btn-icon" aria-label={isSwahili ? 'Funga' : 'Close'}>
+              <X className="w-4.5 h-4.5" />
             </button>
           </div>
         </div>
 
-        {/* Primary View Switcher: Hospital Records vs. Personal Files Vault */}
-        <div className="pt-3 pb-2 flex-shrink-0 flex items-center justify-between gap-2 border-b border-slate-200/80 dark:border-slate-800">
-          <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-900/90 p-1 rounded-2xl border border-slate-200 dark:border-slate-800 w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={() => setActiveTab('records')}
-              className={`flex-1 sm:flex-initial px-4 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all ${
-                activeTab === 'records'
-                  ? isDark
-                    ? 'bg-primary text-white shadow-md'
-                    : 'bg-primary-dark text-white shadow-md'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <FileText className="w-3.5 h-3.5" />
-              <span>{isSwahili ? 'Rekodi za Hospitali & Vipimo' : 'Hospital Records & Lab Tests'}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab('personal_files')}
-              className={`flex-1 sm:flex-initial px-4 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all ${
-                activeTab === 'personal_files'
-                  ? isDark
-                    ? 'bg-primary text-white shadow-md'
-                    : 'bg-primary text-white shadow-md'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <FolderLock className="w-3.5 h-3.5" />
-              <span>{isSwahili ? 'Faili Zangu Binafsi' : 'My Personal Files'}</span>
-              <span
-                className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full font-semibold ${
-                  activeTab === 'personal_files'
-                    ? isDark
-                      ? 'bg-white/10 text-white'
-                      : 'bg-white text-primary'
-                    : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+        {/* Primary Navigation: Records vs. Files */}
+        <div className="pt-3 pb-2.5 flex-shrink-0 flex items-center justify-between gap-2 border-b nc-border">
+          <div className="overflow-x-auto scrollbar-none min-w-0">
+            <div className="inline-flex items-center gap-1" role="tablist">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'records'}
+                onClick={() => setActiveTab('records')}
+                className={`px-3 py-1.5 rounded-full text-sm font-semibold cursor-pointer transition-colors whitespace-nowrap ${
+                  activeTab === 'records' ? 'bg-primary text-white' : 'nc-text-muted hover:text-primary'
                 }`}
               >
-                {personalFiles.length}
-              </span>
-            </button>
+                {isSwahili ? 'Rekodi' : 'Records'}
+              </button>
+
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'personal_files'}
+                onClick={() => setActiveTab('personal_files')}
+                className={`px-3 py-1.5 rounded-full text-sm font-semibold cursor-pointer transition-colors whitespace-nowrap flex items-center gap-1 ${
+                  activeTab === 'personal_files' ? 'bg-primary text-white' : 'nc-text-muted hover:text-primary'
+                }`}
+              >
+                <span>{isSwahili ? 'Faili' : 'Files'}</span>
+                <span className={activeTab === 'personal_files' ? 'text-white/80' : 'nc-text-muted'}>{personalFiles.length}</span>
+              </button>
+            </div>
           </div>
 
           {activeTab === 'personal_files' && (
-            <button
-              type="button"
-              onClick={() => setIsUploadOpen(true)}
-              className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs flex items-center gap-1.5 shadow-sm cursor-pointer transition-all flex-shrink-0"
-            >
+            <button type="button" onClick={() => setIsUploadOpen(true)} className="nc-btn-primary px-3 py-1.5 flex items-center gap-1.5 flex-shrink-0">
               <Upload className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">{isSwahili ? 'Weka Faili Jipya' : 'Add Document'}</span>
               <span className="sm:hidden">{isSwahili ? 'Ongeza' : 'Upload'}</span>
@@ -611,19 +546,12 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
         {/* Global Action Toast */}
         {actionNotice && (
           <div
-            className={`my-2 p-3 rounded-2xl text-xs font-bold flex items-center justify-between shadow-lg animate-in slide-in-from-top duration-200 flex-shrink-0 ${
-              actionNotice.type === 'success'
-                ? 'bg-emerald-600 text-white'
-                : isDark
-                ? 'bg-primary/15 text-primary-light border border-primary/30'
-                : 'bg-primary text-white'
+            className={`my-2 px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-2 flex-shrink-0 ${
+              actionNotice.type === 'success' ? 'bg-success-subtle text-success' : 'bg-info-subtle text-info'
             }`}
           >
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4" />
-              <span>{actionNotice.text}</span>
-            </div>
-            <span className="text-[10px] font-mono bg-black/20 px-2 py-0.5 rounded">PDF Stored</span>
+            <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+            <span>{actionNotice.text}</span>
           </div>
         )}
 
@@ -632,72 +560,82 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
         {/* ========================================================================= */}
         {activeTab === 'records' && (
           <div className="flex flex-col flex-1 min-h-0">
-            {/* Filter Tabs & Search Bar */}
-            <div className="py-2.5 space-y-2 flex-shrink-0">
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder={isSwahili ? 'Tafuta kipimo, daktari au hospitali...' : 'Search test, doctor, or hospital...'}
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className={`w-full pl-9 pr-3 py-2 rounded-xl text-xs border outline-none transition-all ${
-                      isDark
-                        ? 'bg-slate-900 border-slate-700/80 text-white focus:border-primary'
-                        : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-primary'
-                    }`}
-                  />
-                  {searchQuery && (
+            {/* Search & Category Navigation */}
+            <div className="pt-2.5 pb-2 space-y-2 flex-shrink-0">
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 nc-text-muted" />
+                <input
+                  type="text"
+                  placeholder={isSwahili ? 'Tafuta kipimo, daktari au hospitali...' : 'Search test, doctor, or hospital...'}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="nc-input pl-9 pr-8 py-2"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    aria-label={isSwahili ? 'Futa utafutaji' : 'Clear search'}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 nc-text-muted hover:text-primary text-xs p-1"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Category filter — plain horizontal nav, blue only on the active item */}
+              <div className="overflow-x-auto scrollbar-none">
+                <div className="inline-flex items-center gap-1" role="tablist">
+                  {[
+                    { id: 'all', labelSw: 'Zote', labelEn: 'All' },
+                    { id: 'lab', labelSw: 'Maabara', labelEn: 'Lab' },
+                    { id: 'radiology', labelSw: 'Mionzi', labelEn: 'Imaging' },
+                    { id: 'consultation', labelSw: 'Kliniki', labelEn: 'Encounters' },
+                    { id: 'vaccine', labelSw: 'Chanjo', labelEn: 'Vaccines' },
+                  ].map((cat) => (
                     <button
+                      key={cat.id}
                       type="button"
-                      onClick={() => setSearchQuery('')}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs"
+                      role="tab"
+                      aria-selected={selectedCategory === cat.id}
+                      onClick={() => setSelectedCategory(cat.id as any)}
+                      className={`px-2.5 py-1 rounded-full font-medium whitespace-nowrap text-xs transition-colors cursor-pointer ${
+                        selectedCategory === cat.id ? 'bg-primary text-white' : 'nc-text-muted hover:text-primary'
+                      }`}
                     >
-                      ✕
+                      {isSwahili ? cat.labelSw : cat.labelEn}
                     </button>
-                  )}
+                  ))}
                 </div>
               </div>
 
-              {/* Category Pills */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs scrollbar-none">
-                {[
-                  { id: 'all', labelSw: 'Zote (All)', labelEn: 'All Records' },
-                  { id: 'lab', labelSw: 'Maabara (Lab)', labelEn: 'Lab Tests' },
-                  { id: 'radiology', labelSw: 'Mionzi (Radiology)', labelEn: 'Radiology' },
-                  { id: 'consultation', labelSw: 'Daktari (Clinical)', labelEn: 'Clinical' },
-                  { id: 'vaccine', labelSw: 'Chanjo (Vaccines)', labelEn: 'Vaccines' },
-                ].map((cat) => (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => setSelectedCategory(cat.id as any)}
-                    className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap text-xs transition-all cursor-pointer ${
-                      selectedCategory === cat.id
-                        ? isDark
-                          ? 'bg-primary text-white shadow-md'
-                          : 'bg-primary-dark text-white shadow-md'
-                        : isDark
-                        ? 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200'
-                        : 'bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    {isSwahili ? cat.labelSw : cat.labelEn}
-                  </button>
-                ))}
-              </div>
+              {/* Compact record summary row */}
+              {!recordsLoading && records.length > 0 && (
+                <div className="flex items-center gap-4 overflow-x-auto text-xs scrollbar-none">
+                  <div className="flex items-baseline gap-1 flex-shrink-0">
+                    <span className="font-semibold nc-text">{records.length}</span>
+                    <span className="nc-text-muted">{isSwahili ? 'Jumla' : 'Total'}</span>
+                  </div>
+                  {categorySummary.map((c) => (
+                    <div key={c.id} className="flex items-baseline gap-1 flex-shrink-0">
+                      <span className="font-semibold nc-text">{c.count}</span>
+                      <span className="nc-text-muted">{c.label}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Records List (Scrollable Area) */}
-            <div className="flex-1 overflow-y-auto pr-1 space-y-3 min-h-0">
+            <div className="flex-1 overflow-y-auto pr-1 min-h-0">
               {recordsLoading ? (
                 <LoadingSkeleton rows={4} />
               ) : filteredRecords.length === 0 ? (
-                <div className="text-center py-12 space-y-2">
-                  <FileText className="w-10 h-10 text-slate-400 mx-auto opacity-50" />
-                  <p className="text-xs font-bold text-slate-500">
-                    {isSwahili ? 'Hakuna rekodi zilizopatikana kwa utafutaji huu.' : 'No medical records matching your search.'}
+                <div className="text-center py-10 space-y-1.5">
+                  <FileText className="w-7 h-7 nc-text-muted mx-auto" />
+                  <p className="text-sm font-medium nc-text">{isSwahili ? 'Hakuna rekodi za matibabu' : 'No medical records'}</p>
+                  <p className="text-xs nc-text-muted max-w-xs mx-auto">
+                    {isSwahili ? 'Hakuna rekodi zilizopatikana kwa utafutaji huu.' : 'No records match your current search or filter.'}
                   </p>
                   <button
                     type="button"
@@ -707,7 +645,7 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
                     }}
                     className="text-xs text-primary font-semibold hover:underline cursor-pointer"
                   >
-                    {isSwahili ? 'Onyesha Rekodi Zote' : 'Reset Filters'}
+                    {isSwahili ? 'Onyesha Rekodi Zote' : 'Reset filters'}
                   </button>
                 </div>
               ) : (
@@ -716,89 +654,68 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
                   const isStoredInPersonalFiles = personalFiles.some((f) => f.recordId === record.id);
 
                   return (
-                    <div
-                      key={record.id}
-                      className={`rounded-2xl border transition-all overflow-hidden ${
-                        isExpanded
-                          ? isDark
-                            ? 'bg-[#091422] border-primary/40 shadow-lg'
-                            : 'bg-primary/5 border-primary/30 shadow-md'
-                          : isDark
-                          ? 'bg-slate-900/90 border-slate-800 hover:border-slate-700'
-                          : 'bg-slate-50 border-slate-200/80 hover:border-slate-300'
-                      }`}
-                    >
-                      {/* Record Summary Header */}
-                      <div
+                    <div key={record.id} className="nc-list-row">
+                      {/* Record Row */}
+                      <button
+                        type="button"
                         onClick={() => setExpandedRecordId(isExpanded ? null : record.id)}
-                        className="p-3.5 sm:p-4 flex items-start justify-between gap-3 cursor-pointer select-none"
+                        aria-expanded={isExpanded}
+                        className="w-full py-3 flex items-start justify-between gap-3 cursor-pointer text-left"
                       >
-                        <div className="space-y-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary dark:text-primary-light font-mono">
-                              {record.id}
+                        <div className="min-w-0">
+                          <h4 className="font-semibold text-[15px] nc-text leading-snug">{record.title}</h4>
+
+                          <p className="text-xs nc-text-secondary truncate mt-0.5">{record.hospitalName}</p>
+
+                          <div className="flex items-center gap-x-2.5 gap-y-1 flex-wrap text-[11px] nc-text-muted mt-1">
+                            <span>
+                              {record.date} · {isSwahili ? record.categoryLabel.sw : record.categoryLabel.en}
                             </span>
-                            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                              <Calendar className="w-3 h-3" />
-                              <span>{record.date}</span>
-                            </span>
-                            <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                              <ShieldCheck className="w-3 h-3" />
-                              <span>{record.status === 'verified' ? 'Verified (MoH)' : 'Certified'}</span>
-                            </span>
+                            {record.status === 'verified' && (
+                              <span className="flex items-center gap-1 text-success">
+                                <ShieldCheck className="w-3 h-3" />
+                                <span>{isSwahili ? 'Imethibitishwa' : 'Verified'}</span>
+                              </span>
+                            )}
                             {isStoredInPersonalFiles && (
-                              <span className="text-[10px] font-bold bg-primary/10 text-primary dark:text-primary-light px-2 py-0.2 rounded-md flex items-center gap-1">
-                                <BookmarkCheck className="w-3 h-3 text-primary" />
+                              <span className="flex items-center gap-1 text-primary dark:text-primary-light">
+                                <BookmarkCheck className="w-3 h-3" />
                                 <span>{isSwahili ? 'Imehifadhiwa' : 'In Vault'}</span>
                               </span>
                             )}
                           </div>
-
-                          <h4 className="font-semibold text-xs sm:text-sm text-slate-900 dark:text-white leading-tight">
-                            {record.title}
-                          </h4>
-
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 truncate">
-                            <Building2 className="w-3.5 h-3.5 flex-shrink-0" />
-                            <span className="truncate">{record.hospitalName}</span>
-                          </p>
                         </div>
 
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <span className="text-[10px] font-bold px-2 py-1 rounded-xl bg-primary/10 dark:bg-primary/15 text-primary dark:text-primary-light hidden sm:inline-block">
-                            {isSwahili ? record.categoryLabel.sw : record.categoryLabel.en}
-                          </span>
-                          <div className="p-1 rounded-full text-slate-400">
-                            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                          </div>
+                        <div className="flex-shrink-0 nc-text-muted mt-1">
+                          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                         </div>
-                      </div>
+                      </button>
 
                       {/* Expanded Medical Details */}
                       {isExpanded && (
-                        <div className="px-3.5 sm:px-4 pb-4 pt-1 border-t border-slate-200/80 dark:border-slate-800 space-y-3">
-                          {/* Doctor / Department Banner */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs p-2.5 rounded-xl bg-black/5 dark:bg-black/30 border border-slate-200 dark:border-slate-800/80">
+                        <div className="pb-4 pt-2 border-t nc-border space-y-3 text-xs">
+                          {/* Doctor / Department */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
-                              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase block">
+                              <span className="text-[10px] nc-text-muted font-semibold uppercase block">
                                 {isSwahili ? 'Daktari Bingwa / Mtaalamu' : 'Doctor / Specialist'}
                               </span>
-                              <span className="font-bold text-slate-900 dark:text-white">{record.doctorName}</span>
+                              <span className="font-medium nc-text">{record.doctorName}</span>
                             </div>
                             <div>
-                              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase block">
+                              <span className="text-[10px] nc-text-muted font-semibold uppercase block">
                                 {isSwahili ? 'Idara ya Hospitali' : 'Department'}
                               </span>
-                              <span className="font-bold text-slate-900 dark:text-white">{record.department}</span>
+                              <span className="font-medium nc-text">{record.department}</span>
                             </div>
                           </div>
 
                           {/* Summary */}
-                          <div className="text-xs">
-                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">
+                          <div>
+                            <span className="text-[10px] nc-text-muted font-semibold uppercase tracking-wide block mb-1">
                               {isSwahili ? 'Muhtasari wa Majibu' : 'Clinical Summary'}
                             </span>
-                            <p className="text-slate-700 dark:text-slate-300 leading-relaxed font-medium bg-white/40 dark:bg-slate-950/40 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800">
+                            <p className="nc-text-secondary leading-relaxed">
                               {isSwahili ? record.summary.sw : record.summary.en}
                             </p>
                           </div>
@@ -806,44 +723,43 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
                           {/* Detailed Lab Test Parameter Table if available */}
                           {record.details?.labParams && (
                             <div className="space-y-1.5">
-                              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
+                              <span className="text-[10px] nc-text-muted font-semibold uppercase tracking-wide block">
                                 {isSwahili ? 'Matokeo ya Vipimo (Lab Indices)' : 'Detailed Lab Indices'}
                               </span>
-                              <div className="rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden font-mono text-[11px]">
-                                <div className="grid grid-cols-4 p-2 bg-slate-100 dark:bg-slate-800/80 font-bold text-[10px] text-slate-500 dark:text-slate-400 uppercase">
+                              <div className="rounded-lg border nc-border overflow-hidden text-[11px]">
+                                <div className="grid grid-cols-4 p-2 nc-surface-elevated font-semibold text-[10px] nc-text-muted uppercase">
                                   <span className="col-span-2">{isSwahili ? 'Kipimo' : 'Test'}</span>
                                   <span>{isSwahili ? 'Matokeo' : 'Result'}</span>
-                                  <span>{isSwahili ? 'Kiwango cha Kawaida' : 'Reference'}</span>
+                                  <span>{isSwahili ? 'Kiwango' : 'Reference'}</span>
                                 </div>
-                                {record.details.labParams.map((param, idx) => (
-                                  <div
-                                    key={idx}
-                                    className={`grid grid-cols-4 p-2 items-center border-t border-slate-200 dark:border-slate-800 ${
-                                      idx % 2 === 0 ? 'bg-transparent' : 'bg-slate-50/50 dark:bg-slate-900/40'
-                                    }`}
-                                  >
-                                    <span className="col-span-2 font-bold text-slate-900 dark:text-white">
-                                      {param.name}
-                                    </span>
-                                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                                      {param.value} {param.unit}
-                                    </span>
-                                    <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                                      {param.referenceRange}
-                                    </span>
-                                  </div>
-                                ))}
+                                {record.details.labParams.map((param, idx) => {
+                                  const flagged = ['high', 'low', 'positive'].includes(param.status);
+                                  return (
+                                    <div key={idx} className="grid grid-cols-4 p-2 items-center border-t nc-border">
+                                      <span className="col-span-2 font-medium nc-text">{param.name}</span>
+                                      <span className={`font-medium ${flagged ? 'text-warning' : 'nc-text-secondary'}`}>
+                                        {param.value} {param.unit}
+                                        {flagged && (
+                                          <span className="ml-1 text-[9px] uppercase font-semibold">
+                                            ({param.status})
+                                          </span>
+                                        )}
+                                      </span>
+                                      <span className="text-[10px] nc-text-muted">{param.referenceRange}</span>
+                                    </div>
+                                  );
+                                })}
                               </div>
                             </div>
                           )}
 
                           {/* Radiology Findings if available */}
                           {record.details?.radiologyFindings && (
-                            <div className="p-2.5 rounded-xl bg-primary/10 dark:bg-primary/15 border border-primary/20 dark:border-primary-dark text-xs">
-                              <span className="text-[10px] text-primary dark:text-primary-light font-bold uppercase block mb-0.5">
+                            <div>
+                              <span className="text-[10px] nc-text-muted font-semibold uppercase tracking-wide block mb-1">
                                 {isSwahili ? 'Taarifa ya Mionzi (Radiologist Findings)' : 'Radiologist Findings'}
                               </span>
-                              <p className="text-slate-700 dark:text-slate-300">
+                              <p className="nc-text-secondary leading-relaxed">
                                 {isSwahili ? record.details.radiologyFindings.sw : record.details.radiologyFindings.en}
                               </p>
                             </div>
@@ -851,39 +767,28 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
 
                           {/* Certificate info if available */}
                           {record.details?.certificateNumber && (
-                            <div className="p-2.5 rounded-xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-xs flex items-center justify-between">
+                            <div className="flex items-center justify-between gap-2 pt-2 border-t nc-border">
                               <div>
-                                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold uppercase block">
+                                <span className="text-[10px] nc-text-muted font-semibold uppercase block">
                                   {isSwahili ? 'Nambari ya Cheti cha Kimataifa' : 'Official Certificate No.'}
                                 </span>
-                                <span className="font-mono font-semibold text-slate-900 dark:text-white">
-                                  {record.details.certificateNumber}
-                                </span>
+                                <span className="font-mono font-medium nc-text">{record.details.certificateNumber}</span>
                               </div>
-                              <span className="text-[10px] font-bold bg-amber-500/20 text-amber-600 dark:text-amber-300 px-2 py-0.5 rounded">
-                                {record.details.validity}
-                              </span>
+                              <span className="nc-status nc-status-neutral flex-shrink-0">{record.details.validity}</span>
                             </div>
                           )}
 
-                          {/* Action buttons: Download PDF & Save to Personal Files */}
-                          <div className="pt-2 flex flex-wrap items-center justify-end gap-2">
-                            {/* Save / Store to Personal Files button */}
+                          {/* Actions: Save to Personal Files & Download PDF */}
+                          <div className="pt-2 flex items-center justify-between gap-2 border-t nc-border">
                             <button
                               type="button"
                               onClick={() => handleSaveToPersonalFiles(record)}
-                              className={`px-3.5 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all ${
-                                isStoredInPersonalFiles
-                                  ? 'bg-primary/10 text-primary dark:text-primary-light border border-primary/30'
-                                  : isDark
-                                  ? 'bg-primary/10 text-primary-light hover:bg-primary/15 border border-primary/30'
-                                  : 'bg-primary/5 text-primary hover:bg-primary/10 border border-primary/20'
-                              }`}
+                              className="nc-btn-ghost px-2 py-1.5 flex items-center gap-1.5 -ml-2"
                             >
                               {isStoredInPersonalFiles ? (
                                 <>
-                                  <BookmarkCheck className="w-3.5 h-3.5 text-primary" />
-                                  <span>{isSwahili ? 'Imehifadhiwa kwenye Faili Zangu' : 'Saved in Personal Files'}</span>
+                                  <BookmarkCheck className="w-3.5 h-3.5" />
+                                  <span>{isSwahili ? 'Imehifadhiwa' : 'Saved to Personal Files'}</span>
                                 </>
                               ) : (
                                 <>
@@ -893,14 +798,9 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
                               )}
                             </button>
 
-                            {/* Download PDF Button */}
-                            <button
-                              type="button"
-                              onClick={() => handleDownloadPdf(record)}
-                              className="px-3.5 py-2 rounded-xl bg-primary hover:bg-primary-light text-white font-semibold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-xs"
-                            >
+                            <button type="button" onClick={() => handleDownloadPdf(record)} className="nc-btn-primary px-3 py-1.5 flex items-center gap-1.5 flex-shrink-0">
                               <Download className="w-3.5 h-3.5" />
-                              <span>{isSwahili ? 'Pakua Ripoti (PDF)' : 'Download PDF'}</span>
+                              <span>{isSwahili ? 'Pakua PDF' : 'Download PDF'}</span>
                             </button>
                           </div>
                         </div>
@@ -919,157 +819,131 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
         {activeTab === 'personal_files' && (
           <div className="flex flex-col flex-1 min-h-0">
             {/* Vault Search & Category Filter */}
-            <div className="py-2.5 space-y-2 flex-shrink-0">
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder={isSwahili ? 'Tafuta faili, dokezo au hospitali...' : 'Search your saved personal documents...'}
-                    value={personalFileSearch}
-                    onChange={(e) => setPersonalFileSearch(e.target.value)}
-                    className={`w-full pl-9 pr-3 py-2 rounded-xl text-xs border outline-none transition-all ${
-                      isDark
-                        ? 'bg-slate-900 border-slate-700/80 text-white focus:border-primary-light'
-                        : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-primary'
-                    }`}
-                  />
-                  {personalFileSearch && (
-                    <button
-                      type="button"
-                      onClick={() => setPersonalFileSearch('')}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
+            <div className="pt-2.5 pb-2 space-y-2 flex-shrink-0">
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 nc-text-muted" />
+                <input
+                  type="text"
+                  placeholder={isSwahili ? 'Tafuta faili, dokezo au hospitali...' : 'Search your saved personal documents...'}
+                  value={personalFileSearch}
+                  onChange={(e) => setPersonalFileSearch(e.target.value)}
+                  className="nc-input pl-9 pr-8 py-2"
+                />
+                {personalFileSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setPersonalFileSearch('')}
+                    aria-label={isSwahili ? 'Futa utafutaji' : 'Clear search'}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 nc-text-muted hover:text-primary p-1"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
 
-              {/* Category Filter Pills */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs scrollbar-none">
-                {[
-                  { id: 'all', labelSw: 'Faili Zote', labelEn: 'All Files' },
-                  { id: 'hospital_report', labelSw: '📋 Ripoti za Daktari', labelEn: '📋 Clinical Reports' },
-                  { id: 'lab_result', labelSw: 'Vipimo vya Damu', labelEn: 'Lab Results' },
-                  { id: 'vaccine_cert', labelSw: 'Vyeti vya Chanjo', labelEn: 'Vaccine Passports' },
-                  { id: 'scan_image', labelSw: 'Picha za Mionzi', labelEn: 'Scans / X-Ray' },
-                  { id: 'custom_upload', labelSw: '📁 Nyaraka Nilizoweka', labelEn: '📁 My Uploads' },
-                ].map((cat) => (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => setPersonalFileCategory(cat.id as any)}
-                    className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap text-xs transition-all cursor-pointer ${
-                      personalFileCategory === cat.id
-                        ? isDark
-                          ? 'bg-primary text-white shadow-md'
-                          : 'bg-primary text-white shadow-md'
-                        : isDark
-                        ? 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200'
-                        : 'bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    {isSwahili ? cat.labelSw : cat.labelEn}
-                  </button>
-                ))}
+              {/* Category filter — plain horizontal nav, blue only on the active item */}
+              <div className="overflow-x-auto scrollbar-none">
+                <div className="inline-flex items-center gap-1" role="tablist">
+                  {[
+                    { id: 'all', labelSw: 'Faili Zote', labelEn: 'All Files' },
+                    { id: 'hospital_report', labelSw: 'Ripoti za Daktari', labelEn: 'Clinical Reports' },
+                    { id: 'lab_result', labelSw: 'Vipimo vya Damu', labelEn: 'Lab Results' },
+                    { id: 'vaccine_cert', labelSw: 'Vyeti vya Chanjo', labelEn: 'Vaccine Passports' },
+                    { id: 'scan_image', labelSw: 'Picha za Mionzi', labelEn: 'Scans / X-Ray' },
+                    { id: 'custom_upload', labelSw: 'Nyaraka Nilizoweka', labelEn: 'My Uploads' },
+                  ].map((cat) => (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={personalFileCategory === cat.id}
+                      onClick={() => setPersonalFileCategory(cat.id as any)}
+                      className={`px-2.5 py-1 rounded-full font-medium whitespace-nowrap text-xs transition-colors cursor-pointer ${
+                        personalFileCategory === cat.id ? 'bg-primary text-white' : 'nc-text-muted hover:text-primary'
+                      }`}
+                    >
+                      {isSwahili ? cat.labelSw : cat.labelEn}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
             {/* Personal Files Vault List */}
-            <div className="flex-1 overflow-y-auto pr-1 space-y-2.5 min-h-0">
+            <div className="flex-1 overflow-y-auto pr-1 min-h-0">
               {filteredPersonalFiles.length === 0 ? (
-                <div className="text-center py-12 space-y-3">
-                  <FolderLock className="w-12 h-12 text-slate-400 mx-auto opacity-50" />
-                  <p className="text-xs font-bold text-slate-500">
+                <div className="text-center py-10 space-y-1.5">
+                  <FolderLock className="w-7 h-7 nc-text-muted mx-auto" />
+                  <p className="text-sm font-medium nc-text">{isSwahili ? 'Hakuna nyaraka' : 'No personal files'}</p>
+                  <p className="text-xs nc-text-muted max-w-xs mx-auto">
                     {isSwahili
                       ? 'Huna nyaraka zilizohifadhiwa kwenye kundi hili.'
-                      : 'No saved documents matching your search in your personal files vault.'}
+                      : 'No saved documents match your current search or filter.'}
                   </p>
                   <button
                     type="button"
                     onClick={() => setIsUploadOpen(true)}
-                    className="px-4 py-2 rounded-xl bg-primary text-white text-xs font-semibold inline-flex items-center gap-1.5 shadow-sm cursor-pointer"
+                    className="nc-btn-primary px-3.5 py-1.5 inline-flex items-center gap-1.5"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    <span>{isSwahili ? 'Weka Faili au Picha Sasa' : 'Upload Medical Document Now'}</span>
+                    <span>{isSwahili ? 'Weka Faili au Picha Sasa' : 'Upload Document'}</span>
                   </button>
                 </div>
               ) : (
                 filteredPersonalFiles.map((file) => (
-                  <div
-                    key={file.id}
-                    className={`p-3.5 rounded-2xl border transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
-                      isDark
-                        ? 'bg-[#091422] border-slate-800/90 hover:border-primary/50'
-                        : 'bg-slate-50 border-slate-200 hover:border-primary/40'
-                    }`}
-                  >
+                  <div key={file.id} className="nc-list-row py-3 flex items-center justify-between gap-3">
                     <div className="flex items-start gap-3 min-w-0 flex-1">
-                      <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary dark:text-primary-light flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <FileText className="w-5 h-5" />
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary dark:text-primary-light flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <FileText className="w-4 h-4" />
                       </div>
 
-                      <div className="space-y-1 min-w-0 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-[10px] font-bold font-mono px-2 py-0.2 rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                            {file.fileSize} • PDF
-                          </span>
-                          <span className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            <span>{file.dateAdded}</span>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-semibold text-[15px] nc-text leading-snug truncate">{file.title}</h4>
+                        <p className="text-xs nc-text-secondary truncate mt-0.5">
+                          {file.facility}
+                          {file.notes ? ` · ${file.notes}` : ''}
+                        </p>
+                        <div className="flex items-center gap-1 text-[11px] nc-text-muted mt-1 min-w-0">
+                          <span className="truncate">
+                            {file.fileSize} · {file.dateAdded}
                           </span>
                           {file.isEncrypted && (
-                            <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
+                            <span className="flex items-center gap-0.5 text-success flex-shrink-0">
+                              <span>·</span>
                               <Lock className="w-2.5 h-2.5" />
-                              <span>Encrypted</span>
+                              <span>{isSwahili ? 'Imefungwa' : 'Encrypted'}</span>
                             </span>
                           )}
                         </div>
-
-                        <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white leading-tight">
-                          {file.title}
-                        </h4>
-
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                          {file.facility} {file.notes ? `• ${file.notes}` : ''}
-                        </p>
                       </div>
                     </div>
 
-                    {/* Actions on this personal file */}
-                    <div className="flex items-center gap-1.5 self-end sm:self-center flex-shrink-0">
-                      {/* Star Button */}
+                    {/* Actions on this personal file — icon-only to stay compact */}
+                    <div className="flex items-center gap-0.5 flex-shrink-0">
                       <button
                         type="button"
                         onClick={() => handleToggleStar(file.id)}
-                        className={`p-2 rounded-xl transition-colors cursor-pointer ${
-                          file.starred
-                            ? 'text-amber-400 hover:text-amber-300 bg-amber-400/10'
-                            : 'text-slate-400 hover:text-slate-600 dark:hover:text-white'
-                        }`}
-                        title={file.starred ? 'Starred Favorite' : 'Mark Favorite'}
+                        aria-pressed={file.starred}
+                        aria-label={file.starred ? (isSwahili ? 'Ondoa alama' : 'Remove favorite') : (isSwahili ? 'Weka alama' : 'Mark favorite')}
+                        className={`nc-btn-icon ${file.starred ? 'text-warning' : ''}`}
                       >
-                        <Star className="w-4 h-4 fill-current" />
+                        <Star className={`w-4 h-4 ${file.starred ? 'fill-current' : ''}`} />
                       </button>
 
-                      {/* Download Single PDF button */}
                       <button
                         type="button"
                         onClick={() => handleDownloadPersonalFile(file)}
-                        className="px-3 py-2 rounded-xl bg-primary hover:bg-primary-light text-white font-semibold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-xs"
-                        title="Download this PDF to local storage"
+                        aria-label={isSwahili ? 'Pakua PDF' : 'Download PDF'}
+                        className="nc-btn-icon"
                       >
-                        <Download className="w-3.5 h-3.5" />
-                        <span>{isSwahili ? 'Pakua PDF' : 'Download PDF'}</span>
+                        <Download className="w-4 h-4" />
                       </button>
 
-                      {/* Delete / Remove button */}
                       <button
                         type="button"
                         onClick={() => handleRemovePersonalFile(file.id, file.title)}
-                        className="p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                        title={isSwahili ? 'Ondoa kwenye faili zangu' : 'Remove from personal files'}
+                        aria-label={isSwahili ? 'Ondoa kwenye faili zangu' : 'Remove from personal files'}
+                        className="w-8 h-8 rounded-lg inline-flex items-center justify-center flex-shrink-0 transition-colors cursor-pointer nc-text-muted hover:text-danger hover:bg-danger-subtle"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -1085,19 +959,12 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
         {/* MODAL / DRAWER: ADD / UPLOAD PERSONAL MEDICAL DOCUMENT */}
         {/* ========================================================================= */}
         {isUploadOpen && (
-          <div className="absolute inset-0 z-20 bg-black/80 backdrop-blur-xs rounded-2xl p-4 sm:p-6 flex flex-col justify-center animate-in fade-in">
-            <div
-              className={`w-full max-w-lg mx-auto rounded-2xl p-5 sm:p-6 border space-y-4 shadow-2xl ${
-                isDark ? 'bg-[#0F2238] border-primary/30 text-white' : 'bg-white border-slate-200 text-slate-900'
-              }`}
-            >
-              <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-                <div className="flex items-center gap-2">
-                  <Upload className="w-5 h-5 text-emerald-500" />
-                  <h4 className="font-semibold text-sm sm:text-base">
-                    {isSwahili ? 'Hifadhi Nyaraka Kwenye Faili Binafsi' : 'Upload Document to Personal Vault'}
-                  </h4>
-                </div>
+          <div className="absolute inset-0 z-20 bg-black/70 backdrop-blur-xs rounded-xl p-4 sm:p-6 flex flex-col justify-center animate-in fade-in">
+            <div className="nc-card w-full max-w-lg mx-auto p-5 space-y-4 nc-text">
+              <div className="flex items-center justify-between border-b nc-border pb-3">
+                <h4 className="font-semibold text-sm">
+                  {isSwahili ? 'Hifadhi Nyaraka Kwenye Faili Binafsi' : 'Upload Document to Personal Vault'}
+                </h4>
                 <button
                   type="button"
                   onClick={() => {
@@ -1107,18 +974,19 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
                     setSelectedFileName('');
                     setUploadError('');
                   }}
-                  className="p-1 rounded-full text-slate-400 hover:text-white"
+                  aria-label={isSwahili ? 'Funga' : 'Close'}
+                  className="nc-btn-icon"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4.5 h-4.5" />
                 </button>
               </div>
 
               {/* Form Fields */}
               <div className="space-y-3 text-xs">
-                {/* File picker button */}
+                {/* Compact file picker module */}
                 <div>
-                  <label className="font-bold block mb-1 text-slate-600 dark:text-slate-300">
-                    {isSwahili ? 'Chagua Faili kutoka kwenye Simu/Kompyuta (PDF au Picha):' : 'Select File (PDF, Image, or Scan):'}
+                  <label className="font-semibold block mb-1 nc-text-secondary">
+                    {isSwahili ? 'Chagua Faili:' : 'Select File:'}
                   </label>
                   <input
                     type="file"
@@ -1127,22 +995,28 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
                     accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
                     className="hidden"
                   />
-                  <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className={`border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-all ${
-                      isDark
-                        ? 'border-slate-700 bg-slate-900/60 hover:border-primary-light'
-                        : 'border-slate-300 bg-slate-50 hover:border-primary'
-                    }`}
-                  >
-                    <Upload className="w-6 h-6 mx-auto text-primary mb-1" />
-                    <p className="font-bold">
-                      {selectedFileName ? `✓ ${selectedFileName}` : isSwahili ? 'Bofya au Vuta Faili Hapa' : 'Click to browse or drop file here'}
-                    </p>
-                    <span className="text-[10px] text-slate-400">PDF, JPG, PNG hadi 25MB</span>
+                  <div className="border nc-border rounded-lg p-3 flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary dark:text-primary-light flex items-center justify-center flex-shrink-0">
+                      <Upload className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium nc-text truncate">
+                        {selectedFileName || (isSwahili ? 'Upload medical document' : 'Upload medical document')}
+                      </p>
+                      <p className="text-[11px] nc-text-muted">
+                        {isSwahili ? 'PDF, picha, au hati inayotumika, hadi 25MB' : 'PDF, image, or supported document, up to 25MB'}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="nc-btn-secondary px-3 py-1.5 flex-shrink-0"
+                    >
+                      {selectedFileName ? (isSwahili ? 'Badilisha' : 'Change') : isSwahili ? 'Chagua' : 'Choose File'}
+                    </button>
                   </div>
                   {uploadError && (
-                    <p className="mt-1.5 text-[11px] font-bold text-red-500 flex items-center gap-1">
+                    <p className="mt-1.5 text-[11px] font-medium text-danger flex items-center gap-1">
                       <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
                       {uploadError}
                     </p>
@@ -1151,7 +1025,7 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
 
                 {/* Title */}
                 <div>
-                  <label className="font-bold block mb-1 text-slate-600 dark:text-slate-300">
+                  <label className="font-semibold block mb-1 nc-text-secondary">
                     {isSwahili ? 'Jina la Hati / Kipimo:' : 'Document Title:'}
                   </label>
                   <input
@@ -1159,25 +1033,17 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
                     placeholder="e.g. Kipimo cha Macho, Bima Card Copy..."
                     value={uploadTitle}
                     onChange={(e) => setUploadTitle(e.target.value)}
-                    className={`w-full p-2.5 rounded-xl border outline-none ${
-                      isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'
-                    }`}
+                    className="nc-input p-2.5"
                   />
                 </div>
 
                 {/* Category */}
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="font-bold block mb-1 text-slate-600 dark:text-slate-300">
+                    <label className="font-semibold block mb-1 nc-text-secondary">
                       {isSwahili ? 'Aina ya Nyaraka:' : 'Category:'}
                     </label>
-                    <select
-                      value={uploadCategory}
-                      onChange={(e) => setUploadCategory(e.target.value as any)}
-                      className={`w-full p-2.5 rounded-xl border outline-none ${
-                        isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'
-                      }`}
-                    >
+                    <select value={uploadCategory} onChange={(e) => setUploadCategory(e.target.value as any)} className="nc-input p-2.5">
                       <option value="custom_upload">Nyaraka Binafsi (General)</option>
                       <option value="hospital_report">Ripoti ya Daktari (Clinical)</option>
                       <option value="lab_result">Vipimo vya Maabara (Lab)</option>
@@ -1188,7 +1054,7 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
                   </div>
 
                   <div>
-                    <label className="font-bold block mb-1 text-slate-600 dark:text-slate-300">
+                    <label className="font-semibold block mb-1 nc-text-secondary">
                       {isSwahili ? 'Hospitali / Kituo:' : 'Facility / Issuer:'}
                     </label>
                     <input
@@ -1196,16 +1062,14 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
                       placeholder="e.g. Muhimbili, Aga Khan..."
                       value={uploadFacility}
                       onChange={(e) => setUploadFacility(e.target.value)}
-                      className={`w-full p-2.5 rounded-xl border outline-none ${
-                        isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'
-                      }`}
+                      className="nc-input p-2.5"
                     />
                   </div>
                 </div>
 
                 {/* Notes */}
                 <div>
-                  <label className="font-bold block mb-1 text-slate-600 dark:text-slate-300">
+                  <label className="font-semibold block mb-1 nc-text-secondary">
                     {isSwahili ? 'Maelezo / Dokezo (Hiari):' : 'Notes / Clinical Impression (Optional):'}
                   </label>
                   <input
@@ -1213,15 +1077,13 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
                     placeholder="e.g. Kipimo kiko salama, dozi ya miezi 3..."
                     value={uploadNotes}
                     onChange={(e) => setUploadNotes(e.target.value)}
-                    className={`w-full p-2.5 rounded-xl border outline-none ${
-                      isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-200'
-                    }`}
+                    className="nc-input p-2.5"
                   />
                 </div>
               </div>
 
               {/* Action buttons */}
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+              <div className="flex items-center justify-end gap-2 pt-2 border-t nc-border">
                 <button
                   type="button"
                   onClick={() => {
@@ -1231,7 +1093,7 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
                     setUploadError('');
                   }}
                   disabled={isUploading}
-                  className="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs cursor-pointer disabled:opacity-50"
+                  className="nc-btn-secondary px-4 py-2"
                 >
                   {isSwahili ? 'Ghairi' : 'Cancel'}
                 </button>
@@ -1240,7 +1102,7 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
                   type="button"
                   onClick={handleSaveUpload}
                   disabled={!uploadTitle.trim() || !selectedFile || isUploading}
-                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold text-xs cursor-pointer shadow-md"
+                  className="nc-btn-primary px-4 py-2"
                 >
                   {isUploading
                     ? isSwahili
@@ -1256,30 +1118,13 @@ export const MedicalRecordsModal: React.FC<MedicalRecordsModalProps> = ({
         )}
 
         {/* Footer */}
-        <div className="pt-3 mt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between flex-shrink-0 text-xs">
-          <span className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
-            <ShieldCheck className="w-4 h-4 text-emerald-500" />
-            <span>{isSwahili ? 'Nyaraka zote zimehifadhiwa kwa usalama chini ya PDPA 2022' : 'Protected & encrypted under Tanzania PDPA Act 2022'}</span>
-          </span>
+        <div className="pt-3 mt-2 border-t nc-border flex items-center justify-between gap-2 flex-shrink-0 text-xs">
+          <span className="text-[11px] nc-text-muted">PDPA 2022</span>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleExportCompletePassport}
-              className="px-3 py-2 rounded-xl bg-primary/10 text-primary dark:text-primary-light font-semibold text-xs flex items-center gap-1.5 cursor-pointer hover:bg-primary/15 transition-all sm:hidden"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>PDF</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs cursor-pointer transition-all"
-            >
-              {isSwahili ? 'Funga' : 'Close'}
-            </button>
-          </div>
+          <button type="button" onClick={handleExportCompletePassport} className="nc-btn-primary px-3.5 py-1.5 flex items-center gap-1.5 flex-shrink-0">
+            <FileDown className="w-3.5 h-3.5" />
+            <span>{isSwahili ? 'Pakua Zote (PDF)' : 'Export PDF'}</span>
+          </button>
         </div>
       </div>
     </div>

@@ -52,15 +52,18 @@
   --nc-radius-surface: 0.875rem; /* 14px — maximum in the system */
   --nc-radius-pill: 9999px;
 
-  /* Visualization stage — the 3D Body Map's own backdrop. Deliberately
-     NOT theme-linked (stays this same dark navy-black whether the rest
-     of the app is in light or dark mode): a body model on a plain white
-     card reads as "illustration in a form," the same model on a dark
-     instrument surface reads as "a medical visualization tool." One
-     token, reused nowhere else, so nothing else in the app is affected. */
-  --nc-stage-bg: #0A0F1A;
-  --nc-stage-border: rgba(255, 255, 255, 0.08);
-  --nc-stage-text: #B9C6D4;
+  /* Visualization stage — the 3D Body Map's own backdrop. A dark
+     "instrument" surface was tried here and read as a game/demo
+     viewport rather than part of a clinical app — a soft cool-gray
+     clinical surface, distinct from the plain white --nc-surface a form
+     card uses, keeps the "dedicated visualization area" feeling without
+     the dark-theater effect. Deliberately NOT app-theme-linked: this
+     stays the same light tone in both light and dark app mode, since a
+     visualization surface reading as consistently "clinical" is the
+     goal, not a mode switch. One token, reused nowhere else. */
+  --nc-stage-bg: #EEF2F6;
+  --nc-stage-border: #D9E1EA;
+  --nc-stage-text: #5B6B7F;
 }
 
 .dark {

@@ -609,41 +609,37 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
         <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4">
           {/* VIEW 1: TELEHEALTH VIDEO ROOM (real Daily.co WebRTC call) */}
           {activeVideoCall && (
-            <div className="rounded-2xl border border-primary/40 p-5 bg-gradient-to-br from-slate-900 via-[#0B1B30] to-slate-950 text-white space-y-4 animate-in zoom-in-95">
+            <div className="nc-card p-5 space-y-4 animate-in zoom-in-95">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span
-                    className={`w-3 h-3 rounded-full ${
-                      videoJoinState === 'joined' ? 'bg-rose-500 animate-ping' : 'bg-amber-500 animate-pulse'
+                    className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
+                      videoJoinState === 'joined' ? 'bg-danger' : videoJoinState === 'error' ? 'bg-danger' : 'bg-warning animate-pulse'
                     }`}
                   />
-                  <span className="font-bold text-xs uppercase tracking-wider text-rose-400">
+                  <span className="font-semibold text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
                     {videoJoinState === 'joined'
-                      ? 'LIVE TELEHEALTH CONSULTATION (ENCRYPTED)'
+                      ? isSwahili ? 'Ushauri wa Video (Umefichwa)' : 'Live Telehealth Consultation (Encrypted)'
                       : videoJoinState === 'error'
                       ? isSwahili
-                        ? 'IMESHINDIKANA KUUNGANISHA'
-                        : 'CONNECTION FAILED'
+                        ? 'Imeshindikana Kuunganisha'
+                        : 'Connection Failed'
                       : isSwahili
-                      ? 'INAUNGANISHA...'
-                      : 'CONNECTING...'}
+                      ? 'Inaunganisha...'
+                      : 'Connecting…'}
                   </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleLeaveVideoCall}
-                  className="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl cursor-pointer"
-                >
-                  End Call (Kata Simu)
+                <button type="button" onClick={handleLeaveVideoCall} className="nc-btn-danger px-3 py-1.5">
+                  {isSwahili ? 'Kata Simu' : 'End Call'}
                 </button>
               </div>
 
               {/* Real embedded Daily.co call frame */}
-              <div className="relative aspect-video rounded-2xl bg-slate-950 border border-primary/30 overflow-hidden">
+              <div className="relative aspect-video rounded-lg border nc-border overflow-hidden bg-slate-950">
                 {videoJoinState === 'error' ? (
                   <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-center px-6">
-                    <AlertCircle className="w-8 h-8 text-rose-400" />
-                    <p className="text-xs text-rose-300 font-bold">
+                    <AlertCircle className="w-8 h-8 text-danger" />
+                    <p className="text-xs text-white font-semibold">
                       {isSwahili
                         ? 'Imeshindikana kuanzisha video call. Jaribu tena baadaye.'
                         : 'Could not start the video call. Please try again shortly.'}
@@ -655,7 +651,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                     {videoJoinState === 'connecting' && (
                       <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 z-10 bg-slate-950/80">
                         <div className="w-10 h-10 rounded-full border-2 border-primary-light border-t-transparent animate-spin" />
-                        <p className="text-xs text-primary-light font-bold">
+                        <p className="text-xs text-primary-light font-semibold">
                           {isSwahili ? 'Inaunganisha na daktari...' : 'Connecting to your doctor...'}
                         </p>
                       </div>
@@ -673,107 +669,95 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
 
           {/* VIEW 2: CONFIRMED APPOINTMENT PASS */}
           {confirmedAppointment && (
-            <div className="rounded-2xl border border-emerald-500/40 p-5 bg-gradient-to-br from-emerald-950/40 via-slate-900 to-[#0A2238] space-y-4 animate-in zoom-in-95">
-              <div className="text-center space-y-2">
-                <div className="w-14 h-14 rounded-2xl bg-emerald-500 text-white mx-auto flex items-center justify-center shadow-lg shadow-emerald-500/30">
-                  <Check className="w-8 h-8" />
+            <div className="nc-card p-5 space-y-4 animate-in zoom-in-95">
+              <div className="text-center space-y-1.5">
+                <div className="w-11 h-11 rounded-full bg-success/10 text-success mx-auto flex items-center justify-center">
+                  <Check className="w-6 h-6" />
                 </div>
-                <h3 className="text-lg font-semibold text-white">
-                  {isSwahili ? 'Miadi Imethibitishwa Kikamilifu!' : 'Appointment Successfully Confirmed!'}
+                <h3 className="text-base font-semibold text-slate-900 dark:text-white">
+                  {isSwahili ? 'Miadi Imethibitishwa' : 'Appointment Confirmed'}
                 </h3>
-                <p className="text-xs text-slate-300 max-w-md mx-auto">
+                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
                   {isSwahili
                     ? `Namba ya Foleni na maelezo ya daktari yametumwa kupitia SMS kwenda namba ${patientPhone}.`
-                    : `Confirmation ticket sent via SMS to ${patientPhone}. Show QR pass at hospital reception.`}
+                    : `Confirmation ticket sent via SMS to ${patientPhone}. Show the QR pass at hospital reception.`}
                 </p>
               </div>
 
-              {/* Digital Pass Card */}
-              <div className="p-4 rounded-2xl bg-slate-950/80 border border-primary/30 text-white space-y-3">
-                <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                  <div>
-                    <span className="text-[10px] uppercase font-mono tracking-wider text-primary-light font-bold block">
-                      TICKET NUMBER
-                    </span>
-                    <span className="font-mono font-semibold text-lg text-emerald-400">
-                      {confirmedAppointment.ticketNumber}
-                    </span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[10px] uppercase font-mono tracking-wider text-primary-light font-bold block">
-                      FOLENI (QUEUE NO)
-                    </span>
-                    <span className="font-mono font-semibold text-lg text-amber-300">
-                      {confirmedAppointment.queueNumber}
-                    </span>
-                  </div>
+              {/* Appointment details — one bordered module, not a nested card */}
+              <div className="border-t border-b nc-border divide-y divide-[var(--nc-border)] text-xs">
+                <div className="flex items-center justify-between py-2.5">
+                  <span className="text-slate-400">{isSwahili ? 'Daktari' : 'Doctor'}</span>
+                  <span className="font-semibold text-slate-900 dark:text-white text-right">
+                    {confirmedAppointment.doctorName}
+                    <span className="block font-normal text-primary dark:text-primary-light">{confirmedAppointment.doctorSpecialty}</span>
+                  </span>
                 </div>
-
-                <div className="grid grid-cols-2 gap-3 text-xs">
-                  <div>
-                    <span className="text-[10px] text-slate-400 block font-semibold">Daktari (Doctor):</span>
-                    <p className="font-bold text-white text-sm">{confirmedAppointment.doctorName}</p>
-                    <p className="text-[11px] text-primary-light">{confirmedAppointment.doctorSpecialty}</p>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 block font-semibold">Hospitali & Chumba:</span>
-                    <p className="font-bold text-white text-xs">{confirmedAppointment.hospitalName}</p>
-                    <p className="text-[11px] text-amber-300 font-mono">{confirmedAppointment.roomNumber}</p>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 block font-semibold">Tarehe & Muda:</span>
-                    <p className="font-bold text-white text-xs">
-                      {confirmedAppointment.date} saa {confirmedAppointment.timeSlot}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 block font-semibold">Gharama & Bima:</span>
-                    <p className="font-bold text-emerald-400 text-xs">
-                      {confirmedAppointment.insuranceCovered ? '0 TZS (NHIF 100% Covered)' : 'TZS 45,000'}
-                    </p>
-                  </div>
+                <div className="flex items-center justify-between py-2.5">
+                  <span className="text-slate-400">{isSwahili ? 'Hospitali' : 'Facility'}</span>
+                  <span className="font-semibold text-slate-900 dark:text-white text-right">
+                    {confirmedAppointment.hospitalName}
+                    <span className="block font-normal font-mono text-slate-400">{confirmedAppointment.roomNumber}</span>
+                  </span>
                 </div>
-
-                {/* QR Code fast pass */}
-                <div className="pt-3 border-t border-white/10 flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-12 h-12 bg-white p-1 rounded-lg">
-                      <img
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${confirmedAppointment.ticketNumber}`}
-                        alt="Appointment QR"
-                        className="w-full h-full"
-                        referrerPolicy="no-referrer"
-                      />
-                    </div>
-                    <div className="text-[11px]">
-                      <span className="font-bold block">Hospital Fast-Track QR</span>
-                      <span className="text-[10px] text-slate-400">Onyesha reception kupunguza muda</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => generateAppointmentIcs(confirmedAppointment)}
-                      className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold flex items-center gap-1 cursor-pointer"
-                      title="Add to Calendar"
-                    >
-                      <CalendarIcon className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">Kalenda</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setConfirmedAppointment(null);
-                        setActiveTab('my_appointments');
-                      }}
-                      className="px-3.5 py-2 rounded-xl bg-primary hover:bg-primary-light text-white font-semibold text-xs cursor-pointer shadow-md"
-                    >
-                      {isSwahili ? 'Tazama Orodha ya Miadi' : 'View Appointments'}
-                    </button>
-                  </div>
+                <div className="flex items-center justify-between py-2.5">
+                  <span className="text-slate-400">{isSwahili ? 'Tarehe & Muda' : 'Date & Time'}</span>
+                  <span className="font-semibold text-slate-900 dark:text-white">
+                    {confirmedAppointment.date} • {confirmedAppointment.timeSlot}
+                  </span>
                 </div>
+                <div className="flex items-center justify-between py-2.5">
+                  <span className="text-slate-400">{isSwahili ? 'Ticket / Foleni' : 'Ticket / Queue'}</span>
+                  <span className="font-mono font-semibold text-slate-900 dark:text-white">
+                    {confirmedAppointment.ticketNumber} · {confirmedAppointment.queueNumber}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between py-2.5">
+                  <span className="text-slate-400">{isSwahili ? 'Gharama & Bima' : 'Cost & Insurance'}</span>
+                  <span className="font-semibold text-success">
+                    {confirmedAppointment.insuranceCovered ? (isSwahili ? '0 TZS (NHIF)' : '0 TZS (NHIF Covered)') : 'TZS 45,000'}
+                  </span>
+                </div>
+              </div>
+
+              {/* QR fast pass */}
+              <div className="flex items-center gap-2.5">
+                <div className="w-12 h-12 border nc-border p-1 rounded-md flex-shrink-0">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${confirmedAppointment.ticketNumber}`}
+                    alt="Appointment QR"
+                    className="w-full h-full"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+                <div className="text-[11px]">
+                  <span className="font-semibold block text-slate-900 dark:text-white">
+                    {isSwahili ? 'QR ya Kuharakisha Hospitalini' : 'Hospital Fast-Track QR'}
+                  </span>
+                  <span className="text-slate-400">{isSwahili ? 'Onyesha reception kupunguza muda' : 'Show at reception to skip the line'}</span>
+                </div>
+              </div>
+
+              {/* One primary action, one secondary — not competing buttons */}
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => generateAppointmentIcs(confirmedAppointment)}
+                  className="nc-btn-secondary flex-1 py-2.5 flex items-center justify-center gap-1.5"
+                >
+                  <CalendarIcon className="w-3.5 h-3.5" />
+                  {isSwahili ? 'Kalenda' : 'Add to Calendar'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setConfirmedAppointment(null);
+                    setActiveTab('my_appointments');
+                  }}
+                  className="nc-btn-primary flex-[2] py-2.5"
+                >
+                  {isSwahili ? 'Tazama Miadi' : 'View Appointment'}
+                </button>
               </div>
             </div>
           )}
@@ -1047,81 +1031,51 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
           {/* VIEW 4: BROWSE DOCTORS & APPOINTMENT BOOKING WIZARD */}
           {activeTab === 'browse' && !confirmedAppointment && !activeVideoCall && (
             <div className="space-y-4">
-              {/* Consultation Type Selector Header */}
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setConsultationType('in_person')}
-                  className={`p-3 rounded-2xl border text-center transition-all cursor-pointer ${
-                    consultationType === 'in_person'
-                      ? 'bg-primary/20 border-primary-light text-primary-light shadow-md'
-                      : isDark
-                      ? 'bg-[#0E1C2F] border-slate-800 text-slate-400 hover:border-slate-700'
-                      : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  <Building2 className="w-5 h-5 mx-auto mb-1" />
-                  <span className="text-xs font-semibold block">Hospitali (In-Person)</span>
-                  <span className="text-[10px] opacity-75">Kituo cha Afya / Referral</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setConsultationType('telehealth')}
-                  className={`p-3 rounded-2xl border text-center transition-all cursor-pointer ${
-                    consultationType === 'telehealth'
-                      ? 'bg-primary/20 border-primary-light text-primary-light shadow-md'
-                      : isDark
-                      ? 'bg-[#0E1C2F] border-slate-800 text-slate-400 hover:border-slate-700'
-                      : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  <Video className="w-5 h-5 mx-auto mb-1 text-primary-light" />
-                  <span className="text-xs font-semibold block">Video Telehealth</span>
-                  <span className="text-[10px] opacity-75">Ushauri wa Moja kwa Moja</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setConsultationType('home_visit')}
-                  className={`p-3 rounded-2xl border text-center transition-all cursor-pointer ${
-                    consultationType === 'home_visit'
-                      ? 'bg-primary/20 border-primary-light text-primary-light shadow-md'
-                      : isDark
-                      ? 'bg-[#0E1C2F] border-slate-800 text-slate-400 hover:border-slate-700'
-                      : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  <MapPin className="w-5 h-5 mx-auto mb-1 text-emerald-400" />
-                  <span className="text-xs font-semibold block">Daktari Nyumbani</span>
-                  <span className="text-[10px] opacity-75">Mobile Home Clinic</span>
-                </button>
+              {/* Consultation type — compact segmented control, one accent
+                  for the selected state instead of three tinted cards. */}
+              <div className="inline-flex w-full rounded-lg border nc-border p-0.5">
+                {([
+                  { key: 'in_person' as const, Icon: Building2, label: isSwahili ? 'Hospitali' : 'In-Person' },
+                  { key: 'telehealth' as const, Icon: Video, label: isSwahili ? 'Video' : 'Telehealth' },
+                  { key: 'home_visit' as const, Icon: MapPin, label: isSwahili ? 'Nyumbani' : 'Home Visit' },
+                ]).map(({ key, Icon, label }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setConsultationType(key)}
+                    aria-pressed={consultationType === key}
+                    className={`flex-1 py-2 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors ${
+                      consultationType === key
+                        ? 'bg-primary text-white'
+                        : 'text-slate-500 dark:text-slate-400'
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    {label}
+                  </button>
+                ))}
               </div>
 
-              {/* SEARCH & SPECIALTY FILTERS */}
+              {/* Search & filters */}
               <div className="space-y-2.5">
                 <div className="flex flex-col sm:flex-row gap-2">
                   <div className="relative flex-1">
-                    <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                    <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder={isSwahili ? 'Tafuta Daktari, Hospitali, au Ugonjwa (mf. Moyo, Malaria, Mwangi)...' : 'Search doctor, hospital, or symptoms...'}
-                      className={`w-full pl-9 pr-3 py-2.5 rounded-xl border text-xs outline-none ${
-                        isDark ? 'bg-[#0E1C2F] border-slate-700 text-white placeholder-slate-500 focus:border-primary-light' : 'bg-slate-50 border-slate-200 placeholder-slate-400'
-                      }`}
+                      placeholder={isSwahili ? 'Tafuta Daktari, Hospitali, au Ugonjwa...' : 'Search doctor, hospital, or symptoms...'}
+                      className="nc-input pl-8 pr-3 py-2"
                     />
                   </div>
 
                   <select
                     value={selectedHospitalFilter}
                     onChange={(e) => setSelectedHospitalFilter(e.target.value)}
-                    className={`py-2.5 px-3 rounded-xl border text-xs outline-none font-bold ${
-                      isDark ? 'bg-[#0E1C2F] border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'
-                    }`}
+                    className="nc-input py-2 px-3 font-medium sm:w-auto"
                   >
-                    <option value="all">Hospitali Zote (All Facilities)</option>
+                    <option value="all">{isSwahili ? 'Hospitali Zote' : 'All Facilities'}</option>
                     <option value="Muhimbili">Muhimbili National Hospital (MNH)</option>
                     <option value="Aga Khan">The Aga Khan Hospital DSM</option>
                     <option value="KCMC">KCMC Referral Moshi</option>
@@ -1132,7 +1086,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                   </select>
                 </div>
 
-                {/* Specialty Horizontal Scroll Pills */}
+                {/* Specialty filter — single accent for the selected pill */}
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
                   {SPECIALTIES.map((spec) => {
                     const isSelected = selectedSpecialtyId === spec.id;
@@ -1141,12 +1095,11 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                         key={spec.id}
                         type="button"
                         onClick={() => setSelectedSpecialtyId(spec.id)}
-                        className={`px-3 py-1.5 rounded-xl whitespace-nowrap font-bold transition-all cursor-pointer ${
+                        aria-pressed={isSelected}
+                        className={`px-2.5 py-1 rounded-md whitespace-nowrap font-medium transition-colors ${
                           isSelected
-                            ? 'bg-primary text-white shadow-xs'
-                            : isDark
-                            ? 'bg-[#0E1C2F] border border-slate-800 text-slate-300 hover:border-slate-700'
-                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                            ? 'bg-primary text-white'
+                            : 'border nc-border text-slate-600 dark:text-slate-300 hover:border-primary'
                         }`}
                       >
                         {isSwahili ? spec.nameSw : spec.name}
@@ -1158,15 +1111,14 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
 
               {/* ACTIVE BOOKING WIZARD (IF A DOCTOR IS SELECTED FOR IMMEDIATE BOOKING) */}
               {selectedDoctor && (
-                <div
-                  className={`p-4 sm:p-5 rounded-2xl border ${
-                    isDark ? 'bg-[#0F2238] border-primary/40 shadow-xl' : 'bg-primary/5 border-primary/20'
-                  }`}
-                >
+                <div className="nc-card p-4 sm:p-5">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 mb-3">
+                    {isSwahili ? 'Weka Miadi' : 'Book Appointment'}
+                  </p>
                   <div className="flex items-start justify-between gap-3 mb-4">
                     <div className="flex items-center gap-3">
                       <div
-                        className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${selectedDoctor.avatarColor} text-white flex items-center justify-center font-semibold text-lg shadow-md flex-shrink-0`}
+                        className={`w-11 h-11 rounded-full bg-gradient-to-br ${selectedDoctor.avatarColor} text-white flex items-center justify-center font-semibold flex-shrink-0`}
                       >
                         {doctorInitial(selectedDoctor.name)}
                       </div>
@@ -1175,30 +1127,34 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                           <h4 className="font-semibold text-sm text-slate-900 dark:text-white">
                             {selectedDoctor.name}
                           </h4>
-                          <span className="text-[10px] font-bold px-1.5 py-0.2 bg-emerald-500/20 text-emerald-400 rounded">
-                            MCT Verified ✓
-                          </span>
+                          {/* Real verification state only — doctor_profiles.is_verified,
+                              set by an admin. Never shown unconditionally. */}
+                          {selectedDoctor.isVerified && (
+                            <CheckCircle2 className="w-3.5 h-3.5 text-primary dark:text-primary-light flex-shrink-0" aria-label={isSwahili ? 'Amethibitishwa' : 'Verified'} />
+                          )}
                         </div>
-                        <p className="text-xs text-primary-light font-bold">{selectedDoctor.specialty}</p>
+                        <p className="text-xs text-primary dark:text-primary-light font-medium">{selectedDoctor.specialty}</p>
                         <p className="text-[11px] text-slate-400">{selectedDoctor.hospital}</p>
                       </div>
                     </div>
 
-                    <div className="text-right">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 block">
-                        NHIF 100% COVERED
-                      </span>
-                      <span className="text-xs font-semibold text-slate-900 dark:text-white">
-                        0 TZS Co-Pay
-                      </span>
-                    </div>
+                    {selectedDoctor.nhifAccepted && (
+                      <div className="text-right flex-shrink-0">
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-success block">
+                          {isSwahili ? 'NHIF Inakubaliwa' : 'NHIF Accepted'}
+                        </span>
+                        <span className="text-xs font-semibold text-slate-900 dark:text-white">
+                          0 TZS {isSwahili ? 'Malipo' : 'Co-Pay'}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Wizard Step 1: Slot & Date Selection */}
-                  <div className="space-y-3 pt-3 border-t border-slate-700/50">
+                  <div className="space-y-3 pt-3 border-t nc-border">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label className="text-xs font-bold block mb-1.5">
+                        <label className="text-xs font-semibold block mb-1.5 text-slate-600 dark:text-slate-300">
                           {isSwahili ? 'Chagua Tarehe ya Miadi:' : 'Select Appointment Date:'}
                         </label>
                         <input
@@ -1206,14 +1162,12 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                           value={selectedDate}
                           min={getTodayISO()}
                           onChange={(e) => setSelectedDate(e.target.value)}
-                          className={`w-full p-2.5 rounded-xl border text-xs font-bold outline-none ${
-                            isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-300'
-                          }`}
+                          className="nc-input p-2.5"
                         />
                       </div>
 
                       <div>
-                        <label className="text-xs font-bold block mb-1.5">
+                        <label className="text-xs font-semibold block mb-1.5 text-slate-600 dark:text-slate-300">
                           {isSwahili ? 'Chagua Muda (Available Slots):' : 'Select Time Slot:'}
                         </label>
                         {(() => {
@@ -1223,7 +1177,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                           }
                           if (allSlots.length === 0) {
                             return (
-                              <p className="text-[11px] text-amber-500 font-semibold py-1.5">
+                              <p className="text-[11px] text-warning font-semibold py-1.5">
                                 {isSwahili ? 'Hakuna nafasi tarehe hii. Jaribu tarehe nyingine.' : 'No open slots on this date. Try another date.'}
                               </p>
                             );
@@ -1237,12 +1191,10 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                                   onClick={() => setSelectedSlot(slot)}
                                   aria-pressed={selectedSlot === slot}
                                   aria-label={isSwahili ? `Chagua muda ${slot}` : `Select ${slot} time slot`}
-                                  className={`min-h-[38px] py-1.5 px-2 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
+                                  className={`min-h-[36px] py-1.5 px-2 rounded-md text-xs font-mono font-semibold transition-colors ${
                                     selectedSlot === slot
-                                      ? 'bg-primary text-white shadow-md font-semibold ring-2 ring-offset-1 ring-primary'
-                                      : isDark
-                                      ? 'bg-slate-900/90 text-slate-300 border border-slate-700 hover:border-primary-light'
-                                      : 'bg-white text-slate-800 border border-slate-200 hover:bg-slate-100'
+                                      ? 'bg-primary text-white'
+                                      : 'border nc-border text-slate-700 dark:text-slate-300 hover:border-primary'
                                   }`}
                                 >
                                   {slot}
@@ -1256,7 +1208,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
 
                     {/* Step 2: Reason for Consultation */}
                     <div>
-                      <label className="text-xs font-bold block mb-1.5">
+                      <label className="text-xs font-semibold block mb-1.5 text-slate-600 dark:text-slate-300">
                         {isSwahili ? 'Sababu ya Kuonana na Daktari:' : 'Reason for Consultation / Symptoms:'}
                       </label>
                       <div className="flex flex-wrap gap-1.5 mb-2">
@@ -1265,12 +1217,10 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                             key={preset.key}
                             type="button"
                             onClick={() => setVisitReason(preset.label)}
-                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                            className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
                               visitReason === preset.label
-                                ? 'bg-emerald-500 text-white shadow-xs'
-                                : isDark
-                                ? 'bg-slate-900 border border-slate-700 text-slate-300 hover:border-slate-600'
-                                : 'bg-white border border-slate-200 text-slate-700'
+                                ? 'bg-primary text-white'
+                                : 'border nc-border text-slate-600 dark:text-slate-300 hover:border-primary'
                             }`}
                           >
                             {preset.label}
@@ -1283,39 +1233,33 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                         value={visitReason}
                         onChange={(e) => setVisitReason(e.target.value)}
                         placeholder="Andika maelezo ya dalili zako hapa..."
-                        className={`w-full p-2.5 rounded-xl border text-xs outline-none ${
-                          isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-300'
-                        }`}
+                        className="nc-input p-2.5"
                       />
                     </div>
 
-                    {/* Step 3: Payment / Insurance procedure selection */}
+                    {/* Step 3: Payment / Insurance procedure selection — one
+                        accent (primary) marks the selected method; the two
+                        options no longer compete with separate bright colors. */}
                     <div className="space-y-2">
-                      <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+                      <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide block">
                         {isSwahili ? 'Utaratibu wa Malipo / Bima' : 'Payment / Insurance Procedure'}
                       </label>
                       <div className="grid grid-cols-2 gap-2">
                         <button
                           type="button"
                           onClick={() => setPaymentMethod('insurance')}
-                          className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                          className={`p-3 rounded-lg border text-left transition-colors ${
                             paymentMethod === 'insurance'
-                              ? isDark
-                                ? 'bg-emerald-950/60 border-emerald-500 text-emerald-300'
-                                : 'bg-emerald-50 border-emerald-600 text-emerald-950 shadow-xs'
-                              : isDark
-                              ? 'bg-slate-900 border-slate-700/80 text-slate-400 hover:border-slate-600'
-                              : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                              ? 'border-primary bg-primary/5 text-slate-900 dark:text-white'
+                              : 'nc-border text-slate-500 dark:text-slate-400 hover:border-primary/50'
                           }`}
                         >
                           <div className="flex items-center justify-between mb-1">
                             <span className="font-semibold text-xs flex items-center gap-1.5">
-                              <Shield className="w-3.5 h-3.5 text-emerald-500" />
+                              <Shield className="w-3.5 h-3.5" />
                               <span>{isSwahili ? 'Bima ya Afya' : 'Insurance'}</span>
                             </span>
-                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">
-                              0 TZS Co-Pay
-                            </span>
+                            <span className="text-[10px] font-semibold text-success">0 TZS</span>
                           </div>
                           <p className="text-[10px] opacity-80 truncate">
                             {insuranceName} (Pre-Auth)
@@ -1325,22 +1269,18 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                         <button
                           type="button"
                           onClick={() => setPaymentMethod('mpesa')}
-                          className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                          className={`p-3 rounded-lg border text-left transition-colors ${
                             paymentMethod !== 'insurance'
-                              ? isDark
-                                ? 'bg-primary/15 border-primary text-primary-light'
-                                : 'bg-primary/5 border-primary text-primary-dark shadow-xs'
-                              : isDark
-                              ? 'bg-slate-900 border-slate-700/80 text-slate-400 hover:border-slate-600'
-                              : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                              ? 'border-primary bg-primary/5 text-slate-900 dark:text-white'
+                              : 'nc-border text-slate-500 dark:text-slate-400 hover:border-primary/50'
                           }`}
                         >
                           <div className="flex items-center justify-between mb-1">
                             <span className="font-semibold text-xs flex items-center gap-1.5">
-                              <CreditCard className="w-3.5 h-3.5 text-primary" />
+                              <CreditCard className="w-3.5 h-3.5" />
                               <span>{isSwahili ? 'Pesa / Simu' : 'Cash / Mobile'}</span>
                             </span>
-                            <span className="font-mono text-[10px] font-semibold text-primary">
+                            <span className="font-mono text-[10px] font-semibold">
                               {selectedDoctor.consultationFeeTzs.toLocaleString()} TZS
                             </span>
                           </div>
@@ -1351,58 +1291,44 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                       </div>
 
                       {paymentMethod === 'insurance' ? (
-                        <div
-                          className={`p-2.5 rounded-xl border flex items-center justify-between gap-3 text-xs ${
-                            isDark
-                              ? 'bg-emerald-950/40 border-emerald-800 text-emerald-200'
-                              : 'bg-emerald-50 border-emerald-200 text-emerald-900'
-                          }`}
-                        >
+                        <div className="p-2.5 rounded-md border nc-border flex items-center justify-between gap-3 text-xs bg-success-subtle">
                           <div className="flex items-center gap-2">
-                            <Shield className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                            <Shield className="w-4 h-4 text-success flex-shrink-0" />
                             <div className="text-[11px]">
-                              <span className="font-bold block">
+                              <span className="font-semibold block text-slate-900 dark:text-white">
                                 {isSwahili ? `Imehakikiwa na Bima: ${insuranceName}` : `Verified with: ${insuranceName}`}
                               </span>
-                              <span className="text-[10px] opacity-90">
+                              <span className="text-slate-500 dark:text-slate-400">
                                 {isSwahili ? 'Hakuna malipo ya ziada dirishani.' : 'No out-of-pocket payment required.'}
                               </span>
                             </div>
                           </div>
-                          <span className="font-mono font-semibold text-xs text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded">
-                            0 TZS
-                          </span>
+                          <span className="font-mono font-semibold text-xs text-success">0 TZS</span>
                         </div>
                       ) : (
-                        <div
-                          className={`p-2.5 rounded-xl border flex items-center justify-between gap-3 text-xs ${
-                            isDark
-                              ? 'bg-primary/40 border-primary-dark text-primary-light'
-                              : 'bg-primary/5 border-primary-light text-primary-dark'
-                          }`}
-                        >
+                        <div className="p-2.5 rounded-md border nc-border flex items-center justify-between gap-3 text-xs">
                           <div className="flex items-center gap-2">
-                            <CreditCard className="w-4 h-4 text-primary-light flex-shrink-0" />
+                            <CreditCard className="w-4 h-4 text-primary flex-shrink-0" />
                             <div className="text-[11px]">
-                              <span className="font-bold block">
+                              <span className="font-semibold block text-slate-900 dark:text-white">
                                 {isSwahili ? 'Malipo Dirishani au kwa Simu (M-Pesa / Tigo)' : 'Pay via Mobile Money or at Cashier'}
                               </span>
-                              <span className="text-[10px] opacity-90">
+                              <span className="text-slate-500 dark:text-slate-400">
                                 {isSwahili ? 'Utapokea risiti ya kielektroniki baada ya uthibitisho.' : 'Electronic receipt generated upon confirmation.'}
                               </span>
                             </div>
                           </div>
-                          <span className="font-mono font-semibold text-xs text-primary-light bg-primary/20 px-2 py-0.5 rounded">
+                          <span className="font-mono font-semibold text-xs text-primary">
                             {selectedDoctor.consultationFeeTzs.toLocaleString()} TZS
                           </span>
                         </div>
                       )}
                     </div>
 
-                    {/* Submit Booking Button */}
+                    {/* Submit — one clear primary action */}
                     <div className="pt-2 space-y-2">
                       {bookingError && (
-                        <div role="alert" className="text-xs font-semibold text-rose-500 bg-rose-500/10 border border-rose-500/30 rounded-xl p-2.5 space-y-2">
+                        <div role="alert" className="text-xs font-semibold text-danger bg-danger-subtle rounded-md p-2.5 space-y-2">
                           <p className="flex items-center gap-1.5">
                             <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
                             {bookingError}
@@ -1417,7 +1343,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                                 setPresetSlot(null);
                                 setSlotsRefreshToken((t) => t + 1);
                               }}
-                              className="w-full py-2 rounded-lg bg-rose-500 hover:bg-rose-600 text-white font-bold cursor-pointer"
+                              className="nc-btn-danger w-full py-2"
                             >
                               {isSwahili ? 'Chagua Muda Mwingine' : 'Choose Another Time'}
                             </button>
@@ -1428,9 +1354,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                         type="button"
                         onClick={handleCompleteBooking}
                         disabled={isBooking || !selectedSlot}
-                        className={`w-full py-3.5 px-4 rounded-2xl bg-primary hover:bg-primary-light text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary/20 transition-all active:scale-98 ${
-                          isBooking || !selectedSlot ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'
-                        }`}
+                        className="nc-btn-primary w-full py-3 flex items-center justify-center gap-2"
                       >
                         <CalendarCheck className="w-4 h-4" />
                         <span>
@@ -1439,8 +1363,8 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                               ? 'Inathibitisha...'
                               : 'Confirming...'
                             : isSwahili
-                            ? `Thibitisha Miadi na ${selectedDoctor.name}`
-                            : `Confirm Appointment with ${selectedDoctor.name}`}
+                            ? 'Thibitisha Miadi'
+                            : 'Confirm Appointment'}
                         </span>
                       </button>
                     </div>
@@ -1448,19 +1372,16 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                 </div>
               )}
 
-              {/* LIST OF AVAILABLE SPECIALISTS */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                    Madaktari Bingwa Waliopo ({filteredDoctors.length})
-                  </h4>
-                  <span className="text-[11px] text-primary-light font-bold">
-                    Panga Miadi Haraka (1-Tap Book)
-                  </span>
-                </div>
+              {/* Doctor directory — compact rows, not a grid of cards. Every
+                  field shown is real, existing data: no invented ratings,
+                  reviews, experience years, or statistics. */}
+              <div className="space-y-2">
+                <h4 className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                  {isSwahili ? `Madaktari Bingwa (${filteredDoctors.length})` : `Available Specialists (${filteredDoctors.length})`}
+                </h4>
 
                 {doctorsError && (
-                  <p className="text-xs font-semibold text-rose-500 bg-rose-500/10 border border-rose-500/30 rounded-xl p-3">
+                  <p className="text-xs font-semibold text-danger bg-danger-subtle rounded-md p-3">
                     {doctorsError}
                   </p>
                 )}
@@ -1486,95 +1407,71 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {filteredDoctors.map((doc) => {
-                    const isSelected = selectedDoctor?.id === doc.id;
-                    return (
-                      <div
-                        key={doc.id}
-                        className={`p-3.5 rounded-2xl border transition-all flex flex-col justify-between ${
-                          isSelected
-                            ? isDark
-                              ? 'bg-[#12253D] border-primary-light shadow-md'
-                              : 'bg-primary/10 border-[var(--nc-primary)]'
-                            : isDark
-                            ? 'bg-[#0E1C2F] border-slate-800 hover:border-slate-700'
-                            : 'bg-white border-slate-200 hover:border-slate-300 shadow-xs'
-                        }`}
-                      >
-                        <div>
-                          <div className="flex items-start justify-between gap-2 mb-2">
-                            <button
-                              type="button"
-                              onClick={() => onViewDoctorProfile?.({ doctor: doc })}
-                              disabled={!onViewDoctorProfile}
-                              className="flex items-center gap-2.5 text-left disabled:cursor-default"
-                              title={onViewDoctorProfile ? (isSwahili ? 'Angalia Wasifu' : 'View Profile') : undefined}
+                {filteredDoctors.length > 0 && (
+                  <div className="border nc-border rounded-lg divide-y divide-[var(--nc-border)]">
+                    {filteredDoctors.map((doc) => {
+                      const isSelected = selectedDoctor?.id === doc.id;
+                      return (
+                        <div
+                          key={doc.id}
+                          className={`flex items-center gap-3 p-3 transition-colors ${isSelected ? 'bg-primary/5' : ''}`}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => onViewDoctorProfile?.({ doctor: doc })}
+                            disabled={!onViewDoctorProfile}
+                            className="flex items-center gap-3 flex-1 min-w-0 text-left disabled:cursor-default"
+                            title={onViewDoctorProfile ? (isSwahili ? 'Angalia Wasifu' : 'View Profile') : undefined}
+                          >
+                            {/* No doctor photography exists in the data model
+                                today (checked before writing this) — initials
+                                avatar is the real, non-fabricated fallback. */}
+                            <div
+                              className={`w-10 h-10 rounded-full bg-gradient-to-br ${doc.avatarColor} text-white flex items-center justify-center font-semibold text-sm flex-shrink-0`}
                             >
-                              <div
-                                className={`w-10 h-10 rounded-xl bg-gradient-to-br ${doc.avatarColor} text-white flex items-center justify-center font-semibold text-sm flex-shrink-0`}
-                              >
-                                {doctorInitial(doc.name)}
-                              </div>
-                              <div>
-                                <h5 className="font-bold text-xs text-slate-900 dark:text-white leading-tight">
+                              {doctorInitial(doc.name)}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <h5 className="font-semibold text-xs text-slate-900 dark:text-white truncate">
                                   {doc.name}
                                 </h5>
-                                <p className="text-[11px] text-primary-light font-semibold">{doc.specialty}</p>
+                                {doc.isVerified && (
+                                  <CheckCircle2 className="w-3 h-3 text-primary dark:text-primary-light flex-shrink-0" aria-label={isSwahili ? 'Amethibitishwa' : 'Verified'} />
+                                )}
+                                {doc.reviewsCount > 0 && (
+                                  <span className="text-[10px] font-semibold text-warning flex-shrink-0">★ {doc.rating.toFixed(1)}</span>
+                                )}
                               </div>
-                            </button>
-                            {/* Rating only shown once the doctor has real reviews behind it —
-                                every profile defaults to rating 5.0 / 0 reviews, and surfacing
-                                that default reads as a fabricated rating. */}
-                            {doc.reviewsCount > 0 && (
-                              <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded flex-shrink-0">
-                                ★ {doc.rating.toFixed(1)}
-                              </span>
-                            )}
-                          </div>
-
-                          <p className="text-[11px] text-slate-400 mb-2 line-clamp-2">
-                            {isSwahili ? doc.bioSw : doc.bio}
-                          </p>
-
-                          <div className="space-y-1 text-[11px] text-slate-400 mb-3">
-                            <div className="flex items-center gap-1 truncate">
-                              <Building2 className="w-3 h-3 text-slate-400 flex-shrink-0" />
-                              <span className="truncate">{doc.hospital}</span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              {doc.nhifAccepted ? (
-                                <span className="text-emerald-400 font-bold flex items-center gap-1">
-                                  <CheckCircle2 className="w-3 h-3" /> NHIF Accepted
+                              <p className="text-[11px] text-primary dark:text-primary-light font-medium truncate">{doc.specialty}</p>
+                              <div className="flex items-center gap-2.5 mt-0.5 flex-wrap text-[10px] text-slate-400">
+                                <span className="flex items-center gap-1 truncate">
+                                  <Building2 className="w-2.5 h-2.5 flex-shrink-0" />
+                                  <span className="truncate">{doc.hospital}</span>
                                 </span>
-                              ) : (
-                                <span className="text-slate-400">{isSwahili ? 'Malipo ya Moja kwa Moja' : 'Direct Pay'}</span>
-                              )}
-                              <span className="font-mono text-slate-300">
-                                {doc.consultationFeeTzs.toLocaleString()} TZS
-                              </span>
+                                {doc.nhifAccepted && <span className="text-success font-semibold flex-shrink-0">NHIF</span>}
+                                {doc.telehealthAvailable && (
+                                  <span className="text-primary dark:text-primary-light font-semibold flex items-center gap-0.5 flex-shrink-0">
+                                    <Video className="w-2.5 h-2.5" /> {isSwahili ? 'Video' : 'Telehealth'}
+                                  </span>
+                                )}
+                                <span className="font-mono flex-shrink-0">{doc.consultationFeeTzs.toLocaleString()} TZS</span>
+                              </div>
                             </div>
-                          </div>
-                        </div>
+                          </button>
 
-                        <button
-                          type="button"
-                          onClick={() => startBookingWithDoctor(doc)}
-                          className={`w-full py-2 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-center gap-1 ${
-                            isSelected
-                              ? 'bg-primary text-white font-semibold'
-                              : isDark
-                              ? 'bg-slate-800 hover:bg-slate-700 text-white'
-                              : 'bg-slate-100 hover:bg-[var(--nc-primary)] hover:text-white text-slate-800'
-                          }`}
-                        >
-                          <span>{isSelected ? 'Inachaguliwa Hapo Juu ↑' : 'Weka Miadi (Book Slot)'}</span>
-                          <ChevronRight className="w-3 h-3" />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
+                          <button
+                            type="button"
+                            onClick={() => startBookingWithDoctor(doc)}
+                            className={isSelected ? 'nc-btn-primary px-3 py-1.5 flex-shrink-0' : 'nc-btn-secondary px-3 py-1.5 flex-shrink-0'}
+                          >
+                            {isSelected ? (isSwahili ? 'Imechaguliwa' : 'Selected') : (isSwahili ? 'Chagua' : 'Select')}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           )}

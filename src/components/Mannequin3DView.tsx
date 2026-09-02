@@ -3,6 +3,7 @@ import { RotateCcw, Loader2, ZoomIn, ZoomOut } from 'lucide-react';
 import { descriptiveRegionLabel } from '../data/bodyRegionHierarchy';
 import { bodyMapRegionKey } from '../lib/bodyMap';
 import { MannequinViewer, HOTSPOTS_3D_FRONT, HOTSPOTS_3D_BACK, isWebGLAvailable, Hotspot3D } from '../lib/bodyMap3d';
+import { resolveBodyModelSource } from './body-map/bodyModelAdapter';
 
 // Split into its own module (default export, dynamically imported via
 // React.lazy from BodyMapModal) specifically so `three` and this component
@@ -37,15 +38,22 @@ const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({ view, markedCounts, s
     }
     let viewer: MannequinViewer | null = null;
     try {
-      viewer = new MannequinViewer(containerRef.current, {
-        onHover: (key) => setHoveredKey(key),
-        onSelect: (h) => {
-          if (!h) { onSelectKey(null); return; }
-          const key = bodyMapRegionKey(h.key, h.side || null);
-          onSelectKey(key);
+      viewer = new MannequinViewer(
+        containerRef.current,
+        {
+          onHover: (key) => setHoveredKey(key),
+          onSelect: (h) => {
+            if (!h) { onSelectKey(null); return; }
+            const key = bodyMapRegionKey(h.key, h.side || null);
+            onSelectKey(key);
+          },
+          onError: () => { setStatus('error'); onStatus('unavailable'); },
         },
-        onError: () => { setStatus('error'); onStatus('unavailable'); },
-      });
+        // undefined today (no VITE_ANATOMICAL_MODEL_URL configured — see
+        // docs/body-map-assets.md for why) — MannequinViewer then builds
+        // the procedural body exactly as it always has.
+        resolveBodyModelSource()
+      );
       viewerRef.current = viewer;
       setStatus('ready');
       onStatus('ready');
@@ -111,29 +119,28 @@ const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({ view, markedCounts, s
       {status === 'ready' && (
         <>
           {hoveredKey && (
-            <div className="absolute top-3 left-3 rounded-md px-2 py-1 text-[11px] font-semibold bg-black/40 backdrop-blur-sm" style={{ color: 'var(--nc-stage-text)' }}>
+            <div
+              className="absolute top-3 left-3 rounded-md px-2 py-1 text-[11px] font-semibold bg-white/90 border"
+              style={{ color: 'var(--nc-text)', borderColor: 'var(--nc-stage-border)' }}
+            >
               {descriptiveRegionLabel(hoveredKey.split(':')[0], hoveredKey.split(':')[1], isSw)}
             </div>
           )}
 
-          {/* Overlay control cluster — reads as an instrument's own
-              controls rather than page chrome sitting below the model. */}
-          <div className="absolute bottom-3 right-3 flex items-center gap-0.5 rounded-lg bg-black/40 backdrop-blur-sm p-0.5">
-            <button
-              type="button"
-              onClick={() => viewerRef.current?.zoomStep('out')}
-              aria-label={isSw ? 'Punguza' : 'Zoom out'}
-              title={isSw ? 'Punguza' : 'Zoom out'}
-              className="w-7 h-7 rounded-md flex items-center justify-center text-white/80 hover:bg-white/10 hover:text-white transition-colors"
-            >
-              <ZoomOut className="w-3.5 h-3.5" />
-            </button>
+          {/* Vertical control cluster — a small light instrument panel
+              docked to the stage, not page chrome sitting below the
+              model, and colored for a light stage rather than the
+              earlier dark-overlay treatment. */}
+          <div
+            className="absolute top-3 right-3 flex flex-col items-center gap-0.5 rounded-lg bg-white/90 border p-0.5"
+            style={{ borderColor: 'var(--nc-stage-border)' }}
+          >
             <button
               type="button"
               onClick={() => viewerRef.current?.zoomStep('in')}
               aria-label={isSw ? 'Kuza' : 'Zoom in'}
               title={isSw ? 'Kuza' : 'Zoom in'}
-              className="w-7 h-7 rounded-md flex items-center justify-center text-white/80 hover:bg-white/10 hover:text-white transition-colors"
+              className="w-7 h-7 rounded-md flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors"
             >
               <ZoomIn className="w-3.5 h-3.5" />
             </button>
@@ -142,9 +149,18 @@ const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({ view, markedCounts, s
               onClick={() => viewerRef.current?.resetView()}
               aria-label={isSw ? 'Rudisha Mwonekano' : 'Reset view'}
               title={isSw ? 'Rudisha Mwonekano' : 'Reset view'}
-              className="w-7 h-7 rounded-md flex items-center justify-center text-white/80 hover:bg-white/10 hover:text-white transition-colors"
+              className="w-7 h-7 rounded-md flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors"
             >
               <RotateCcw className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => viewerRef.current?.zoomStep('out')}
+              aria-label={isSw ? 'Punguza' : 'Zoom out'}
+              title={isSw ? 'Punguza' : 'Zoom out'}
+              className="w-7 h-7 rounded-md flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors"
+            >
+              <ZoomOut className="w-3.5 h-3.5" />
             </button>
           </div>
         </>

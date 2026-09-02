@@ -171,7 +171,12 @@ const pt = (radius: number, y: number) => new THREE.Vector2(radius, y);
  * verified and may need real adjustment once someone can actually look
  * at the rendered model. See MannequinViewer's own header/report notes.
  */
-const buildMannequinBody = (): THREE.Group => {
+// Exported so src/components/body-map/bodyModelAdapter.ts can offer it as
+// the default/fallback BodyModelSource — kept in this file rather than
+// moved, since relocating ~230 lines of already visually-QA-verified
+// geometry code carries real risk of a transcription slip for zero
+// functional benefit; a plain export is enough to make it pluggable.
+export const buildMannequinBody = (): THREE.Group => {
   const group = new THREE.Group();
   const mat = clinicalMaterial();
 
@@ -366,7 +371,12 @@ export class MannequinViewer {
   // Marked (has records): brand blue. Selected: brighter cyan, so the one
   // region the patient is actually looking at is unambiguous against every
   // other marked region, not just a shade darker.
-  private markerColors = { base: 0xffffff, marked: 0x0066cc, selected: 0x18a8d8 };
+  // `base` is what an unmarked region shows on hover only — white read
+  // fine as a glow against the old dark stage, but is nearly invisible
+  // against the light clinical surface/light-gray body used now, so
+  // hover feedback uses the same accent family as marked/selected
+  // (just at much lower opacity) rather than a separate hue.
+  private markerColors = { base: 0x0066cc, marked: 0x0066cc, selected: 0x18a8d8 };
   private hoveredKey: string | null = null;
   private selectedKey: string | null = null;
   private dirty = true;
@@ -379,7 +389,15 @@ export class MannequinViewer {
   private lastPointerDownTime = 0;
   private lastPointerDownPos = { x: 0, y: 0 };
 
-  constructor(container: HTMLElement, callbacks: MannequinCallbacks) {
+  // bodySource: optional async override for where the body geometry comes
+  // from (see src/components/body-map/bodyModelAdapter.ts). Omitted by
+  // every call site today, which is exactly what keeps this a no-op
+  // change — the procedural body still builds and attaches synchronously
+  // in the constructor exactly as before. When a source IS provided (a
+  // configured anatomical GLB), the body attaches once it resolves, and
+  // falls back to the same synchronous procedural body on any failure —
+  // the app never ends up with an empty stage either way.
+  constructor(container: HTMLElement, callbacks: MannequinCallbacks, bodySource?: () => Promise<THREE.Group>) {
     this.container = container;
     this.callbacks = callbacks;
     this.lowPower = window.innerWidth < 640 || (navigator.hardwareConcurrency ?? 8) < 4;
@@ -422,8 +440,24 @@ export class MannequinViewer {
     fill.position.set(-2, 1.2, -1.5);
     this.scene.add(fill);
 
-    const body = buildMannequinBody();
-    this.scene.add(body);
+    if (bodySource) {
+      bodySource()
+        .then((body) => {
+          if (this.disposed) return;
+          this.scene.add(body);
+          this.dirty = true;
+        })
+        .catch(() => {
+          // The configured source (a GLB URL) failed to load or
+          // normalize — fall back to the same procedural body every
+          // other path uses, rather than leaving an empty stage.
+          if (this.disposed) return;
+          this.scene.add(buildMannequinBody());
+          this.dirty = true;
+        });
+    } else {
+      this.scene.add(buildMannequinBody());
+    }
 
     if (!this.lowPower) {
       const floor = new THREE.Mesh(
