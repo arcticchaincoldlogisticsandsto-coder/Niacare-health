@@ -34,38 +34,46 @@ export interface Hotspot3D {
 export const HOTSPOTS_3D_FRONT: Hotspot3D[] = [
   { key: 'head', position: [0, 1.66, 0.02], radius: 0.115 },
   { key: 'neck', position: [0, 1.535, 0.05], radius: 0.05 },
-  { key: 'chest', position: [0, 1.42, 0.155], radius: 0.14 },
-  { key: 'heart', position: [-0.06, 1.42, 0.17], radius: 0.055 },
-  { key: 'lungs', side: 'left', position: [-0.11, 1.44, 0.14], radius: 0.06 },
-  { key: 'lungs', side: 'right', position: [0.11, 1.44, 0.14], radius: 0.06 },
-  { key: 'abdomen', position: [0, 1.16, 0.15], radius: 0.13 },
-  // Limb marker x/y below are computed from the new arm/leg lathe
-  // profiles in bodyMap3d.ts's buildMannequinBody() (including the arm's
-  // outward-lean rotation about the shoulder pivot), not carried over
-  // from the old capsule-chain geometry — see that function's header
-  // comment for the derivation.
-  { key: 'shoulder', side: 'left', position: [-0.09, 1.495, 0.03], radius: 0.06 },
-  { key: 'shoulder', side: 'right', position: [0.09, 1.495, 0.03], radius: 0.06 },
-  { key: 'arm', side: 'left', position: [-0.112, 1.337, 0.02], radius: 0.05 },
-  { key: 'arm', side: 'right', position: [0.112, 1.337, 0.02], radius: 0.05 },
-  { key: 'elbow', side: 'left', position: [-0.133, 1.193, 0.01], radius: 0.042 },
-  { key: 'elbow', side: 'right', position: [0.133, 1.193, 0.01], radius: 0.042 },
-  { key: 'wrist', side: 'left', position: [-0.169, 0.935, 0], radius: 0.03 },
-  { key: 'wrist', side: 'right', position: [0.169, 0.935, 0], radius: 0.03 },
-  { key: 'hand', side: 'left', position: [-0.179, 0.866, 0.01], radius: 0.038 },
-  { key: 'hand', side: 'right', position: [0.179, 0.866, 0.01], radius: 0.038 },
-  { key: 'hip', side: 'left', position: [-0.09, 0.9, 0.09], radius: 0.07 },
-  { key: 'hip', side: 'right', position: [0.09, 0.9, 0.09], radius: 0.07 },
-  { key: 'thigh', side: 'left', position: [-0.09, 0.7, 0.05], radius: 0.065 },
-  { key: 'thigh', side: 'right', position: [0.09, 0.7, 0.05], radius: 0.065 },
-  { key: 'knee', side: 'left', position: [-0.09, 0.5, 0.06], radius: 0.052 },
-  { key: 'knee', side: 'right', position: [0.09, 0.5, 0.06], radius: 0.052 },
-  { key: 'leg', side: 'left', position: [-0.09, 0.35, 0.02], radius: 0.045 },
-  { key: 'leg', side: 'right', position: [0.09, 0.35, 0.02], radius: 0.045 },
-  { key: 'ankle', side: 'left', position: [-0.09, 0.085, 0.02], radius: 0.032 },
-  { key: 'ankle', side: 'right', position: [0.09, 0.085, 0.02], radius: 0.032 },
-  { key: 'foot', side: 'left', position: [-0.09, 0.045, 0.08], radius: 0.045 },
-  { key: 'foot', side: 'right', position: [0.09, 0.045, 0.08], radius: 0.045 },
+  // RENDERED QA FINDING: every marker radius below was originally a
+  // leftover from the old capsule-chain geometry's own proportions and
+  // was never re-checked against the new lathe body's actual surface
+  // width — 'chest'/'abdomen'/'back' at 0.13-0.16 were as large as or
+  // LARGER than the torso itself, rendering as a giant disc covering
+  // most of the upper body rather than a localized highlight. All
+  // shrunk to roughly a quarter to a third of the local body radius.
+  { key: 'chest', position: [0, 1.42, 0.155], radius: 0.05 },
+  { key: 'heart', position: [-0.06, 1.42, 0.17], radius: 0.035 },
+  { key: 'lungs', side: 'left', position: [-0.11, 1.44, 0.14], radius: 0.04 },
+  { key: 'lungs', side: 'right', position: [0.11, 1.44, 0.14], radius: 0.04 },
+  { key: 'abdomen', position: [0, 1.16, 0.15], radius: 0.05 },
+  // Limb marker x/y below are computed from the arm/leg lathe profiles in
+  // bodyMap3d.ts's buildMannequinBody(), including the arm's shoulder
+  // pivot/lean — see that function's header comment (and its "RENDERED QA
+  // FINDING" note on the shoulder width) for the derivation. Radii are
+  // also shrunk from the first pass for the same reason as the torso
+  // markers above — sized to the actual (fairly slim) limb thickness.
+  { key: 'shoulder', side: 'left', position: [-0.17, 1.47, 0.04], radius: 0.05 },
+  { key: 'shoulder', side: 'right', position: [0.17, 1.47, 0.04], radius: 0.05 },
+  { key: 'arm', side: 'left', position: [-0.192, 1.312, 0.02], radius: 0.04 },
+  { key: 'arm', side: 'right', position: [0.192, 1.312, 0.02], radius: 0.04 },
+  { key: 'elbow', side: 'left', position: [-0.213, 1.168, 0.01], radius: 0.032 },
+  { key: 'elbow', side: 'right', position: [0.213, 1.168, 0.01], radius: 0.032 },
+  { key: 'wrist', side: 'left', position: [-0.249, 0.911, 0], radius: 0.024 },
+  { key: 'wrist', side: 'right', position: [0.249, 0.911, 0], radius: 0.024 },
+  { key: 'hand', side: 'left', position: [-0.256, 0.861, 0.01], radius: 0.03 },
+  { key: 'hand', side: 'right', position: [0.256, 0.861, 0.01], radius: 0.03 },
+  { key: 'hip', side: 'left', position: [-0.09, 0.9, 0.09], radius: 0.045 },
+  { key: 'hip', side: 'right', position: [0.09, 0.9, 0.09], radius: 0.045 },
+  { key: 'thigh', side: 'left', position: [-0.09, 0.7, 0.05], radius: 0.04 },
+  { key: 'thigh', side: 'right', position: [0.09, 0.7, 0.05], radius: 0.04 },
+  { key: 'knee', side: 'left', position: [-0.09, 0.5, 0.06], radius: 0.032 },
+  { key: 'knee', side: 'right', position: [0.09, 0.5, 0.06], radius: 0.032 },
+  { key: 'leg', side: 'left', position: [-0.09, 0.35, 0.02], radius: 0.03 },
+  { key: 'leg', side: 'right', position: [0.09, 0.35, 0.02], radius: 0.03 },
+  { key: 'ankle', side: 'left', position: [-0.09, 0.085, 0.02], radius: 0.022 },
+  { key: 'ankle', side: 'right', position: [0.09, 0.085, 0.02], radius: 0.022 },
+  { key: 'foot', side: 'left', position: [-0.09, 0.075, 0.08], radius: 0.032 },
+  { key: 'foot', side: 'right', position: [0.09, 0.075, 0.08], radius: 0.032 },
 ];
 
 // Back-facing hotspots — same limb keys mirrored onto the rear surface
@@ -74,30 +82,30 @@ export const HOTSPOTS_3D_FRONT: Hotspot3D[] = [
 export const HOTSPOTS_3D_BACK: Hotspot3D[] = [
   { key: 'head', position: [0, 1.66, -0.02], radius: 0.115 },
   { key: 'neck', position: [0, 1.535, -0.05], radius: 0.05 },
-  { key: 'back', position: [0, 1.3, -0.155], radius: 0.16 },
-  { key: 'spine', position: [0, 1.25, -0.17], radius: 0.035 },
-  { key: 'shoulder', side: 'left', position: [-0.09, 1.495, -0.03], radius: 0.06 },
-  { key: 'shoulder', side: 'right', position: [0.09, 1.495, -0.03], radius: 0.06 },
-  { key: 'arm', side: 'left', position: [-0.112, 1.337, -0.02], radius: 0.05 },
-  { key: 'arm', side: 'right', position: [0.112, 1.337, -0.02], radius: 0.05 },
-  { key: 'elbow', side: 'left', position: [-0.133, 1.193, -0.01], radius: 0.042 },
-  { key: 'elbow', side: 'right', position: [0.133, 1.193, -0.01], radius: 0.042 },
-  { key: 'wrist', side: 'left', position: [-0.169, 0.935, 0], radius: 0.03 },
-  { key: 'wrist', side: 'right', position: [0.169, 0.935, 0], radius: 0.03 },
-  { key: 'hand', side: 'left', position: [-0.179, 0.866, -0.01], radius: 0.038 },
-  { key: 'hand', side: 'right', position: [0.179, 0.866, -0.01], radius: 0.038 },
-  { key: 'hip', side: 'left', position: [-0.09, 0.9, -0.09], radius: 0.07 },
-  { key: 'hip', side: 'right', position: [0.09, 0.9, -0.09], radius: 0.07 },
-  { key: 'thigh', side: 'left', position: [-0.09, 0.7, -0.05], radius: 0.065 },
-  { key: 'thigh', side: 'right', position: [0.09, 0.7, -0.05], radius: 0.065 },
-  { key: 'knee', side: 'left', position: [-0.09, 0.5, -0.06], radius: 0.052 },
-  { key: 'knee', side: 'right', position: [0.09, 0.5, -0.06], radius: 0.052 },
-  { key: 'leg', side: 'left', position: [-0.09, 0.35, -0.02], radius: 0.045 },
-  { key: 'leg', side: 'right', position: [0.09, 0.35, -0.02], radius: 0.045 },
-  { key: 'ankle', side: 'left', position: [-0.09, 0.085, -0.02], radius: 0.032 },
-  { key: 'ankle', side: 'right', position: [0.09, 0.085, -0.02], radius: 0.032 },
-  { key: 'foot', side: 'left', position: [-0.09, 0.045, -0.08], radius: 0.045 },
-  { key: 'foot', side: 'right', position: [0.09, 0.045, -0.08], radius: 0.045 },
+  { key: 'back', position: [0, 1.3, -0.155], radius: 0.06 },
+  { key: 'spine', position: [0, 1.25, -0.17], radius: 0.025 },
+  { key: 'shoulder', side: 'left', position: [-0.17, 1.47, -0.04], radius: 0.05 },
+  { key: 'shoulder', side: 'right', position: [0.17, 1.47, -0.04], radius: 0.05 },
+  { key: 'arm', side: 'left', position: [-0.192, 1.312, -0.02], radius: 0.04 },
+  { key: 'arm', side: 'right', position: [0.192, 1.312, -0.02], radius: 0.04 },
+  { key: 'elbow', side: 'left', position: [-0.213, 1.168, -0.01], radius: 0.032 },
+  { key: 'elbow', side: 'right', position: [0.213, 1.168, -0.01], radius: 0.032 },
+  { key: 'wrist', side: 'left', position: [-0.249, 0.911, 0], radius: 0.024 },
+  { key: 'wrist', side: 'right', position: [0.249, 0.911, 0], radius: 0.024 },
+  { key: 'hand', side: 'left', position: [-0.256, 0.861, -0.01], radius: 0.03 },
+  { key: 'hand', side: 'right', position: [0.256, 0.861, -0.01], radius: 0.03 },
+  { key: 'hip', side: 'left', position: [-0.09, 0.9, -0.09], radius: 0.045 },
+  { key: 'hip', side: 'right', position: [0.09, 0.9, -0.09], radius: 0.045 },
+  { key: 'thigh', side: 'left', position: [-0.09, 0.7, -0.05], radius: 0.04 },
+  { key: 'thigh', side: 'right', position: [0.09, 0.7, -0.05], radius: 0.04 },
+  { key: 'knee', side: 'left', position: [-0.09, 0.5, -0.06], radius: 0.032 },
+  { key: 'knee', side: 'right', position: [0.09, 0.5, -0.06], radius: 0.032 },
+  { key: 'leg', side: 'left', position: [-0.09, 0.35, -0.02], radius: 0.03 },
+  { key: 'leg', side: 'right', position: [0.09, 0.35, -0.02], radius: 0.03 },
+  { key: 'ankle', side: 'left', position: [-0.09, 0.085, -0.02], radius: 0.022 },
+  { key: 'ankle', side: 'right', position: [0.09, 0.085, -0.02], radius: 0.022 },
+  { key: 'foot', side: 'left', position: [-0.09, 0.075, -0.08], radius: 0.032 },
+  { key: 'foot', side: 'right', position: [0.09, 0.075, -0.08], radius: 0.032 },
 ];
 
 /** WebGL support check — cheap, synchronous, no context left open. */
@@ -180,6 +188,27 @@ const buildMannequinBody = (): THREE.Group => {
   // Pelvis (widest lower point) -> natural waist (narrowest) -> ribcage
   // -> chest (widest upper point) -> shoulder line -> neck (narrower
   // than the shoulders) -> a near-closed cap the head sphere overlaps.
+  // The pelvis-floor (0.83->0.87) and the very top cap (1.6->1.615) are
+  // both steep, but neither is a visual risk: the former sits right where
+  // the legs' hip attachment (embedded, radius 0.085, centered y=0.9)
+  // covers it, and the latter is fully inside the head sphere (bottom
+  // surface at y~1.547, well past 1.615). The shoulder-to-neck taper
+  // (1.39 -> 1.535) is genuinely visible and unoccluded, so it's built
+  // from more, smaller steps with a gradually INCREASING slope
+  // (~11 -> 19 -> 31 -> 45 -> 53 -> 57 degrees) rather than one jump from
+  // a ~13 degree chest taper straight into a ~55 degree collar — a sudden
+  // slope change between adjacent rows is what reads as a crease on a
+  // lathe surface, not the raw steepness of any one row by itself.
+  // RENDERED QA FINDING (first real screenshot, not just profile math):
+  // with the shoulder line NARROWER than the chest and the arm pivot
+  // tucked in close (x=0.09) to guarantee a seamless join, the arm never
+  // actually separated from the torso's own silhouette — two convex
+  // shapes with no concavity between them just read as "one slightly
+  // wider torso," not "a torso plus an arm." Real shoulders are closer to
+  // the WIDEST point of the upper torso (deltoid), wider than the chest
+  // below them — that width difference is what creates the armpit
+  // concavity an arm needs to read as a separate limb. Shoulder line
+  // widened accordingly; the arm pivot below was moved out to match.
   const torsoProfile = [
     pt(0.02, 0.83),
     pt(0.115, 0.87),
@@ -189,13 +218,21 @@ const buildMannequinBody = (): THREE.Group => {
     pt(0.115, 1.19),
     pt(0.14, 1.3),
     pt(0.148, 1.39),
-    pt(0.132, 1.46),
-    pt(0.11, 1.495),
+    pt(0.165, 1.42),
+    pt(0.185, 1.45),
+    pt(0.19, 1.47),
+    pt(0.15, 1.49),
+    pt(0.1, 1.505),
+    pt(0.07, 1.52),
     pt(0.052, 1.535),
     pt(0.049, 1.6),
     pt(0.008, 1.615),
   ];
-  addMesh(new THREE.LatheGeometry(torsoProfile, 20), 0, 0);
+  // RENDERED QA FINDING: 20 radial segments showed a faint faceted seam
+  // at oblique (three-quarter) viewing angles, most visible around the
+  // shoulder-to-neck curve where the profile changes fastest. Raised to
+  // 32 — still a trivial polygon count for a mesh this size.
+  addMesh(new THREE.LatheGeometry(torsoProfile, 32), 0, 0);
 
   // ---- Head: a restrained oval, not a perfect ball or a face -------
   const head = addMesh(new THREE.SphereGeometry(0.105, 20, 16), 0, 1.665);
@@ -219,26 +256,30 @@ const buildMannequinBody = (): THREE.Group => {
     pt(0.03, -0.565),
     pt(0.01, -0.58),
   ];
+  // RENDERED QA FINDING: the calf bulge here was originally only 2mm
+  // (0.05 -> 0.052), imperceptible in the screenshot — the whole lower
+  // leg read as one long taper to a point rather than a calf-into-ankle
+  // shape. Widened the bulge and kept the ankle from thinning as much.
   const legProfile = [
     pt(0.085, 0),
     pt(0.08, -0.05),
     pt(0.068, -0.2),
     pt(0.058, -0.36),
     pt(0.05, -0.4),
-    pt(0.052, -0.43),
-    pt(0.045, -0.55),
-    pt(0.036, -0.68),
-    pt(0.03, -0.79),
-    pt(0.026, -0.815),
+    pt(0.06, -0.43),
+    pt(0.05, -0.55),
+    pt(0.04, -0.68),
+    pt(0.034, -0.79),
+    pt(0.03, -0.815),
     pt(0.01, -0.83),
   ];
   const ARM_LEAN = 0.14; // radians, outward lean from vertical
 
   for (const s of [-1, 1] as const) {
     const arm = new THREE.Group();
-    arm.position.set(0.09 * s, 1.495, 0.02);
+    arm.position.set(0.17 * s, 1.47, 0.02);
     arm.rotation.z = ARM_LEAN * s;
-    const armMesh = new THREE.Mesh(new THREE.LatheGeometry(armProfile, 12), mat);
+    const armMesh = new THREE.Mesh(new THREE.LatheGeometry(armProfile, 18), mat);
     armMesh.castShadow = true;
     armMesh.receiveShadow = true;
     arm.add(armMesh);
@@ -248,7 +289,11 @@ const buildMannequinBody = (): THREE.Group => {
     // the wrist end with enough overlap to hide that seam too.
     const hand = new THREE.Mesh(new THREE.CapsuleGeometry(0.026, 0.05, 4, 10), mat);
     hand.scale.set(1, 1, 0.55);
-    hand.position.set(0, -0.628, 0);
+    // y=-0.615 (not tight to the -0.58 wrist cap) gives roughly 16mm of
+    // real overlap into the arm lathe's end, not the ~3mm the first pass
+    // had — a margin this thin is asking for a visible gap I have no way
+    // to catch without rendering it.
+    hand.position.set(0, -0.615, 0);
     hand.castShadow = true;
     hand.receiveShadow = true;
     arm.add(hand);
@@ -256,25 +301,39 @@ const buildMannequinBody = (): THREE.Group => {
 
     const leg = new THREE.Group();
     leg.position.set(0.09 * s, 0.9, 0.06);
-    const legMesh = new THREE.Mesh(new THREE.LatheGeometry(legProfile, 12), mat);
+    const legMesh = new THREE.Mesh(new THREE.LatheGeometry(legProfile, 18), mat);
     legMesh.castShadow = true;
     legMesh.receiveShadow = true;
     leg.add(legMesh);
-    // Foot: a flattened, elongated capsule for the midfoot/forefoot
-    // (rotated so its long axis runs front-to-back, not vertically),
+    // Foot: a flattened, elongated capsule for the midfoot/forefoot,
     // plus a small heel bump behind it — heel, midfoot, and forefoot as
     // three blended forms rather than one box or sphere standing in for
     // the whole foot.
+    //
+    // Three.js composes a mesh's local matrix as position * rotation *
+    // scale, i.e. scale is applied in the geometry's OWN unrotated frame
+    // first, then rotated. This capsule's native axis is Y (length) with
+    // a circular X/Z cross-section (radius 0.03); rotation.x=90 degrees
+    // then remaps that already-scaled shape as (x,y,z) -> (x,-z,y). So to
+    // land on a target of roughly 0.05 wide (X) x 0.036 tall (Y) x 0.16
+    // long front-to-back (Z) in the FINAL, rotated orientation, the scale
+    // has to be chosen in the PRE-rotation frame: scale.x drives final
+    // width directly (unaffected by this rotation), scale.z drives final
+    // height (it becomes -Y after rotating), and scale.y drives final
+    // length (it becomes Z after rotating) — not the more intuitive
+    // "scale.z for depth" a non-rotated mesh would use. Getting this
+    // backwards was the actual cause of the first pass's foot looking
+    // more like a squat blob than a flat elongated foot.
     const foot = new THREE.Mesh(new THREE.CapsuleGeometry(0.03, 0.12, 4, 10), mat);
     foot.rotation.x = Math.PI / 2;
-    foot.scale.set(0.9, 0.5, 1);
-    foot.position.set(0, -0.845, 0.05);
+    foot.scale.set(0.85, 0.9, 0.6);
+    foot.position.set(0, -0.825, 0.05);
     foot.castShadow = true;
     foot.receiveShadow = true;
     leg.add(foot);
     const heel = new THREE.Mesh(new THREE.SphereGeometry(0.028, 12, 10), mat);
     heel.scale.set(1, 0.7, 0.85);
-    heel.position.set(0, -0.845, -0.045);
+    heel.position.set(0, -0.828, -0.045);
     heel.castShadow = true;
     heel.receiveShadow = true;
     leg.add(heel);
