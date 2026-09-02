@@ -1,5 +1,10 @@
 import { supabase } from './supabaseClient';
 
+// Shared by BodyMapModal, Mannequin3DView, and HealthJourneyModal's deep
+// link into the map — one canonical way to identify a region+side so all
+// three agree on what "the same region" means.
+export const bodyMapRegionKey = (region: string, side: string | null | undefined) => `${region}:${side || 'none'}`;
+
 export interface BodyMapEntry {
   id: string;
   kind: 'diagnosis' | 'imaging';

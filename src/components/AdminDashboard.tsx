@@ -392,19 +392,19 @@ const DashboardPanel: React.FC<{ isSw: boolean; profiles: Profile[]; metrics: Me
   const doctors = profiles.filter((p) => p.role === 'doctor').length;
 
   const overviewStats = [
-    { label: isSw ? 'Watumiaji' : 'Users', value: profiles.length, Icon: Users, accent: 'bg-primary' },
-    { label: isSw ? 'Wagonjwa' : 'Patients', value: patients, Icon: Users, accent: 'bg-primary' },
-    { label: isSw ? 'Madaktari' : 'Doctors', value: doctors, Icon: Stethoscope, accent: 'bg-primary' },
-    { label: isSw ? 'Madaktari Waliothibitishwa' : 'Verified Doctors', value: metrics.verifiedDoctors, Icon: ShieldCheck, accent: 'bg-primary' },
-    { label: isSw ? 'Madaktari Hai' : 'Active Doctors', value: metrics.activeDoctors, Icon: Stethoscope, accent: 'bg-primary' },
-    { label: isSw ? 'Vituo (Hai/Jumla)' : 'Facilities (Active/Total)', value: `${metrics.activeProviders}/${metrics.providers}`, Icon: Building2, accent: 'bg-emerald-500' },
-    { label: isSw ? 'Miadi ya Leo' : "Today's Appointments", value: metrics.todayAppointments, Icon: CalendarDays, accent: 'bg-amber-500' },
-    { label: isSw ? 'Miadi Jumla' : 'Total Appointments', value: metrics.appointments, Icon: CalendarDays, accent: 'bg-amber-500' },
-    { label: isSw ? 'Ziara Zilizokamilika' : 'Completed Visits', value: metrics.completedAppointments, Icon: CalendarDays, accent: 'bg-emerald-500' },
-    { label: isSw ? 'Miadi Iliyoghairiwa' : 'Cancelled Appointments', value: metrics.cancelledAppointments, Icon: CalendarDays, accent: 'bg-rose-500' },
-    { label: isSw ? 'Mapato' : 'Revenue', value: `${billTotals.revenue.toLocaleString()} TZS`, Icon: DollarSign, accent: 'bg-emerald-600' },
-    { label: isSw ? 'Inasubiri' : 'Pending Payments', value: `${billTotals.pending.toLocaleString()} TZS`, Icon: CreditCard, accent: 'bg-amber-600' },
-    { label: isSw ? 'Simu za Dharura' : 'Emergency Calls', value: metrics.dispatches, Icon: Siren, accent: 'bg-rose-500' },
+    { label: isSw ? 'Watumiaji' : 'Users', value: profiles.length, Icon: Users },
+    { label: isSw ? 'Wagonjwa' : 'Patients', value: patients, Icon: Users },
+    { label: isSw ? 'Madaktari' : 'Doctors', value: doctors, Icon: Stethoscope },
+    { label: isSw ? 'Madaktari Waliothibitishwa' : 'Verified Doctors', value: metrics.verifiedDoctors, Icon: ShieldCheck },
+    { label: isSw ? 'Madaktari Hai' : 'Active Doctors', value: metrics.activeDoctors, Icon: Stethoscope },
+    { label: isSw ? 'Vituo (Hai/Jumla)' : 'Facilities (Active/Total)', value: `${metrics.activeProviders}/${metrics.providers}`, Icon: Building2 },
+    { label: isSw ? 'Miadi ya Leo' : "Today's Appointments", value: metrics.todayAppointments, Icon: CalendarDays },
+    { label: isSw ? 'Miadi Jumla' : 'Total Appointments', value: metrics.appointments, Icon: CalendarDays },
+    { label: isSw ? 'Ziara Zilizokamilika' : 'Completed Visits', value: metrics.completedAppointments, Icon: CalendarDays },
+    { label: isSw ? 'Miadi Iliyoghairiwa' : 'Cancelled Appointments', value: metrics.cancelledAppointments, Icon: CalendarDays },
+    { label: isSw ? 'Mapato' : 'Revenue', value: `${billTotals.revenue.toLocaleString()} TZS`, Icon: DollarSign },
+    { label: isSw ? 'Inasubiri' : 'Pending Payments', value: `${billTotals.pending.toLocaleString()} TZS`, Icon: CreditCard },
+    { label: isSw ? 'Simu za Dharura' : 'Emergency Calls', value: metrics.dispatches, Icon: Siren },
   ];
 
   const patientGrowth = last6Months().map((m) => ({
@@ -419,16 +419,21 @@ const DashboardPanel: React.FC<{ isSw: boolean; profiles: Profile[]; metrics: Me
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {overviewStats.map(({ label, value, Icon, accent }) => (
-          <div key={label} className={`flex items-center gap-3 p-4 ${cardCls}`} style={{ backgroundColor: 'var(--nc-surface)' }}>
-            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${accent}`}>
-              <Icon className="h-5 w-5 text-white" />
+      {/* Compact metric blocks — typography and spacing carry the hierarchy,
+          not a colored icon square per tile. gap-px + a shared background
+          renders as hairline separators between blocks, one bordered panel
+          overall rather than N floating rounded boxes. */}
+      <div
+        className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-px overflow-hidden rounded-xl border nc-border"
+        style={{ backgroundColor: 'var(--nc-border)' }}
+      >
+        {overviewStats.map(({ label, value, Icon }) => (
+          <div key={label} className="p-3.5" style={{ backgroundColor: 'var(--nc-surface)' }}>
+            <div className="flex items-center gap-1.5 mb-1 nc-text-muted">
+              <Icon className="h-3.5 w-3.5 flex-shrink-0" />
+              <p className="truncate text-[10px] font-semibold uppercase tracking-wide">{label}</p>
             </div>
-            <div className="min-w-0">
-              <p className="truncate text-xl font-semibold leading-none">{loading ? '—' : value}</p>
-              <p className="mt-1 text-[11px] font-semibold nc-text-muted">{label}</p>
-            </div>
+            <p className="truncate text-xl font-semibold leading-none">{loading ? '—' : value}</p>
           </div>
         ))}
       </div>

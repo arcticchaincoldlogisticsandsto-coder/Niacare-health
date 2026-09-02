@@ -20,6 +20,9 @@ export interface HealthJourneyEntry {
   labInterpretation?: 'normal' | 'abnormal' | 'critical';
   /** providers.id — set for encounter/referral/lab entries (all have a real provider_id column). Never set for imaging: medical_records has no provider FK, only free-text hospital_name. */
   facilityId?: string;
+  /** Set only when the underlying record actually carries an anatomical tag — imaging's own body_region, or (for encounters) the first tagged diagnosis from that visit. Never inferred or defaulted; most entries have none, which is correct. Pass to bodyMapRegionKey() for a Body Map deep link. */
+  bodyRegion?: string;
+  bodySide?: 'left' | 'right' | 'bilateral' | 'midline' | null;
 }
 
 interface EncounterRow {
@@ -39,6 +42,7 @@ interface ImagingRecordRow {
   doctor_name: string;
   record_date: string;
   body_region: string | null;
+  body_side: 'left' | 'right' | 'bilateral' | 'midline' | null;
 }
 
 // A patient's own chronological healthcare timeline — every encounter they
@@ -57,7 +61,7 @@ export const fetchHealthJourney = async (
       .eq('patient_id', patientId)
       .order('started_at', { ascending: false })
       .limit(30),
-    supabase.from('diagnoses').select('encounter_id, diagnosis').eq('patient_id', patientId),
+    supabase.from('diagnoses').select('encounter_id, diagnosis, body_region, body_side').eq('patient_id', patientId),
     supabase.from('prescriptions').select('encounter_id, medication_name').eq('patient_id', patientId).not('encounter_id', 'is', null),
     supabase.from('lab_orders').select('encounter_id, test_name').eq('patient_id', patientId).not('encounter_id', 'is', null),
     supabase
@@ -68,7 +72,7 @@ export const fetchHealthJourney = async (
       .limit(20),
     supabase
       .from('medical_records')
-      .select('id, title, hospital_name, doctor_name, record_date, body_region')
+      .select('id, title, hospital_name, doctor_name, record_date, body_region, body_side')
       .eq('patient_id', patientId)
       .eq('category', 'radiology')
       .order('record_date', { ascending: false })
@@ -88,9 +92,17 @@ export const fetchHealthJourney = async (
   const imagingRecords = (imagingRes.data || []) as ImagingRecordRow[];
 
   const diagnosesByEncounter = new Map<string, string[]>();
+  // First body-region-tagged diagnosis per encounter, if any — most
+  // diagnoses (e.g. "malaria") carry no region at all, which is correct;
+  // only encounters with a genuinely anatomically-locatable diagnosis get a
+  // Body Map deep link.
+  const bodyRegionByEncounter = new Map<string, { region: string; side: HealthJourneyEntry['bodySide'] }>();
   for (const d of diagnosesRes.data || []) {
     if (!d.encounter_id) continue;
     diagnosesByEncounter.set(d.encounter_id, [...(diagnosesByEncounter.get(d.encounter_id) || []), d.diagnosis]);
+    if (d.body_region && !bodyRegionByEncounter.has(d.encounter_id)) {
+      bodyRegionByEncounter.set(d.encounter_id, { region: d.body_region, side: d.body_side });
+    }
   }
   const hasPrescriptionByEncounter = new Set((prescriptionsRes.data || []).map((p) => p.encounter_id as string));
   const hasLabByEncounter = new Set((labOrdersRes.data || []).map((l) => l.encounter_id as string));
@@ -140,6 +152,7 @@ export const fetchHealthJourney = async (
     const subItems = [...(diagnosesByEncounter.get(e.id) || [])];
     if (hasPrescriptionByEncounter.has(e.id)) subItems.push('Prescription added');
     if (hasLabByEncounter.has(e.id)) subItems.push('Lab test requested');
+    const bodyTag = bodyRegionByEncounter.get(e.id);
     return {
       id: `encounter-${e.id}`,
       date: e.started_at,
@@ -152,6 +165,8 @@ export const fetchHealthJourney = async (
       specialty,
       subItems,
       followUpNote: e.follow_up_note || undefined,
+      bodyRegion: bodyTag?.region,
+      bodySide: bodyTag?.side,
     };
   });
 
@@ -181,6 +196,8 @@ export const fetchHealthJourney = async (
     specialty: '',
     subItems: r.body_region ? [r.body_region] : [],
     recordId: r.id,
+    bodyRegion: r.body_region || undefined,
+    bodySide: r.body_side,
   }));
 
   const labEntries: HealthJourneyEntry[] = labOrders.map((l) => {

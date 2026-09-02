@@ -1,8 +1,8 @@
 import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import { X, PersonStanding, Scan, Stethoscope, Box, Squircle, Loader2 } from 'lucide-react';
 import { Language } from '../types';
-import { fetchBodyMapEntries, BodyMapEntry } from '../lib/bodyMap';
-import { BODY_REGIONS, bodyRegionLabel } from '../data/bodyRegions';
+import { fetchBodyMapEntries, bodyMapRegionKey, BodyMapEntry } from '../lib/bodyMap';
+import { descriptiveRegionLabel } from '../data/bodyRegionHierarchy';
 import { withTimeout } from '../lib/useNetworkStatus';
 
 // Lazily loaded — see Mannequin3DView.tsx's own header comment. This keeps
@@ -16,6 +16,12 @@ interface BodyMapModalProps {
   patientId: string | null;
   language: Language;
   onViewHealthJourney?: () => void;
+  /** Deep-link from a Health Journey entry — e.g. "knee:left" — pre-selects
+   * that region as soon as the modal opens instead of landing on the blank
+   * default state. Optimistic: set immediately, not held back until entries
+   * finish loading — if it turns out to have no records, the existing empty
+   * state ("No records are linked to this body area yet") covers it. */
+  initialRegionKey?: string | null;
 }
 
 // 2D fallback hotspots — used when WebGL is unavailable, the 3D viewer
@@ -83,9 +89,7 @@ const BACK_HOTSPOTS: typeof HOTSPOTS = [
   { key: 'foot', side: 'right', shape: 'circle', x: 115, y: 332, r: 9 },
 ];
 
-const regionKey = (region: string, side: string | null) => `${region}:${side || 'none'}`;
-
-export const BodyMapModal: React.FC<BodyMapModalProps> = ({ isOpen, onClose, patientId, language, onViewHealthJourney }) => {
+export const BodyMapModal: React.FC<BodyMapModalProps> = ({ isOpen, onClose, patientId, language, onViewHealthJourney, initialRegionKey }) => {
   const isSw = language === 'sw';
   const [entries, setEntries] = useState<BodyMapEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -100,7 +104,14 @@ export const BodyMapModal: React.FC<BodyMapModalProps> = ({ isOpen, onClose, pat
   const [viewer3dStatus, setViewer3dStatus] = useState<'checking' | 'ready' | 'unavailable'>('checking');
 
   useEffect(() => {
-    if (!isOpen) { setSelectedKey(null); setView('front'); setViewMode('3d'); setViewer3dStatus('checking'); }
+    if (!isOpen) { setSelectedKey(null); setView('front'); setViewMode('3d'); setViewer3dStatus('checking'); return; }
+    setSelectedKey(initialRegionKey || null);
+    // Regions that only exist on the back silhouette — everything else
+    // (shoulders, limbs, etc.) is reachable from either facing, so 'front'
+    // stays the default there.
+    const region = initialRegionKey?.split(':')[0];
+    setView(region === 'back' || region === 'spine' ? 'back' : 'front');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   useEffect(() => {
@@ -122,7 +133,7 @@ export const BodyMapModal: React.FC<BodyMapModalProps> = ({ isOpen, onClose, pat
   const entriesByRegion = useMemo(() => {
     const map = new Map<string, BodyMapEntry[]>();
     for (const e of entries) {
-      const k = regionKey(e.bodyRegion, e.bodySide);
+      const k = bodyMapRegionKey(e.bodyRegion, e.bodySide);
       map.set(k, [...(map.get(k) || []), e]);
     }
     return map;
@@ -132,6 +143,11 @@ export const BodyMapModal: React.FC<BodyMapModalProps> = ({ isOpen, onClose, pat
 
   const activeEntries = selectedKey ? entriesByRegion.get(selectedKey) || [] : [];
   const markedKeys = new Set(entriesByRegion.keys());
+  // Record COUNT per region, not just presence — feeds the 3D viewer's
+  // "health activity" gradation (1 record vs. 2+ gets a marginally
+  // stronger highlight; see setMarkedKeys in bodyMap3d.ts). Never a
+  // severity signal, purely how many records are tagged there.
+  const markedCounts = new Map<string, number>([...entriesByRegion].map(([k, v]) => [k, v.length]));
   const activeHotspots = view === 'front' ? HOTSPOTS : BACK_HOTSPOTS;
   const activeHotspotKeys = new Set(activeHotspots.map((h) => h.key));
   const offSilhouetteKeys = [...markedKeys].filter((k) => !activeHotspotKeys.has(k.split(':')[0]));
@@ -144,7 +160,7 @@ export const BodyMapModal: React.FC<BodyMapModalProps> = ({ isOpen, onClose, pat
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="nc-card w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="nc-card w-full max-w-lg lg:max-w-3xl max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
         <div className="p-5 flex items-center justify-between bg-primary text-white flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center">
@@ -170,6 +186,13 @@ export const BodyMapModal: React.FC<BodyMapModalProps> = ({ isOpen, onClose, pat
             </div>
           )}
 
+          {/* Desktop (lg+): viewer dominant on the left, a real side panel
+              on the right (Phase 18). Mobile: the same content stacks in
+              document order — the side panel becomes the last section on
+              the page, reading like a bottom sheet without a second
+              overlay system. */}
+          <div className="lg:grid lg:grid-cols-[1fr_300px] lg:gap-5 lg:items-start">
+          <div>
           <div className="flex items-center justify-between gap-2 mb-3">
             <div className="flex gap-1.5">
               {(['front', 'back'] as const).map((v) => (
@@ -206,13 +229,13 @@ export const BodyMapModal: React.FC<BodyMapModalProps> = ({ isOpen, onClose, pat
             <Suspense
               fallback={
                 <div className="flex items-center justify-center gap-1.5 text-slate-400 py-24">
-                  <Loader2 className="w-4 h-4 animate-spin" /> {isSw ? 'Inapakia muundo...' : 'Loading body model…'}
+                  <Loader2 className="w-4 h-4 animate-spin" /> {isSw ? 'Inapakia Ramani ya Afya...' : 'Loading Health Map…'}
                 </div>
               }
             >
               <Mannequin3DView
                 view={view}
-                markedKeys={markedKeys}
+                markedCounts={markedCounts}
                 selectedKey={selectedKey}
                 onSelectKey={setSelectedKey}
                 onStatus={setViewer3dStatus}
@@ -248,7 +271,7 @@ export const BodyMapModal: React.FC<BodyMapModalProps> = ({ isOpen, onClose, pat
                 )}
 
                 {activeHotspots.map((h) => {
-                  const key = regionKey(h.key, h.side || null);
+                  const key = bodyMapRegionKey(h.key, h.side || null);
                   const marked = markedKeys.has(key);
                   const isSelected = selectedKey === key;
                   const fill = isSelected
@@ -257,7 +280,7 @@ export const BodyMapModal: React.FC<BodyMapModalProps> = ({ isOpen, onClose, pat
                     ? 'color-mix(in srgb, var(--nc-primary) 30%, transparent)'
                     : 'transparent';
                   const stroke = isSelected || marked ? 'var(--nc-primary)' : 'transparent';
-                  const label = `${bodyRegionLabel(h.key, isSw)}${h.side ? ` (${h.side})` : ''}`;
+                  const label = descriptiveRegionLabel(h.key, h.side || null, isSw);
                   const activate = () => setSelectedKey(marked ? key : null);
                   const a11yProps = {
                     role: 'button' as const,
@@ -324,7 +347,7 @@ export const BodyMapModal: React.FC<BodyMapModalProps> = ({ isOpen, onClose, pat
               3D canvas (or, in 2D mode, a supplement for regions not on the
               current silhouette). */}
           {allMarkedKeys.length > 0 && (
-            <div role="group" aria-label={isSw ? 'Chagua Eneo la Mwili' : 'Select Body Area'} className="flex flex-wrap gap-1.5 justify-center mb-3">
+            <div role="group" aria-label={isSw ? 'Chagua Eneo la Mwili' : 'Select Body Area'} className="flex flex-wrap gap-1.5 justify-center lg:justify-start mb-3">
               {(viewMode === '3d' ? allMarkedKeys : offSilhouetteKeys).map((k) => {
                 const [region, side] = k.split(':');
                 return (
@@ -339,56 +362,70 @@ export const BodyMapModal: React.FC<BodyMapModalProps> = ({ isOpen, onClose, pat
                         : 'bg-primary/10 text-primary dark:text-primary-light'
                     }`}
                   >
-                    {bodyRegionLabel(region, isSw)}{side !== 'none' ? ` (${side})` : ''}
+                    {descriptiveRegionLabel(region, side, isSw)}
                   </button>
                 );
               })}
             </div>
           )}
+          </div>
 
-          {selectedKey && (
-            <div className="space-y-2 border-t nc-border pt-3">
-              <div>
-                <p className="font-semibold text-slate-900 dark:text-white">
-                  {bodyRegionLabel(selectedKey.split(':')[0], isSw)}
-                  {selectedKey.split(':')[1] !== 'none' ? ` (${selectedKey.split(':')[1]})` : ''}
-                </p>
-                <p className="text-slate-400">
-                  {activeEntries.length} {isSw ? 'rekodi zinazohusiana' : activeEntries.length === 1 ? 'related record' : 'related records'}
-                </p>
-              </div>
-              {activeEntries.length === 0 ? (
-                <p className="text-slate-500 dark:text-slate-400 rounded-xl border border-slate-100 dark:border-slate-800 p-3">
-                  {isSw
-                    ? 'Hakuna rekodi zilizounganishwa na eneo hili bado.'
-                    : 'No records are linked to this body area yet. This does not mean there is no medical condition.'}
-                </p>
-              ) : (
-                activeEntries.map((e) => (
-                  <div key={e.id} className="rounded-xl border border-slate-100 dark:border-slate-800 p-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="font-semibold text-slate-900 dark:text-white">{e.diagnosis}</p>
-                      <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-semibold flex-shrink-0 ${e.kind === 'imaging' ? 'bg-primary/10 text-primary dark:text-primary-light' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}`}>
-                        {e.kind === 'imaging' ? <Scan className="w-3 h-3" /> : <Stethoscope className="w-3 h-3" />}
-                        {e.kind === 'imaging' ? (isSw ? 'Picha' : 'Imaging') : (isSw ? 'Utambuzi' : 'Diagnosis')}
-                      </span>
+          {/* Right column on desktop (a real side panel); on mobile this
+              is simply the next section down the page — the closest
+              practical equivalent of a bottom sheet without adding a
+              second overlay/portal system for one screen. */}
+          <div className="mt-4 lg:mt-0">
+            {selectedKey ? (
+              <div className="space-y-2 border-t nc-border pt-3 lg:border lg:rounded-xl lg:p-3.5 lg:pt-3.5">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                    {isSw ? 'Shughuli za Afya' : 'Health Activity'}
+                  </p>
+                  <p className="font-semibold text-slate-900 dark:text-white">
+                    {descriptiveRegionLabel(selectedKey.split(':')[0], selectedKey.split(':')[1], isSw)}
+                  </p>
+                  <p className="text-slate-400">
+                    {activeEntries.length} {isSw ? 'rekodi' : activeEntries.length === 1 ? 'record' : 'records'}
+                  </p>
+                </div>
+                {activeEntries.length === 0 ? (
+                  <p className="text-slate-500 dark:text-slate-400 rounded-xl border border-slate-100 dark:border-slate-800 p-3">
+                    {isSw
+                      ? 'Hakuna rekodi zilizounganishwa na eneo hili bado.'
+                      : 'No records are linked to this body area yet. This does not mean there is no medical condition.'}
+                  </p>
+                ) : (
+                  activeEntries.map((e) => (
+                    <div key={e.id} className="rounded-xl border border-slate-100 dark:border-slate-800 p-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="font-semibold text-slate-900 dark:text-white">{e.diagnosis}</p>
+                        <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-semibold flex-shrink-0 ${e.kind === 'imaging' ? 'bg-primary/10 text-primary dark:text-primary-light' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}`}>
+                          {e.kind === 'imaging' ? <Scan className="w-3 h-3" /> : <Stethoscope className="w-3 h-3" />}
+                          {e.kind === 'imaging' ? (isSw ? 'Picha' : 'Imaging') : (isSw ? 'Utambuzi' : 'Diagnosis')}
+                        </span>
+                      </div>
+                      {e.notes && <p className="text-slate-600 dark:text-slate-300 mt-1">{e.notes}</p>}
+                      <p className="text-slate-400 mt-1">{e.doctorName} • {new Date(e.createdAt).toLocaleDateString()}</p>
                     </div>
-                    {e.notes && <p className="text-slate-600 dark:text-slate-300 mt-1">{e.notes}</p>}
-                    <p className="text-slate-400 mt-1">{e.doctorName} • {new Date(e.createdAt).toLocaleDateString()}</p>
-                  </div>
-                ))
-              )}
-              {onViewHealthJourney && (
-                <button
-                  type="button"
-                  onClick={onViewHealthJourney}
-                  className="w-full rounded-xl bg-primary/10 text-primary dark:text-primary-light px-3 py-2 font-semibold"
-                >
-                  {isSw ? 'Angalia Historia ya Afya' : 'View Health History'}
-                </button>
-              )}
-            </div>
-          )}
+                  ))
+                )}
+                {onViewHealthJourney && (
+                  <button
+                    type="button"
+                    onClick={onViewHealthJourney}
+                    className="w-full rounded-xl bg-primary/10 text-primary dark:text-primary-light px-3 py-2 font-semibold"
+                  >
+                    {isSw ? 'Angalia Historia ya Afya' : 'View Health History'}
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="hidden lg:flex items-center justify-center text-slate-400 text-center border nc-border rounded-xl p-6 h-full min-h-[200px]">
+                {isSw ? 'Chagua eneo la mwili kuona shughuli zake za afya.' : 'Select a body area to view its health activity.'}
+              </div>
+            )}
+          </div>
+          </div>
         </div>
       </div>
     </div>

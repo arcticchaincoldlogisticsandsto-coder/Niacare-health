@@ -123,14 +123,30 @@ interface StatCardProps {
   loading?: boolean;
 }
 
+// Compact metric block — typography carries the hierarchy, not a card
+// border per tile. Meant to sit inside a StatCardGrid wrapper (below),
+// which supplies the shared panel border and hairline separators.
 export const StatCard: React.FC<StatCardProps> = ({ label, value, sub, Icon, colorClass, loading }) => (
-  <div className="nc-card p-3">
-    <div className="flex items-center gap-2 mb-2">
-      <Icon className={`w-4 h-4 ${colorClass || 'text-[var(--nc-primary)] dark:text-primary-light'}`} />
-      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 truncate">{label}</span>
+  <div className="p-3.5" style={{ backgroundColor: 'var(--nc-surface)' }}>
+    <div className={`flex items-center gap-1.5 mb-1 ${colorClass ? colorClass : 'nc-text-muted'}`}>
+      <Icon className="w-3.5 h-3.5 flex-shrink-0" />
+      <span className="truncate text-[10px] font-semibold uppercase tracking-wide">{label}</span>
     </div>
-    <p className="text-2xl font-semibold text-slate-900 dark:text-white">{loading ? '—' : value}</p>
-    {sub && <p className="text-[10px] text-slate-400 mt-0.5">{sub}</p>}
+    <p className="truncate text-xl font-semibold text-slate-900 dark:text-white leading-none">{loading ? '—' : value}</p>
+    {sub && <p className="text-[10px] nc-text-muted mt-1">{sub}</p>}
+  </div>
+);
+
+// One bordered panel with hairline separators between metric blocks —
+// shared by every dashboard's overview row (Admin/Provider currently
+// inline this same gap-px technique directly; StatCardGrid exists so
+// Doctor and any future consumer don't have to repeat it).
+export const StatCardGrid: React.FC<{ children: React.ReactNode; columns?: string }> = ({ children, columns }) => (
+  <div
+    className={`grid ${columns || 'grid-cols-2 sm:grid-cols-4'} gap-px overflow-hidden rounded-xl border nc-border mb-5`}
+    style={{ backgroundColor: 'var(--nc-border)' }}
+  >
+    {children}
   </div>
 );
 

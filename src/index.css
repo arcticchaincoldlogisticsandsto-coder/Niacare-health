@@ -40,6 +40,17 @@
   --nc-text-secondary: #45566E;
   --nc-text-muted: #66758A;
   --nc-placeholder: #9AA8B8;
+
+  /* Radius bands — the one scale every surface in the system draws from.
+     Inputs/buttons stay tight (efficient, clinical); cards get a touch
+     more; large identity surfaces (Health Passport) cap at 14px, never
+     above — a rounder surface than that starts reading as a marketing
+     card instead of a health record. */
+  --nc-radius-input: 0.5rem;     /* 8px */
+  --nc-radius-button: 0.5rem;    /* 8px */
+  --nc-radius-card: 0.75rem;     /* 12px */
+  --nc-radius-surface: 0.875rem; /* 14px — maximum in the system */
+  --nc-radius-pill: 9999px;
 }
 
 .dark {
@@ -91,6 +102,7 @@
   --color-info-subtle: var(--nc-info-subtle);
 
   --color-bg: var(--nc-bg);
+  --color-background: var(--nc-bg);
   --color-surface: var(--nc-surface);
   --color-surface-elevated: var(--nc-surface-elevated);
   --color-border: var(--nc-border);
@@ -98,7 +110,18 @@
   --color-text: var(--nc-text);
   --color-text-secondary: var(--nc-text-secondary);
   --color-text-muted: var(--nc-text-muted);
+  --color-muted: var(--nc-text-muted);
   --color-placeholder: var(--nc-placeholder);
+  /* Secondary accent (teal/cyan) — sparing decorative use only, never a
+     second primary. Same value as --color-primary-light, just named for
+     the role rather than the hue, so intent reads at the call site. */
+  --color-secondary: var(--nc-primary-light);
+
+  --radius-input: var(--nc-radius-input);
+  --radius-button: var(--nc-radius-button);
+  --radius-card: var(--nc-radius-card);
+  --radius-surface: var(--nc-radius-surface);
+  --radius-pill: var(--nc-radius-pill);
 
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
@@ -181,6 +204,87 @@
     background-color: var(--nc-primary-dark);
   }
 
+  .nc-btn-primary:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  /* Shared button system — one definition per role, so components stop
+     hand-rolling background/border color combinations per screen. Moderate
+     radius throughout (rounded-lg = --nc-radius-button, 8px); not every
+     button is filled or pill-shaped, per the button-system brief. */
+  .nc-btn-secondary {
+    @apply rounded-lg font-semibold text-xs transition-all active:scale-[0.98] border;
+    background-color: var(--nc-surface);
+    border-color: var(--nc-border-strong);
+    color: var(--nc-text);
+  }
+  .nc-btn-secondary:hover {
+    border-color: var(--nc-primary);
+    color: var(--nc-primary);
+  }
+  .dark .nc-btn-secondary {
+    background-color: var(--nc-surface-elevated);
+  }
+  .dark .nc-btn-secondary:hover {
+    color: var(--nc-primary-light);
+  }
+
+  .nc-btn-ghost {
+    @apply rounded-lg font-semibold text-xs transition-all active:scale-[0.98];
+    background-color: transparent;
+    color: var(--nc-text-secondary);
+  }
+  .nc-btn-ghost:hover {
+    background-color: color-mix(in srgb, var(--nc-primary) 8%, transparent);
+    color: var(--nc-primary);
+  }
+  .dark .nc-btn-ghost:hover {
+    color: var(--nc-primary-light);
+  }
+
+  .nc-btn-danger {
+    @apply rounded-lg font-semibold text-xs transition-all active:scale-[0.98];
+    background-color: var(--nc-danger);
+    color: #FFFFFF;
+  }
+  .nc-btn-danger:hover {
+    filter: brightness(0.92);
+  }
+
+  .nc-btn-success {
+    @apply rounded-lg font-semibold text-xs transition-all active:scale-[0.98];
+    background-color: var(--nc-success);
+    color: #FFFFFF;
+  }
+  .nc-btn-success:hover {
+    filter: brightness(0.92);
+  }
+
+  .nc-btn-icon {
+    @apply rounded-lg transition-all active:scale-[0.98] inline-flex items-center justify-center flex-shrink-0;
+    width: 2rem;
+    height: 2rem;
+    background-color: transparent;
+    color: var(--nc-text-secondary);
+  }
+  .nc-btn-icon:hover {
+    background-color: color-mix(in srgb, var(--nc-primary) 8%, transparent);
+    color: var(--nc-primary);
+  }
+  .dark .nc-btn-icon:hover {
+    color: var(--nc-primary-light);
+  }
+
+  [disabled].nc-btn-secondary,
+  [disabled].nc-btn-ghost,
+  [disabled].nc-btn-danger,
+  [disabled].nc-btn-success,
+  [disabled].nc-btn-icon {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
   .nc-card {
     @apply rounded-xl border transition-all;
     background-color: var(--nc-surface);
@@ -240,27 +344,43 @@
 .nc-section-title { color: var(--nc-text); font-size: .8125rem; font-weight: 800; }
 .nc-list-row { border-bottom: 1px solid var(--nc-border); }
 .nc-list-row:last-child { border-bottom: 0; }
-.nc-status { border-radius: 9999px; font-size: 10px; font-weight: 700; line-height: 1; padding: 5px 8px; }
+.nc-status { border-radius: var(--nc-radius-pill); font-size: 10px; font-weight: 700; line-height: 1; padding: 5px 8px; display: inline-flex; align-items: center; gap: 4px; }
+
+/* Semantic status variants — the only place color carries meaning on its
+   own; every badge also carries its own text label, so color is never the
+   sole indicator (WCAG 1.4.1). Neutral is the default for anything that
+   isn't a real success/warning/danger/info state (e.g. "Inactive"). */
+.nc-status-success { background: var(--nc-success-subtle); color: color-mix(in srgb, var(--nc-success) 70%, black); }
+.nc-status-warning { background: var(--nc-warning-subtle); color: color-mix(in srgb, var(--nc-warning) 65%, black); }
+.nc-status-danger { background: var(--nc-danger-subtle); color: color-mix(in srgb, var(--nc-danger) 70%, black); }
+.nc-status-info { background: var(--nc-info-subtle); color: color-mix(in srgb, var(--nc-info) 55%, black); }
+.nc-status-neutral { background: var(--nc-surface-elevated); color: var(--nc-text-secondary); border: 1px solid var(--nc-border); }
+
+.dark .nc-status-success { background: color-mix(in srgb, var(--nc-success) 20%, var(--nc-surface-elevated)); color: color-mix(in srgb, var(--nc-success) 55%, white); }
+.dark .nc-status-warning { background: color-mix(in srgb, var(--nc-warning) 20%, var(--nc-surface-elevated)); color: color-mix(in srgb, var(--nc-warning) 55%, white); }
+.dark .nc-status-danger { background: color-mix(in srgb, var(--nc-danger) 20%, var(--nc-surface-elevated)); color: color-mix(in srgb, var(--nc-danger) 55%, white); }
+.dark .nc-status-info { background: color-mix(in srgb, var(--nc-info) 20%, var(--nc-surface-elevated)); color: color-mix(in srgb, var(--nc-info) 55%, white); }
+.dark .nc-status-neutral { background: var(--nc-surface-elevated); color: var(--nc-text-muted); border-color: var(--nc-border-strong); }
 button, input, select, textarea { font: inherit; }
 button { -webkit-tap-highlight-color: transparent; }
 
 /* Compact clinical UI, not bubbly marketing cards — but not flattened to a
    single radius either. Ordinary cards/panels: 12px. Large identity
-   surfaces (rounded-3xl — the Health Passport, onboarding panels): 16px,
-   the system's one deliberately larger radius, not a bigger version of
-   the same card radius. */
+   surfaces (rounded-3xl — the Health Passport, onboarding panels): capped
+   at 14px, the system's one deliberately larger radius, not a bigger
+   version of the same card radius. */
 .rounded-xl,
 .rounded-2xl {
-  border-radius: 0.75rem !important;
+  border-radius: var(--nc-radius-card) !important;
 }
 
 .rounded-3xl {
-  border-radius: 1rem !important;
+  border-radius: var(--nc-radius-surface) !important;
 }
 
 .rounded-t-3xl {
-  border-top-left-radius: 1rem !important;
-  border-top-right-radius: 1rem !important;
+  border-top-left-radius: var(--nc-radius-surface) !important;
+  border-top-right-radius: var(--nc-radius-surface) !important;
 }
 
 .shadow-md,
@@ -385,11 +505,14 @@ button { -webkit-tap-highlight-color: transparent; }
   transform: none !important;
 }
 
-.app-canvas button,
+.app-canvas button {
+  border-radius: var(--nc-radius-button) !important;
+}
+
 .app-canvas input,
 .app-canvas select,
 .app-canvas textarea {
-  border-radius: 0.5rem !important;
+  border-radius: var(--nc-radius-input) !important;
 }
 
 .app-canvas [class*="border-2"] {
@@ -414,7 +537,7 @@ button { -webkit-tap-highlight-color: transparent; }
 }
 
 .fixed.inset-0 [class*="max-w-"] {
-  border-radius: 0.5rem !important;
+  border-radius: var(--nc-radius-card) !important;
   box-shadow: 0 8px 24px rgba(15, 45, 80, 0.12) !important;
 }
 
@@ -532,9 +655,6 @@ button { -webkit-tap-highlight-color: transparent; }
     margin-right: auto;
   }
 
-  .app-canvas .nc-card {
-    border-radius: 1rem !important;
-  }
 }
 
 .patient-mobile-shell {
@@ -551,7 +671,7 @@ button { -webkit-tap-highlight-color: transparent; }
 
 .patient-mobile-shell #card-digital-health-passport {
   border: 0 !important;
-  border-radius: 1.1rem !important;
+  border-radius: var(--nc-radius-surface) !important;
   min-height: 13.25rem;
   box-shadow: 0 14px 30px rgba(0, 87, 184, 0.22) !important;
 }
@@ -585,20 +705,17 @@ button { -webkit-tap-highlight-color: transparent; }
   background-color: #F0F4F5 !important;
 }
 
+/* Primary quick-action tiles only (3 of them — Book Appointment, Health
+   Records, My Visits). Compact, not the old ~116px identical card grid;
+   the rest of the quick actions are dense list rows (.nc-list-row) with no
+   special sizing rule of their own. */
 .patient-mobile-shell [id^="hub-btn-"] {
-  min-height: 7.25rem;
-  border-radius: 1rem !important;
+  border-radius: var(--nc-radius-card) !important;
   background: var(--nc-surface-elevated) !important;
 }
 
 .patient-mobile-shell [id^="hub-btn-"]:hover {
   border-color: var(--nc-primary) !important;
-}
-
-.patient-mobile-shell [id^="hub-btn-"] > div:first-child {
-  border-radius: 0.9rem !important;
-  background: color-mix(in srgb, var(--nc-primary) 12%, white) !important;
-  color: var(--nc-primary) !important;
 }
 
 @media (min-width: 768px) {

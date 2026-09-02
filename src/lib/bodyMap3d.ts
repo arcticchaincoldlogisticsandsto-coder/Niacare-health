@@ -39,28 +39,33 @@ export const HOTSPOTS_3D_FRONT: Hotspot3D[] = [
   { key: 'lungs', side: 'left', position: [-0.11, 1.44, 0.14], radius: 0.06 },
   { key: 'lungs', side: 'right', position: [0.11, 1.44, 0.14], radius: 0.06 },
   { key: 'abdomen', position: [0, 1.16, 0.15], radius: 0.13 },
-  { key: 'shoulder', side: 'left', position: [-0.245, 1.51, 0.03], radius: 0.065 },
-  { key: 'shoulder', side: 'right', position: [0.245, 1.51, 0.03], radius: 0.065 },
-  { key: 'arm', side: 'left', position: [-0.275, 1.34, 0.02], radius: 0.055 },
-  { key: 'arm', side: 'right', position: [0.275, 1.34, 0.02], radius: 0.055 },
-  { key: 'elbow', side: 'left', position: [-0.285, 1.19, 0.01], radius: 0.045 },
-  { key: 'elbow', side: 'right', position: [0.285, 1.19, 0.01], radius: 0.045 },
-  { key: 'wrist', side: 'left', position: [-0.29, 0.945, 0], radius: 0.035 },
-  { key: 'wrist', side: 'right', position: [0.29, 0.945, 0], radius: 0.035 },
-  { key: 'hand', side: 'left', position: [-0.295, 0.87, 0.01], radius: 0.045 },
-  { key: 'hand', side: 'right', position: [0.295, 0.87, 0.01], radius: 0.045 },
-  { key: 'hip', side: 'left', position: [-0.11, 0.99, 0.1], radius: 0.075 },
-  { key: 'hip', side: 'right', position: [0.11, 0.99, 0.1], radius: 0.075 },
-  { key: 'thigh', side: 'left', position: [-0.1, 0.72, 0.05], radius: 0.075 },
-  { key: 'thigh', side: 'right', position: [0.1, 0.72, 0.05], radius: 0.075 },
-  { key: 'knee', side: 'left', position: [-0.1, 0.5, 0.06], radius: 0.06 },
-  { key: 'knee', side: 'right', position: [0.1, 0.5, 0.06], radius: 0.06 },
-  { key: 'leg', side: 'left', position: [-0.095, 0.29, 0.02], radius: 0.05 },
-  { key: 'leg', side: 'right', position: [0.095, 0.29, 0.02], radius: 0.05 },
-  { key: 'ankle', side: 'left', position: [-0.09, 0.085, 0.02], radius: 0.04 },
-  { key: 'ankle', side: 'right', position: [0.09, 0.085, 0.02], radius: 0.04 },
-  { key: 'foot', side: 'left', position: [-0.09, 0.035, 0.08], radius: 0.05 },
-  { key: 'foot', side: 'right', position: [0.09, 0.035, 0.08], radius: 0.05 },
+  // Limb marker x/y below are computed from the new arm/leg lathe
+  // profiles in bodyMap3d.ts's buildMannequinBody() (including the arm's
+  // outward-lean rotation about the shoulder pivot), not carried over
+  // from the old capsule-chain geometry — see that function's header
+  // comment for the derivation.
+  { key: 'shoulder', side: 'left', position: [-0.09, 1.495, 0.03], radius: 0.06 },
+  { key: 'shoulder', side: 'right', position: [0.09, 1.495, 0.03], radius: 0.06 },
+  { key: 'arm', side: 'left', position: [-0.112, 1.337, 0.02], radius: 0.05 },
+  { key: 'arm', side: 'right', position: [0.112, 1.337, 0.02], radius: 0.05 },
+  { key: 'elbow', side: 'left', position: [-0.133, 1.193, 0.01], radius: 0.042 },
+  { key: 'elbow', side: 'right', position: [0.133, 1.193, 0.01], radius: 0.042 },
+  { key: 'wrist', side: 'left', position: [-0.169, 0.935, 0], radius: 0.03 },
+  { key: 'wrist', side: 'right', position: [0.169, 0.935, 0], radius: 0.03 },
+  { key: 'hand', side: 'left', position: [-0.179, 0.866, 0.01], radius: 0.038 },
+  { key: 'hand', side: 'right', position: [0.179, 0.866, 0.01], radius: 0.038 },
+  { key: 'hip', side: 'left', position: [-0.09, 0.9, 0.09], radius: 0.07 },
+  { key: 'hip', side: 'right', position: [0.09, 0.9, 0.09], radius: 0.07 },
+  { key: 'thigh', side: 'left', position: [-0.09, 0.7, 0.05], radius: 0.065 },
+  { key: 'thigh', side: 'right', position: [0.09, 0.7, 0.05], radius: 0.065 },
+  { key: 'knee', side: 'left', position: [-0.09, 0.5, 0.06], radius: 0.052 },
+  { key: 'knee', side: 'right', position: [0.09, 0.5, 0.06], radius: 0.052 },
+  { key: 'leg', side: 'left', position: [-0.09, 0.35, 0.02], radius: 0.045 },
+  { key: 'leg', side: 'right', position: [0.09, 0.35, 0.02], radius: 0.045 },
+  { key: 'ankle', side: 'left', position: [-0.09, 0.085, 0.02], radius: 0.032 },
+  { key: 'ankle', side: 'right', position: [0.09, 0.085, 0.02], radius: 0.032 },
+  { key: 'foot', side: 'left', position: [-0.09, 0.045, 0.08], radius: 0.045 },
+  { key: 'foot', side: 'right', position: [0.09, 0.045, 0.08], radius: 0.045 },
 ];
 
 // Back-facing hotspots — same limb keys mirrored onto the rear surface
@@ -71,28 +76,28 @@ export const HOTSPOTS_3D_BACK: Hotspot3D[] = [
   { key: 'neck', position: [0, 1.535, -0.05], radius: 0.05 },
   { key: 'back', position: [0, 1.3, -0.155], radius: 0.16 },
   { key: 'spine', position: [0, 1.25, -0.17], radius: 0.035 },
-  { key: 'shoulder', side: 'left', position: [-0.245, 1.51, -0.03], radius: 0.065 },
-  { key: 'shoulder', side: 'right', position: [0.245, 1.51, -0.03], radius: 0.065 },
-  { key: 'arm', side: 'left', position: [-0.275, 1.34, -0.02], radius: 0.055 },
-  { key: 'arm', side: 'right', position: [0.275, 1.34, -0.02], radius: 0.055 },
-  { key: 'elbow', side: 'left', position: [-0.285, 1.19, -0.01], radius: 0.045 },
-  { key: 'elbow', side: 'right', position: [0.285, 1.19, -0.01], radius: 0.045 },
-  { key: 'wrist', side: 'left', position: [-0.29, 0.945, 0], radius: 0.035 },
-  { key: 'wrist', side: 'right', position: [0.29, 0.945, 0], radius: 0.035 },
-  { key: 'hand', side: 'left', position: [-0.295, 0.87, -0.01], radius: 0.045 },
-  { key: 'hand', side: 'right', position: [0.295, 0.87, -0.01], radius: 0.045 },
-  { key: 'hip', side: 'left', position: [-0.11, 0.99, -0.1], radius: 0.075 },
-  { key: 'hip', side: 'right', position: [0.11, 0.99, -0.1], radius: 0.075 },
-  { key: 'thigh', side: 'left', position: [-0.1, 0.72, -0.05], radius: 0.075 },
-  { key: 'thigh', side: 'right', position: [0.1, 0.72, -0.05], radius: 0.075 },
-  { key: 'knee', side: 'left', position: [-0.1, 0.5, -0.06], radius: 0.06 },
-  { key: 'knee', side: 'right', position: [0.1, 0.5, -0.06], radius: 0.06 },
-  { key: 'leg', side: 'left', position: [-0.095, 0.29, -0.02], radius: 0.05 },
-  { key: 'leg', side: 'right', position: [0.095, 0.29, -0.02], radius: 0.05 },
-  { key: 'ankle', side: 'left', position: [-0.09, 0.085, -0.02], radius: 0.04 },
-  { key: 'ankle', side: 'right', position: [0.09, 0.085, -0.02], radius: 0.04 },
-  { key: 'foot', side: 'left', position: [-0.09, 0.035, -0.08], radius: 0.05 },
-  { key: 'foot', side: 'right', position: [0.09, 0.035, -0.08], radius: 0.05 },
+  { key: 'shoulder', side: 'left', position: [-0.09, 1.495, -0.03], radius: 0.06 },
+  { key: 'shoulder', side: 'right', position: [0.09, 1.495, -0.03], radius: 0.06 },
+  { key: 'arm', side: 'left', position: [-0.112, 1.337, -0.02], radius: 0.05 },
+  { key: 'arm', side: 'right', position: [0.112, 1.337, -0.02], radius: 0.05 },
+  { key: 'elbow', side: 'left', position: [-0.133, 1.193, -0.01], radius: 0.042 },
+  { key: 'elbow', side: 'right', position: [0.133, 1.193, -0.01], radius: 0.042 },
+  { key: 'wrist', side: 'left', position: [-0.169, 0.935, 0], radius: 0.03 },
+  { key: 'wrist', side: 'right', position: [0.169, 0.935, 0], radius: 0.03 },
+  { key: 'hand', side: 'left', position: [-0.179, 0.866, -0.01], radius: 0.038 },
+  { key: 'hand', side: 'right', position: [0.179, 0.866, -0.01], radius: 0.038 },
+  { key: 'hip', side: 'left', position: [-0.09, 0.9, -0.09], radius: 0.07 },
+  { key: 'hip', side: 'right', position: [0.09, 0.9, -0.09], radius: 0.07 },
+  { key: 'thigh', side: 'left', position: [-0.09, 0.7, -0.05], radius: 0.065 },
+  { key: 'thigh', side: 'right', position: [0.09, 0.7, -0.05], radius: 0.065 },
+  { key: 'knee', side: 'left', position: [-0.09, 0.5, -0.06], radius: 0.052 },
+  { key: 'knee', side: 'right', position: [0.09, 0.5, -0.06], radius: 0.052 },
+  { key: 'leg', side: 'left', position: [-0.09, 0.35, -0.02], radius: 0.045 },
+  { key: 'leg', side: 'right', position: [0.09, 0.35, -0.02], radius: 0.045 },
+  { key: 'ankle', side: 'left', position: [-0.09, 0.085, -0.02], radius: 0.032 },
+  { key: 'ankle', side: 'right', position: [0.09, 0.085, -0.02], radius: 0.032 },
+  { key: 'foot', side: 'left', position: [-0.09, 0.045, -0.08], radius: 0.045 },
+  { key: 'foot', side: 'right', position: [0.09, 0.045, -0.08], radius: 0.045 },
 ];
 
 /** WebGL support check — cheap, synchronous, no context left open. */
@@ -105,78 +110,175 @@ export const isWebGLAvailable = (): boolean => {
   }
 };
 
+// Neutral matte clinical surface — desaturated cool gray, not a pale-blue
+// plastic tint, and high roughness / near-zero metalness so it never
+// picks up the shiny "toy figurine" specular highlight a glossier
+// material would under the key light below. DoubleSide is a deliberate
+// safety net for the lathe-revolved meshes below: a lathe's face winding
+// depends on point-array order, and this project has no way to preview a
+// render and catch an inverted-normal "hole" before shipping — rendering
+// both sides costs nothing on a model this size and guarantees there is
+// never an invisible patch of body.
 const clinicalMaterial = () =>
   new THREE.MeshStandardMaterial({
-    color: 0xd7e2ec,
-    roughness: 0.55,
-    metalness: 0.04,
+    color: 0xd6dbe1,
+    roughness: 0.7,
+    metalness: 0.02,
+    side: THREE.DoubleSide,
   });
 
-// A capsule's total physical extent along its axis is length + 2*radius
-// (two hemisphere caps beyond the cylindrical middle). OVERLAP_EPS is
-// added on top of that so neighboring segments deliberately interpenetrate
-// by a few millimeters at every joint, rather than mathematically
-// touching-but-not-quite — the thing that made the previous version read
-// as "disconnected capsules" instead of one figure. A sphere joint fillet
-// (radius = the larger of the two meeting segment radii) then sits exactly
-// at the shared boundary and hides the seam entirely.
-const OVERLAP_EPS = 0.028;
+/** One (radius, height) profile point for a THREE.LatheGeometry silhouette. */
+const pt = (radius: number, y: number) => new THREE.Vector2(radius, y);
 
-/** Builds the static mannequin geometry (head/torso/limbs) as one connected
- *  group. No per-region parts here — those are separate marker meshes so
- *  they can be styled/hit-tested independently of the body's own shading. */
+/** Builds the static mannequin geometry as one connected group.
+ *
+ * Previous version: the torso was three stacked capsules (chest/abdomen/
+ * pelvis) plus a separate neck cylinder and head sphere, and every limb
+ * was a chain of capsule segments bridged by visible sphere "joint
+ * fillets." That reads as an assembly of primitives no matter how well
+ * the seams are hidden, because it structurally IS one — a viewer's eye
+ * catches the repeated ball-at-every-bend rhythm.
+ *
+ * This version: the torso+neck is ONE THREE.LatheGeometry — a silhouette
+ * profile (pelvis -> waist -> ribcage -> chest -> shoulder line -> neck)
+ * revolved 360 degrees around the spine axis, so there are no seams to
+ * hide because there are no separate segments. Each arm and each leg is
+ * likewise ONE lathe profile (shoulder/hip -> limb -> wrist/ankle), built
+ * in local space and positioned so its own top radius overlaps into the
+ * torso's surface radius at the attachment height — a real, deliberate
+ * overlap (not a bridging sphere) is what makes the limb read as
+ * continuous with the body. Only the head (an oval sphere), hands, and
+ * feet — none of which are radially symmetric the way a lathe requires —
+ * are separate primitives, and they're small, terminal, and overlapped
+ * into their own limb's end rather than resting flush against it.
+ *
+ * No per-region hotspot markers here — those are separate meshes in
+ * setHotspots() so they can be styled/hit-tested independently.
+ *
+ * IMPORTANT CAVEAT: this geometry was authored entirely from profile
+ * math, with no way to render and visually inspect it in this
+ * environment. The proportions below are a reasoned best effort against
+ * the brief's explicit measurements (narrower neck, wider torso than
+ * waist, subtle joints, tapered limbs) — they have not been visually
+ * verified and may need real adjustment once someone can actually look
+ * at the rendered model. See MannequinViewer's own header/report notes.
+ */
 const buildMannequinBody = (): THREE.Group => {
   const group = new THREE.Group();
   const mat = clinicalMaterial();
-  const jointMat = clinicalMaterial();
-  jointMat.roughness = 0.5;
 
-  const add = (mesh: THREE.Mesh, x: number, y: number, z = 0, material = mat) => {
+  const addMesh = (geo: THREE.BufferGeometry, x: number, y: number, z = 0, material = mat) => {
+    const mesh = new THREE.Mesh(geo, material);
     mesh.position.set(x, y, z);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
-    if (material !== mat) mesh.material = material;
     group.add(mesh);
+    return mesh;
   };
 
-  const joint = (radius: number, x: number, y: number, z = 0) =>
-    add(new THREE.Mesh(new THREE.SphereGeometry(radius, 16, 12), jointMat), x, y, z, jointMat);
+  // ---- Torso + neck: one continuous revolved silhouette -------------
+  // Pelvis (widest lower point) -> natural waist (narrowest) -> ribcage
+  // -> chest (widest upper point) -> shoulder line -> neck (narrower
+  // than the shoulders) -> a near-closed cap the head sphere overlaps.
+  const torsoProfile = [
+    pt(0.02, 0.83),
+    pt(0.115, 0.87),
+    pt(0.135, 0.97),
+    pt(0.118, 1.04),
+    pt(0.1, 1.11),
+    pt(0.115, 1.19),
+    pt(0.14, 1.3),
+    pt(0.148, 1.39),
+    pt(0.132, 1.46),
+    pt(0.11, 1.495),
+    pt(0.052, 1.535),
+    pt(0.049, 1.6),
+    pt(0.008, 1.615),
+  ];
+  addMesh(new THREE.LatheGeometry(torsoProfile, 20), 0, 0);
 
-  // Torso stack — each segment's capsule already overlaps the one above/
-  // below it (chest bottom sits inside abdomen top, etc.), so the spine
-  // reads as one continuous form rather than three stacked pills.
-  add(new THREE.Mesh(new THREE.SphereGeometry(0.115, 24, 18), mat), 0, 1.66);
-  add(new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.058, 0.12, 16), mat), 0, 1.53);
-  add(new THREE.Mesh(new THREE.CapsuleGeometry(0.145, 0.21, 4, 16), mat), 0, 1.42);
-  add(new THREE.Mesh(new THREE.CapsuleGeometry(0.125, 0.17, 4, 16), mat), 0, 1.16);
-  add(new THREE.Mesh(new THREE.CapsuleGeometry(0.135, 0.07, 4, 16), mat), 0, 0.99);
+  // ---- Head: a restrained oval, not a perfect ball or a face -------
+  const head = addMesh(new THREE.SphereGeometry(0.105, 20, 16), 0, 1.665);
+  head.scale.set(1, 1.12, 0.97);
 
-  /** A limb segment between two joints, deliberately overlapping both. */
-  const limb = (radius: number, yTop: number, yBottom: number, x: number, z = 0) => {
-    const span = yTop - yBottom + OVERLAP_EPS * 2;
-    const length = Math.max(span - radius * 2, 0.015);
-    const geo = new THREE.CapsuleGeometry(radius, length, 4, 12);
-    add(new THREE.Mesh(geo, mat), x, (yTop + yBottom) / 2, z);
-  };
+  // ---- Arms: one lathe profile per side, local y=0 at the shoulder,
+  // rotated outward from vertical so the limb drifts naturally away
+  // from the torso going down (a relaxed hanging arm, not a T-pose) —
+  // the rotation pivot IS the shoulder attachment point, so the whole
+  // limb sweeps around it correctly. Built for the right side (s=+1)
+  // then mirrored by negating x for the left.
+  const armProfile = [
+    pt(0.075, 0),
+    pt(0.066, -0.04),
+    pt(0.058, -0.16),
+    pt(0.05, -0.28),
+    pt(0.045, -0.305),
+    pt(0.047, -0.335),
+    pt(0.041, -0.44),
+    pt(0.034, -0.545),
+    pt(0.03, -0.565),
+    pt(0.01, -0.58),
+  ];
+  const legProfile = [
+    pt(0.085, 0),
+    pt(0.08, -0.05),
+    pt(0.068, -0.2),
+    pt(0.058, -0.36),
+    pt(0.05, -0.4),
+    pt(0.052, -0.43),
+    pt(0.045, -0.55),
+    pt(0.036, -0.68),
+    pt(0.03, -0.79),
+    pt(0.026, -0.815),
+    pt(0.01, -0.83),
+  ];
+  const ARM_LEAN = 0.14; // radians, outward lean from vertical
 
   for (const s of [-1, 1] as const) {
-    joint(0.068, 0.245 * s, 1.505, 0.01);
-    limb(0.055, 1.5, 1.2, 0.275 * s);
-    joint(0.05, 0.285 * s, 1.2, 0.005);
-    limb(0.04, 1.2, 0.94, 0.288 * s);
-    joint(0.042, 0.29 * s, 0.94, 0);
-    add(new THREE.Mesh(new THREE.SphereGeometry(0.048, 14, 10), mat), 0.295 * s, 0.87, 0.012);
+    const arm = new THREE.Group();
+    arm.position.set(0.09 * s, 1.495, 0.02);
+    arm.rotation.z = ARM_LEAN * s;
+    const armMesh = new THREE.Mesh(new THREE.LatheGeometry(armProfile, 12), mat);
+    armMesh.castShadow = true;
+    armMesh.receiveShadow = true;
+    arm.add(armMesh);
+    // Hand: a flattened capsule (a paddle-like palm silhouette, not
+    // individual fingers) — a child of the rotated arm group so it
+    // inherits the same outward lean automatically, attached just past
+    // the wrist end with enough overlap to hide that seam too.
+    const hand = new THREE.Mesh(new THREE.CapsuleGeometry(0.026, 0.05, 4, 10), mat);
+    hand.scale.set(1, 1, 0.55);
+    hand.position.set(0, -0.628, 0);
+    hand.castShadow = true;
+    hand.receiveShadow = true;
+    arm.add(hand);
+    group.add(arm);
 
-    joint(0.083, 0.11 * s, 0.99, 0.09);
-    limb(0.07, 0.98, 0.5, 0.1 * s, 0.05);
-    joint(0.066, 0.1 * s, 0.5, 0.06);
-    limb(0.05, 0.5, 0.1, 0.095 * s, 0.025);
-    joint(0.048, 0.09 * s, 0.09, 0.02);
-    const foot = new THREE.Mesh(new THREE.BoxGeometry(0.085, 0.055, 0.21), mat);
-    foot.position.set(0.09 * s, 0.048, 0.08);
+    const leg = new THREE.Group();
+    leg.position.set(0.09 * s, 0.9, 0.06);
+    const legMesh = new THREE.Mesh(new THREE.LatheGeometry(legProfile, 12), mat);
+    legMesh.castShadow = true;
+    legMesh.receiveShadow = true;
+    leg.add(legMesh);
+    // Foot: a flattened, elongated capsule for the midfoot/forefoot
+    // (rotated so its long axis runs front-to-back, not vertically),
+    // plus a small heel bump behind it — heel, midfoot, and forefoot as
+    // three blended forms rather than one box or sphere standing in for
+    // the whole foot.
+    const foot = new THREE.Mesh(new THREE.CapsuleGeometry(0.03, 0.12, 4, 10), mat);
+    foot.rotation.x = Math.PI / 2;
+    foot.scale.set(0.9, 0.5, 1);
+    foot.position.set(0, -0.845, 0.05);
     foot.castShadow = true;
     foot.receiveShadow = true;
-    group.add(foot);
+    leg.add(foot);
+    const heel = new THREE.Mesh(new THREE.SphereGeometry(0.028, 12, 10), mat);
+    heel.scale.set(1, 0.7, 0.85);
+    heel.position.set(0, -0.845, -0.045);
+    heel.castShadow = true;
+    heel.receiveShadow = true;
+    leg.add(heel);
+    group.add(leg);
   }
 
   return group;
@@ -243,8 +345,12 @@ export class MannequinViewer {
     this.controls.minPolarAngle = Math.PI * 0.15;
     this.controls.addEventListener('change', () => { this.dirty = true; });
 
-    this.scene.add(new THREE.HemisphereLight(0xffffff, 0xc7d2e0, 0.9));
-    const key = new THREE.DirectionalLight(0xffffff, 1.15);
+    // Soft, controlled three-point-style setup: a wide ambient fill so no
+    // side of the figure ever goes fully dark, a moderate key light (not
+    // a dramatic single hard source), and a cool rim/fill opposite it —
+    // professional product-visualization lighting, not game lighting.
+    this.scene.add(new THREE.HemisphereLight(0xffffff, 0xc7d2e0, 1.0));
+    const key = new THREE.DirectionalLight(0xffffff, 0.95);
     key.position.set(1.6, 3, 2.2);
     key.castShadow = !this.lowPower;
     if (key.castShadow) {
@@ -324,16 +430,21 @@ export class MannequinViewer {
     this.dirty = true;
   }
 
-  setMarkedKeys(marked: Set<string>) {
+  // counts: regionKey -> number of health records tagged there. This is a
+  // "health activity" indicator, never a severity/risk signal — a region
+  // with 2+ records gets a marginally stronger (not alarming) highlight
+  // than one with exactly 1, and an unmarked region gets none at all. No
+  // color here is ever driven by diagnosis content, only by record count.
+  setMarkedKeys(counts: Map<string, number>) {
     for (const [regionKey, mesh] of this.markers) {
       const mat = mesh.material as THREE.MeshStandardMaterial;
       const isSelected = regionKey === this.selectedKey;
-      const isMarked = marked.has(regionKey);
+      const count = counts.get(regionKey) || 0;
       const color = isSelected ? this.markerColors.selected : this.markerColors.marked;
       mat.color.set(color);
       mat.emissive.set(color);
-      mat.emissiveIntensity = isSelected ? 0.9 : isMarked ? 0.5 : 0;
-      mat.opacity = isSelected ? 0.65 : isMarked ? 0.4 : 0;
+      mat.emissiveIntensity = isSelected ? 0.7 : count > 1 ? 0.42 : count === 1 ? 0.3 : 0;
+      mat.opacity = isSelected ? 0.6 : count > 1 ? 0.34 : count === 1 ? 0.24 : 0;
     }
     this.dirty = true;
   }
@@ -371,6 +482,20 @@ export class MannequinViewer {
     this.dirty = true;
   }
 
+  // Discrete step for the compact Zoom In/Out buttons — same clamp
+  // (minDistance/maxDistance) OrbitControls already enforces for
+  // scroll/pinch, so a button tap can never zoom past what a gesture could.
+  zoomStep(direction: 'in' | 'out') {
+    const dir = new THREE.Vector3().subVectors(this.camera.position, this.controls.target);
+    const distance = dir.length();
+    const factor = direction === 'in' ? 0.85 : 1 / 0.85;
+    const nextDistance = Math.min(this.controls.maxDistance, Math.max(this.controls.minDistance, distance * factor));
+    dir.setLength(nextDistance);
+    this.camera.position.copy(this.controls.target).add(dir);
+    this.controls.update();
+    this.dirty = true;
+  }
+
   resetView() {
     this.facingTween = null;
     this.controls.enabled = true;
@@ -399,9 +524,9 @@ export class MannequinViewer {
     const mat = mesh.material as THREE.MeshStandardMaterial;
     const isSelected = regionKey === this.selectedKey;
     if (isSelected) return;
-    const wasMarked = mat.opacity >= 0.35;
+    const wasMarked = mat.opacity >= 0.2;
     if (wasMarked) return;
-    mat.opacity = hoverOn ? 0.18 : 0;
+    mat.opacity = hoverOn ? 0.14 : 0;
   }
 
   private handlePointerMove = (e: PointerEvent) => {

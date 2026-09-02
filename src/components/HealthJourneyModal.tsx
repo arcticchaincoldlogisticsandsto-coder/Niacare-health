@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { X, Route, Stethoscope, Share2, Scan, User, Search, FlaskConical, CalendarPlus, Activity } from 'lucide-react';
+import { X, Route, Stethoscope, Share2, Scan, User, Search, FlaskConical, CalendarPlus, Activity, MapPin } from 'lucide-react';
 import { Language, Theme } from '../types';
 import { Appointment } from '../data/doctors';
 import { fetchHealthJourney, HealthJourneyEntry } from '../lib/healthJourney';
 import { fetchPrescriptions } from '../lib/prescriptions';
 import { DoctorProfileTarget } from '../data/doctors';
 import { bodyRegionLabel } from '../data/bodyRegions';
+import { bodyMapRegionKey } from '../lib/bodyMap';
 import { withTimeout } from '../lib/useNetworkStatus';
 import { logAuditEvent } from '../lib/audit';
 import { LoadingSkeleton } from './LoadingSkeleton';
@@ -23,6 +24,8 @@ interface HealthJourneyModalProps {
   /** Already fetched by PatientHomeDashboard — reused for "Upcoming Appointment" in the Health Summary, no extra query. */
   appointmentsList?: Appointment[];
   onViewFacility?: (providerId: string) => void;
+  /** Only offered when an entry actually carries a bodyRegion tag — see HealthJourneyEntry.bodyRegion. Receives a bodyMapRegionKey()-shaped key ("knee:left") so BodyMapModal can open pre-selected on that region. */
+  onViewBodyMap?: (regionKey: string) => void;
 }
 
 type JourneyFilter = 'all' | 'consultations' | 'lab' | 'imaging' | 'referrals' | 'followups';
@@ -56,7 +59,7 @@ const ENTRY_DOT: Record<HealthJourneyEntry['type'], string> = {
 };
 
 export const HealthJourneyModal: React.FC<HealthJourneyModalProps> = ({
-  isOpen, onClose, patientId, language, theme, onViewReport, onViewDoctorProfile, onViewLabResults, onBookFollowUp, appointmentsList, onViewFacility,
+  isOpen, onClose, patientId, language, theme, onViewReport, onViewDoctorProfile, onViewLabResults, onBookFollowUp, appointmentsList, onViewFacility, onViewBodyMap,
 }) => {
   const isSw = language === 'sw';
   const isDark = theme === 'dark';
@@ -377,6 +380,15 @@ export const HealthJourneyModal: React.FC<HealthJourneyModalProps> = ({
                             </span>
                           ))}
                         </div>
+                      )}
+                      {entry.bodyRegion && onViewBodyMap && (
+                        <button
+                          type="button"
+                          onClick={() => onViewBodyMap(bodyMapRegionKey(entry.bodyRegion!, entry.bodySide))}
+                          className="mt-2 inline-flex items-center gap-1 text-primary dark:text-primary-light font-bold underline underline-offset-2"
+                        >
+                          <MapPin className="w-3 h-3" /> {isSw ? 'Angalia kwenye Ramani ya Mwili' : 'View on Body Map'}
+                        </button>
                       )}
                       {entry.type === 'imaging' && entry.recordId && onViewReport && (
                         <button

@@ -221,6 +221,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
   const [bookingDoctorPreset, setBookingDoctorPreset] = useState<string | null>(null);
   const [bookingSlotPreset, setBookingSlotPreset] = useState<{ date: string; time: string } | null>(null);
   const [imagingRecordPreset, setImagingRecordPreset] = useState<string | null>(null);
+  const [bodyMapRegionPreset, setBodyMapRegionPreset] = useState<string | null>(null);
   const [viewingDoctorProfile, setViewingDoctorProfile] = useState<DoctorProfileTarget | null>(null);
   const [viewingFacilityProfile, setViewingFacilityProfile] = useState<FacilityProfileTarget | null>(null);
 
@@ -875,337 +876,69 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
         </div>
       </div>
 
-      {/* 5. 6-Action Quick Health Services Grid */}
+      {/* 5. Quick Actions — command-style, not a wall of identical icon
+          cards: three primary destinations get a real tile each; every
+          other action is a dense, scannable row. Every handler below is
+          unchanged from the previous per-button JSX — only the layout and
+          visual weight changed. */}
       <div
         className={`p-4 rounded-2xl border ${
           isDark ? 'bg-[#101F31] border-slate-700/80' : 'bg-white border-slate-200/90'
         }`}
       >
-        <div className="flex items-center justify-between mb-3">
-          <h3 className={`text-xs sm:text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-            {t.quickActions[language]}
-          </h3>
-          <span className="text-[10px] text-slate-400 font-medium">NiaCare Digital Hub</span>
+        <h3 className={`text-xs sm:text-sm font-semibold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+          {t.quickActions[language]}
+        </h3>
+
+        <div className="grid grid-cols-3 gap-2 mb-3">
+          {[
+            { id: 'appointment', icon: Calendar, label: t.bookAppointment[language], action: () => setActiveModal('appointment') },
+            { id: 'records', icon: FileText, label: language === 'sw' ? 'Rekodi za Afya' : 'Health Records', action: () => setActiveModal('records') },
+            { id: 'calendar', icon: CalendarDays, label: language === 'sw' ? 'Ziara Zangu' : 'My Visits', action: () => setActiveModal('calendar') },
+          ].map((item) => (
+            <button
+              key={item.id}
+              id={`hub-btn-${item.id}`}
+              type="button"
+              onClick={item.action}
+              className={`p-3 rounded-xl border flex flex-col items-center text-center gap-1.5 transition-colors ${
+                isDark ? 'bg-[#091422] border-slate-800 hover:border-primary' : 'bg-[#F9FBFE] border-slate-200/80 hover:border-primary'
+              }`}
+            >
+              <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary dark:text-primary-light flex items-center justify-center">
+                <item.icon className="w-4 h-4" />
+              </div>
+              <span className="text-[11px] font-semibold text-slate-900 dark:text-white leading-tight">{item.label}</span>
+            </button>
+          ))}
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-          {/* Action 1: Book Appointment */}
-          <button
-            id="hub-btn-appointment"
-            type="button"
-            onClick={() => setActiveModal('appointment')}
-            className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group active:scale-98 ${
-              isDark
-                ? 'bg-[#091422] border-slate-800 hover:border-primary hover:bg-[#0c1a2d]'
-                : 'bg-[#F9FBFE] border-slate-200/80 hover:border-primary hover:bg-primary/5'
-            }`}
-          >
-            <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary dark:text-primary-light flex items-center justify-center mb-2">
-              <Calendar className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="text-xs font-semibold text-slate-900 dark:text-white leading-tight">
-                {t.bookAppointment[language]}
-              </h4>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">
-                {t.bookAppointmentSub[language]}
-              </p>
-            </div>
-          </button>
-
-          {/* Action 1c: Calendar */}
-          <button
-            id="hub-btn-calendar"
-            type="button"
-            onClick={() => setActiveModal('calendar')}
-            className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group active:scale-98 ${
-              isDark
-                ? 'bg-[#091422] border-slate-800 hover:border-primary hover:bg-[#0c1a2d]'
-                : 'bg-[#F9FBFE] border-slate-200/80 hover:border-primary hover:bg-primary/5'
-            }`}
-          >
-            <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary dark:text-primary-light flex items-center justify-center mb-2">
-              <CalendarDays className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="text-xs font-semibold text-slate-900 dark:text-white leading-tight">
-                {language === 'sw' ? 'Kalenda' : 'Calendar'}
-              </h4>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">
-                {language === 'sw' ? 'Ratiba ya miadi yako' : 'Your visit schedule'}
-              </p>
-            </div>
-          </button>
-
-          {/* Action 1b: Health Journey */}
-          <button
-            id="hub-btn-health-journey"
-            type="button"
-            onClick={() => setActiveModal('journey')}
-            className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group active:scale-98 ${
-              isDark
-                ? 'bg-[#091422] border-slate-800 hover:border-primary hover:bg-[#0c1a2d]'
-                : 'bg-[#F9FBFE] border-slate-200/80 hover:border-primary hover:bg-primary/5'
-            }`}
-          >
-            <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary dark:text-primary-light flex items-center justify-center mb-2">
-              <Route className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="text-xs font-semibold text-slate-900 dark:text-white leading-tight">
-                {language === 'sw' ? 'Safari ya Afya' : 'Health Journey'}
-              </h4>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">
-                {language === 'sw' ? 'Historia yako yote ya matibabu' : 'Your full care history'}
-              </p>
-            </div>
-          </button>
-
-          {/* Action 2: Malipo & Checkout Procedures (Insurance vs Cash) */}
-          <button
-            id="hub-btn-checkout"
-            type="button"
-            onClick={() => setActiveModal('checkout')}
-            className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group active:scale-98 ${
-              isDark
-                ? 'bg-[#091422] border-slate-800 hover:border-primary hover:bg-[#0c1a2d]'
-                : 'bg-[#F9FBFE] border-slate-200/80 hover:border-primary hover:bg-primary/5'
-            }`}
-          >
-            <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary dark:text-primary-light flex items-center justify-center mb-2">
-              <Banknote className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-1">
-                <h4 className="text-xs font-semibold text-slate-900 dark:text-white leading-tight">
-                  {t.checkoutBilling[language]}
-                </h4>
-                </div>
-              <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mt-0.5 leading-tight">
-                {t.checkoutBillingSub[language]}
-              </p>
-            </div>
-          </button>
-
-          {/* Action 3: Prescriptions */}
-          <button
-            id="hub-btn-prescriptions"
-            type="button"
-            onClick={() => setActiveModal('prescriptions')}
-            className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group active:scale-98 ${
-              isDark
-                ? 'bg-[#091422] border-slate-800 hover:border-primary hover:bg-[#0c1a2d]'
-                : 'bg-[#F9FBFE] border-slate-200/80 hover:border-primary hover:bg-primary/5'
-            }`}
-          >
-            <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary dark:text-primary-light flex items-center justify-center mb-2">
-              <Pill className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="text-xs font-semibold text-slate-900 dark:text-white leading-tight">
-                {t.prescriptions[language]}
-              </h4>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">
-                {t.prescriptionsSub[language]}
-              </p>
-            </div>
-          </button>
-
-          {/* Action 4: Lab Results (real lab_orders/lab_results, not the
-              generic medical records vault) */}
-          <button
-            id="hub-btn-lab-records"
-            type="button"
-            onClick={() => setActiveModal('laboratory')}
-            className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group active:scale-98 ${
-              isDark
-                ? 'bg-[#091422] border-slate-800 hover:border-primary hover:bg-[#0c1a2d]'
-                : 'bg-[#F9FBFE] border-slate-200/80 hover:border-primary hover:bg-primary/5'
-            }`}
-          >
-            <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary dark:text-primary-light flex items-center justify-center mb-2">
-              <FileText className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="text-xs font-semibold text-slate-900 dark:text-white leading-tight">
-                {t.labResults[language]}
-              </h4>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">
-                {t.labResultsSub[language]}
-              </p>
-            </div>
-          </button>
-
-          {/* Action 5: Personal Files Vault (Faili Zangu) */}
-          <button
-            id="hub-btn-personal-files"
-            type="button"
-            onClick={() => setActiveModal('personal_files')}
-            className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group active:scale-98 ${
-              isDark
-                ? 'bg-[#091422] border-slate-800 hover:border-primary hover:bg-[#0c1a2d]'
-                : 'bg-[#F9FBFE] border-slate-200/80 hover:border-primary hover:bg-primary/5'
-            }`}
-          >
-            <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary dark:text-primary-light flex items-center justify-center mb-2">
-              <FolderLock className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="text-xs font-semibold text-slate-900 dark:text-white leading-tight">
-                {t.personalFiles[language]}
-              </h4>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">
-                {t.personalFilesSub[language]}
-              </p>
-            </div>
-          </button>
-
-          {/* Action 6: Insurance & Claims */}
-          <button
-            id="hub-btn-insurance"
-            type="button"
-            onClick={() => setActiveModal('insurance')}
-            className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group active:scale-98 ${
-              isDark
-                ? 'bg-[#091422] border-slate-800 hover:border-primary hover:bg-[#0c1a2d]'
-                : 'bg-[#F9FBFE] border-slate-200/80 hover:border-primary hover:bg-primary/5'
-            }`}
-          >
-            <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary dark:text-primary-light flex items-center justify-center mb-2">
-              <CreditCard className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="text-xs font-semibold text-slate-900 dark:text-white leading-tight">
-                {t.insuranceCoverage[language]}
-              </h4>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">
-                {t.insuranceCoverageSub[language]}
-              </p>
-            </div>
-          </button>
-
-          {/* Action 7: Nearby Hospitals & Pharmacies */}
-          <button
-            id="hub-btn-facilities"
-            type="button"
-            onClick={() => setActiveModal('facilities')}
-            className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group active:scale-98 ${
-              isDark
-                ? 'bg-[#091422] border-slate-800 hover:border-primary hover:bg-[#0c1a2d]'
-                : 'bg-[#F9FBFE] border-slate-200/80 hover:border-primary hover:bg-primary/5'
-            }`}
-          >
-            <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary dark:text-primary-light flex items-center justify-center mb-2">
-              <MapPin className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="text-xs font-semibold text-slate-900 dark:text-white leading-tight">
-                {t.findFacility[language]}
-              </h4>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">
-                {t.findFacilitySub[language]}
-              </p>
-            </div>
-          </button>
-
-          {/* Action 8: NiaAI Health Triage */}
-          <button
-            id="hub-btn-ai-triage"
-            type="button"
-            onClick={() => setActiveModal('ai')}
-            className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group active:scale-98 sm:col-span-2 ${
-              isDark
-                ? 'bg-[#091422] border-slate-800 hover:border-primary hover:bg-[#0c1a2d]'
-                : 'bg-[#F9FBFE] border-slate-200/80 hover:border-primary hover:bg-primary/5'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-xl bg-primary/15 text-primary dark:text-primary-light flex items-center justify-center flex-shrink-0">
-                <Stethoscope className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-xs font-semibold text-slate-900 dark:text-white leading-tight flex items-center gap-1">
-                  <span>{t.aiConsult[language]}</span>
-                  <Sparkles className="w-3 h-3 text-primary" />
-                </h4>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">
-                  {t.aiConsultSub[language]}
-                </p>
-              </div>
-            </div>
-          </button>
-
-          {/* Action 9: Messages */}
-          <button
-            id="hub-btn-messages"
-            type="button"
-            onClick={() => setActiveModal('messages')}
-            className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group active:scale-98 sm:col-span-2 ${
-              isDark
-                ? 'bg-[#091422] border-slate-800 hover:border-primary hover:bg-[#0c1a2d]'
-                : 'bg-[#F9FBFE] border-slate-200/80 hover:border-primary hover:bg-primary/5'
-            }`}
-          >
-            <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary dark:text-primary-light flex items-center justify-center mb-2">
-              <MessageSquare className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="text-xs font-semibold text-slate-900 dark:text-white leading-tight">
-                {language === 'sw' ? 'Ujumbe' : 'Messages'}
-              </h4>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">
-                {language === 'sw' ? 'Wasiliana na timu yako ya afya' : 'Chat with your care team'}
-              </p>
-            </div>
-          </button>
-
-          {/* Action 10: Referrals */}
-          <button
-            id="hub-btn-referrals"
-            type="button"
-            onClick={() => setActiveModal('referrals')}
-            className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group active:scale-98 sm:col-span-2 ${
-              isDark
-                ? 'bg-[#091422] border-slate-800 hover:border-primary hover:bg-[#0c1a2d]'
-                : 'bg-[#F9FBFE] border-slate-200/80 hover:border-primary hover:bg-primary/5'
-            }`}
-          >
-            <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary dark:text-primary-light flex items-center justify-center mb-2">
-              <Share2 className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="text-xs font-semibold text-slate-900 dark:text-white leading-tight">
-                {language === 'sw' ? 'Rufaa Zangu' : 'Referrals'}
-              </h4>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">
-                {language === 'sw' ? 'Rufaa kwa wataalamu na vituo vingine' : 'Sent to specialists and other facilities'}
-              </p>
-            </div>
-          </button>
-
-          {/* Action 11: Body Map */}
-          <button
-            id="hub-btn-bodymap"
-            type="button"
-            onClick={() => setActiveModal('bodymap')}
-            className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group active:scale-98 sm:col-span-2 ${
-              isDark
-                ? 'bg-[#091422] border-slate-800 hover:border-primary hover:bg-[#0c1a2d]'
-                : 'bg-[#F9FBFE] border-slate-200/80 hover:border-primary hover:bg-primary/5'
-            }`}
-          >
-            <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary dark:text-primary-light flex items-center justify-center mb-2">
-              <PersonStanding className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="text-xs font-semibold text-slate-900 dark:text-white leading-tight">
-                {language === 'sw' ? 'Ramani ya Mwili' : 'Body Map'}
-              </h4>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">
-                {language === 'sw' ? 'Hali zako kwa eneo la mwili' : 'Your conditions by body area'}
-              </p>
-            </div>
-          </button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 sm:gap-x-4">
+          {[
+            { id: 'prescriptions', icon: Pill, label: t.prescriptions[language], action: () => setActiveModal('prescriptions') },
+            { id: 'lab-records', icon: FileText, label: t.labResults[language], action: () => setActiveModal('laboratory') },
+            { id: 'health-journey', icon: Route, label: language === 'sw' ? 'Safari ya Afya' : 'Health Journey', action: () => setActiveModal('journey') },
+            { id: 'facilities', icon: MapPin, label: t.findFacility[language], action: () => setActiveModal('facilities') },
+            { id: 'messages', icon: MessageSquare, label: language === 'sw' ? 'Ujumbe' : 'Messages', action: () => setActiveModal('messages') },
+            { id: 'checkout', icon: Banknote, label: t.checkoutBilling[language], action: () => setActiveModal('checkout') },
+            { id: 'personal-files', icon: FolderLock, label: t.personalFiles[language], action: () => setActiveModal('personal_files') },
+            { id: 'insurance', icon: CreditCard, label: t.insuranceCoverage[language], action: () => setActiveModal('insurance') },
+            { id: 'referrals', icon: Share2, label: language === 'sw' ? 'Rufaa Zangu' : 'Referrals', action: () => setActiveModal('referrals') },
+            { id: 'bodymap', icon: PersonStanding, label: language === 'sw' ? 'Ramani ya Mwili' : 'Body Map', action: () => setActiveModal('bodymap') },
+            { id: 'ai-triage', icon: Sparkles, label: t.aiConsult[language], action: () => setActiveModal('ai') },
+          ].map((item) => (
+            <button
+              key={item.id}
+              id={`hub-btn-${item.id}`}
+              type="button"
+              onClick={item.action}
+              className="nc-list-row flex items-center gap-2.5 py-2.5 text-left"
+            >
+              <item.icon className="w-4 h-4 text-slate-400 flex-shrink-0" />
+              <span className="text-xs font-medium text-slate-700 dark:text-slate-200 truncate">{item.label}</span>
+              <ChevronRight className="w-3.5 h-3.5 text-slate-300 ml-auto flex-shrink-0" />
+            </button>
+          ))}
         </div>
       </div>
 
@@ -1450,6 +1183,7 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
         patientId={authUserId}
         language={language}
         onViewHealthJourney={() => setActiveModal('journey')}
+        initialRegionKey={bodyMapRegionPreset}
       />
 
       {/* MODAL 14: HEALTH JOURNEY */}
@@ -1471,6 +1205,10 @@ export const PatientHomeDashboard: React.FC<PatientHomeDashboardProps> = ({
           setActiveModal('appointment');
         }}
         onViewFacility={(providerId) => setViewingFacilityProfile({ providerId })}
+        onViewBodyMap={(regionKey) => {
+          setBodyMapRegionPreset(regionKey);
+          setActiveModal('bodymap');
+        }}
       />
 
       {/* MODAL 15: CALENDAR */}

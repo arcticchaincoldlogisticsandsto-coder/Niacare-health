@@ -899,11 +899,11 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({ language, 
   };
 
   const statCards = useMemo(() => [
-    { label: isSw ? 'Ziara za Leo' : "Today's Appointments", value: counts.appointmentsToday, Icon: CalendarDays, colour: 'text-primary dark:text-primary-light' },
-    { label: isSw ? 'Wagonjwa Waliosubiri' : 'Queued Patients', value: counts.queued, Icon: Users, colour: 'text-emerald-600 dark:text-emerald-400' },
-    { label: isSw ? 'Malipo Yaliyobaki' : 'Pending Bills', value: counts.pendingBills, Icon: CreditCard, colour: 'text-amber-600 dark:text-amber-400' },
-    { label: isSw ? 'Wafanyakazi Hai' : 'Active Staff', value: counts.activeStaff, Icon: ShieldCheck, colour: 'text-rose-500' },
-    { label: isSw ? 'Idara Hai' : 'Active Departments', value: counts.activeDepartments, Icon: Building2, colour: 'text-primary dark:text-primary-light' },
+    { label: isSw ? 'Ziara za Leo' : "Today's Appointments", value: counts.appointmentsToday, Icon: CalendarDays },
+    { label: isSw ? 'Wagonjwa Waliosubiri' : 'Queued Patients', value: counts.queued, Icon: Users },
+    { label: isSw ? 'Malipo Yaliyobaki' : 'Pending Bills', value: counts.pendingBills, Icon: CreditCard },
+    { label: isSw ? 'Wafanyakazi Hai' : 'Active Staff', value: counts.activeStaff, Icon: ShieldCheck },
+    { label: isSw ? 'Idara Hai' : 'Active Departments', value: counts.activeDepartments, Icon: Building2 },
   ], [counts, isSw]);
 
   return (
@@ -944,14 +944,17 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({ language, 
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3 mb-5">
-        {statCards.map(({ label, value, Icon, colour }) => (
-          <div key={label} className="nc-card p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Icon className={`w-4 h-4 ${colour}`} />
-              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{label}</span>
+      <div
+        className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-px overflow-hidden rounded-xl border nc-border mb-5"
+        style={{ backgroundColor: 'var(--nc-border)' }}
+      >
+        {statCards.map(({ label, value, Icon }) => (
+          <div key={label} className="p-3.5" style={{ backgroundColor: 'var(--nc-surface)' }}>
+            <div className="flex items-center gap-1.5 mb-1 nc-text-muted">
+              <Icon className="w-3.5 h-3.5 flex-shrink-0" />
+              <span className="truncate text-[10px] font-semibold uppercase tracking-wide">{label}</span>
             </div>
-            <p className="text-2xl font-semibold text-slate-900 dark:text-white">{loading ? '—' : value}</p>
+            <p className="truncate text-xl font-semibold text-slate-900 dark:text-white leading-none">{loading ? '—' : value}</p>
           </div>
         ))}
       </div>
@@ -1030,82 +1033,98 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({ language, 
               {isSw ? 'Hakuna miadi leo.' : 'No appointments today.'}
             </p>
           ) : (
-            <div className="space-y-2">
-              {todayAppointments
-                .filter((apt) => FILTER_MATCHES[receptionFilter](apt.status))
-                .filter((apt) => {
-                  const q = checkInQuery.trim().toLowerCase();
-                  if (!q) return true;
-                  return (
-                    (apt.patient_name || '').toLowerCase().includes(q) ||
-                    (apt.patient_phone || '').toLowerCase().includes(q) ||
-                    apt.ticket_number.toLowerCase().includes(q)
-                  );
-                })
-                .map((apt) => (
-                <div key={apt.id} className="rounded-xl border border-slate-100 dark:border-slate-800 p-3 text-xs">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <Avatar name={apt.patient_name || 'Patient'} size="md" />
-                      <div className="min-w-0">
-                        <p className="font-bold text-slate-900 dark:text-white truncate flex items-center gap-1">
-                          {apt.patient_name || 'Patient'}
-                          {apt.consultation_type === 'telehealth' && <Video className="w-3 h-3 text-primary flex-shrink-0" />}
-                          {apt.queue_number && (
-                            <span className="font-mono text-[10px] text-primary dark:text-primary-light">{apt.queue_number}</span>
-                          )}
-                        </p>
-                        <p className="text-slate-500 dark:text-slate-400 font-mono">
-                          {apt.ticket_number} • {apt.time_slot}
-                          {apt.arrival_confirmed_at && (
-                            <span className="ml-1">
-                              • {isSw ? 'Aliingia' : 'Checked in'} {new Date(apt.arrival_confirmed_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                    <span className={`flex-shrink-0 rounded-lg px-2 py-1 font-bold ${APPOINTMENT_STATUS_STYLES[apt.status] || APPOINTMENT_STATUS_STYLES.confirmed}`}>
-                      {appointmentStatusLabel(apt.status, isSw)}
-                    </span>
-                  </div>
-                  {(apt.status === 'confirmed' || apt.status === 'arrived' || apt.status === 'in_queue') && (
-                    <div className="flex gap-1.5 mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                      {(apt.status === 'confirmed' || apt.status === 'arrived') && (
-                        <button
-                          type="button"
-                          disabled={checkingInId === apt.id}
-                          onClick={() => checkIn(apt.id)}
-                          className="flex-1 min-h-[32px] rounded-lg bg-[var(--nc-primary)] dark:bg-primary text-white dark:text-[#041D34] px-2 py-1.5 font-bold flex items-center justify-center gap-1 disabled:opacity-50"
-                        >
-                          <UserCheck className="w-3.5 h-3.5" /> {isSw ? 'Thibitisha Kufika' : 'Confirm Arrival'}
-                        </button>
-                      )}
-                      {apt.status === 'in_queue' && (
-                        <button
-                          type="button"
-                          disabled={busyId === apt.id}
-                          onClick={() => callNext(apt.id)}
-                          className="flex-1 min-h-[32px] rounded-lg bg-[var(--nc-primary)] dark:bg-primary text-white dark:text-[#041D34] px-2 py-1.5 font-bold flex items-center justify-center gap-1 disabled:opacity-50"
-                        >
-                          <Megaphone className="w-3.5 h-3.5" /> {isSw ? 'Mwite' : 'Call Patient'}
-                        </button>
-                      )}
-                      {(apt.status === 'confirmed' || apt.status === 'arrived') && (
-                        <button
-                          type="button"
-                          disabled={busyId === apt.id}
-                          onClick={() => noShow(apt.id)}
-                          className="rounded-lg border border-rose-200 dark:border-rose-900 text-rose-600 dark:text-rose-400 px-2 py-1.5 font-bold flex items-center justify-center gap-1 disabled:opacity-50"
-                          title={isSw ? 'Hakufika' : 'Mark No Show'}
-                        >
-                          <UserX className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
+            <div className="-mx-4 overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b nc-border nc-text-muted">
+                    <th className="px-4 py-2 font-semibold uppercase tracking-wide">{isSw ? 'Mgonjwa' : 'Patient'}</th>
+                    <th className="px-4 py-2 font-semibold uppercase tracking-wide">{isSw ? 'Tiketi / Muda' : 'Ticket / Time'}</th>
+                    <th className="px-4 py-2 font-semibold uppercase tracking-wide">{isSw ? 'Hali' : 'Status'}</th>
+                    <th className="px-4 py-2 font-semibold uppercase tracking-wide">{isSw ? 'Vitendo' : 'Actions'}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {todayAppointments
+                    .filter((apt) => FILTER_MATCHES[receptionFilter](apt.status))
+                    .filter((apt) => {
+                      const q = checkInQuery.trim().toLowerCase();
+                      if (!q) return true;
+                      return (
+                        (apt.patient_name || '').toLowerCase().includes(q) ||
+                        (apt.patient_phone || '').toLowerCase().includes(q) ||
+                        apt.ticket_number.toLowerCase().includes(q)
+                      );
+                    })
+                    .map((apt) => (
+                    <tr key={apt.id} className="border-b nc-border last:border-0 hover:bg-slate-50 dark:hover:bg-slate-900/40 align-top">
+                      <td className="px-4 py-2.5">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <Avatar name={apt.patient_name || 'Patient'} size="md" />
+                          <div className="min-w-0">
+                            <p className="font-semibold text-slate-900 dark:text-white truncate flex items-center gap-1">
+                              {apt.patient_name || 'Patient'}
+                              {apt.consultation_type === 'telehealth' && <Video className="w-3 h-3 text-primary flex-shrink-0" />}
+                            </p>
+                            {apt.queue_number && (
+                              <span className="font-mono text-[10px] text-primary dark:text-primary-light">{apt.queue_number}</span>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-2.5 nc-text-secondary font-mono">
+                        {apt.ticket_number} • {apt.time_slot}
+                        {apt.arrival_confirmed_at && (
+                          <div className="nc-text-muted">
+                            {isSw ? 'Aliingia' : 'Checked in'} {new Date(apt.arrival_confirmed_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <span className={`inline-block rounded-md px-2 py-1 font-semibold ${APPOINTMENT_STATUS_STYLES[apt.status] || APPOINTMENT_STATUS_STYLES.confirmed}`}>
+                          {appointmentStatusLabel(apt.status, isSw)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5">
+                        {(apt.status === 'confirmed' || apt.status === 'arrived' || apt.status === 'in_queue') && (
+                          <div className="flex gap-1.5">
+                            {(apt.status === 'confirmed' || apt.status === 'arrived') && (
+                              <button
+                                type="button"
+                                disabled={checkingInId === apt.id}
+                                onClick={() => checkIn(apt.id)}
+                                className="min-h-[30px] rounded-md bg-[var(--nc-primary)] dark:bg-primary text-white dark:text-[#041D34] px-2.5 py-1.5 font-semibold flex items-center justify-center gap-1 disabled:opacity-50 whitespace-nowrap"
+                              >
+                                <UserCheck className="w-3.5 h-3.5" /> {isSw ? 'Thibitisha' : 'Confirm'}
+                              </button>
+                            )}
+                            {apt.status === 'in_queue' && (
+                              <button
+                                type="button"
+                                disabled={busyId === apt.id}
+                                onClick={() => callNext(apt.id)}
+                                className="min-h-[30px] rounded-md bg-[var(--nc-primary)] dark:bg-primary text-white dark:text-[#041D34] px-2.5 py-1.5 font-semibold flex items-center justify-center gap-1 disabled:opacity-50 whitespace-nowrap"
+                              >
+                                <Megaphone className="w-3.5 h-3.5" /> {isSw ? 'Mwite' : 'Call'}
+                              </button>
+                            )}
+                            {(apt.status === 'confirmed' || apt.status === 'arrived') && (
+                              <button
+                                type="button"
+                                disabled={busyId === apt.id}
+                                onClick={() => noShow(apt.id)}
+                                className="min-h-[30px] rounded-md border border-rose-200 dark:border-rose-900 text-rose-600 dark:text-rose-400 px-2 py-1.5 font-semibold flex items-center justify-center gap-1 disabled:opacity-50"
+                                title={isSw ? 'Hakufika' : 'Mark No Show'}
+                              >
+                                <UserX className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>

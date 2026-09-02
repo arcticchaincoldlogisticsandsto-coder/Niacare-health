@@ -9,7 +9,7 @@ import { PatientDetailModal } from './PatientDetailModal';
 import { HealthJourneyModal } from './HealthJourneyModal';
 import { Avatar } from './Avatar';
 import { createLabOrder, fetchDoctorLabOrders, LabOrderRow } from '../lib/laboratory';
-import { DashboardShell, StatCard, SegmentedTabs } from './DashboardShell';
+import { DashboardShell, StatCard, StatCardGrid, SegmentedTabs } from './DashboardShell';
 import { ScheduleManager } from './ScheduleManager';
 import { fetchMyAccessRequests, requestRecordAccess, AccessRequest, AccessScope } from '../lib/recordAccess';
 import { MessagesModal } from './MessagesModal';
@@ -689,11 +689,11 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ language, them
         </div>
       )}
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+      <StatCardGrid>
         {statCards.map(({ label, value, sub, Icon, colour }) => (
           <StatCard key={label} label={label} value={value} sub={sub} Icon={Icon} colorClass={colour} loading={loading} />
         ))}
-      </div>
+      </StatCardGrid>
 
       <SegmentedTabs
         tabs={[

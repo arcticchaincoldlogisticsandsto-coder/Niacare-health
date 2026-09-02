@@ -20,6 +20,7 @@ import { NEARBY_HOSPITALS } from '../data/countries';
 import { TRANSLATIONS } from '../data/translations';
 import { createDispatch } from '../lib/emergency';
 import { getDrivingRoutesToMany, RouteResult } from '../lib/routing';
+import { EmergencyTrackingPanel } from './EmergencyTrackingPanel';
 
 interface EmergencyBarProps {
   language: Language;
@@ -31,8 +32,8 @@ export const EmergencyBar: React.FC<EmergencyBarProps> = ({ language, authUserId
   const [selectedCondition, setSelectedCondition] = useState<'trauma' | 'cardiac' | 'respiratory' | 'maternity' | 'unconscious'>('trauma');
   const [countdown, setCountdown] = useState<number | null>(null);
   const [isDispatched, setIsDispatched] = useState(false);
-  const [dispatchId, setDispatchId] = useState<string>('');
-  const [dispatchedTime, setDispatchedTime] = useState<string>('');
+  const [dispatchRefLabel, setDispatchRefLabel] = useState<string>('');
+  const [dispatchRowId, setDispatchRowId] = useState<string>('');
   const [gpsLocation, setGpsLocation] = useState<{ lat: number; lng: number; address: string }>({
     lat: -6.7924,
     lng: 39.2083,
@@ -114,7 +115,6 @@ export const EmergencyBar: React.FC<EmergencyBarProps> = ({ language, authUserId
       }, 1000);
     } else if (countdown === 0) {
       setCountdown(null);
-      setDispatchedTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
 
       // Real dispatch: creates an auditable record (works even without login —
       // an emergency should never be gated behind an auth screen). Includes
@@ -128,8 +128,9 @@ export const EmergencyBar: React.FC<EmergencyBarProps> = ({ language, authUserId
         targetFacility: nearestHospital.name,
         facilityDistanceKm: nearestRoute?.distanceKm,
         facilityEtaMin: nearestRoute?.durationMin,
-      }).then(({ dispatchRef }) => {
-        setDispatchId(dispatchRef);
+      }).then(({ dispatchId: rowId, dispatchRef }) => {
+        setDispatchRefLabel(dispatchRef);
+        setDispatchRowId(rowId);
         setIsDispatched(true);
       });
     }
@@ -228,9 +229,6 @@ export const EmergencyBar: React.FC<EmergencyBarProps> = ({ language, authUserId
                     <CheckCircle className="w-8 h-8" />
                   </div>
                   <div>
-                    <span className="text-xs font-mono font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-md">
-                      ID: {dispatchId}
-                    </span>
                     <h4 className="text-xl font-semibold text-emerald-900 mt-2">
                       {t.dispatchedTitle[language]}
                     </h4>
@@ -239,26 +237,18 @@ export const EmergencyBar: React.FC<EmergencyBarProps> = ({ language, authUserId
                     </p>
                   </div>
 
-                  {/* Responders Card */}
-                  <div className="bg-white p-3 rounded-xl border border-emerald-200 text-left text-xs space-y-1.5">
-                    {dispatchedTime && (
-                      <div className="flex justify-between font-semibold text-slate-700 pb-1 border-b border-emerald-100">
-                        <span>{language === 'sw' ? 'Muda wa Kutuma (Real-Time):' : 'Dispatch Timestamp:'}</span>
-                        <span className="font-mono text-emerald-800 font-bold">{dispatchedTime}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between font-semibold text-slate-700">
-                      <span>{t.paramedicLead[language]}</span>
-                      <span className="text-emerald-700 font-bold">+255 754 112 999</span>
-                    </div>
-                    <div className="flex justify-between text-slate-600">
-                      <span>{t.targetFacility[language]}</span>
-                      <span className="font-semibold text-slate-900">
-                        {nearestHospital.name}
-                        {nearestRoute ? ` (${nearestRoute.distanceKm} km)` : ` (${nearestHospital.distance})`}
-                      </span>
-                    </div>
-                  </div>
+                  {dispatchRowId && (
+                    <EmergencyTrackingPanel
+                      dispatchId={dispatchRowId}
+                      dispatchRef={dispatchRefLabel}
+                      language={language}
+                      canCancel={!!authUserId}
+                      onCancelled={() => {
+                        setIsDispatched(false);
+                        setIsModalOpen(false);
+                      }}
+                    />
+                  )}
 
                   <button
                     id="btn-call-responders"
